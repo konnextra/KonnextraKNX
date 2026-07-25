@@ -330,8 +330,8 @@ and 4b did, before touching any code.
 
 ## Open decisions (waiting on the user)
 
-- **`PROJECT_NAME` is still `"InnotreeKNX"`**, shown in the doxygen-awesome title chip. Deliberately
-  kept — the integration plan states explicitly that project identity does not get renamed.
+- **`PROJECT_NAME` is now `"Konnextra"`** (renamed from `InnotreeKNX`), shown in the doxygen-awesome
+  title chip. Supersedes the earlier "project identity does not get renamed" decision below.
 - **Code styling split:** block code is dark (matching the site's hero windows), inline `code` in
   prose is left light for readability. Confirm or make inline dark too.
 - **JS extras beyond the chrome-offset script:** doxygen-awesome also offers a code copy button,
