@@ -4,9 +4,9 @@
  * @date 18.07.2026
  * @authors Florian Wiesner
  * @details Lighting device objects: KnxLight (on/off), KnxDimmLight (on/off plus relative
- *          brighter/darker dimming), and KnxRGB (colour). Construct one with the group
- *          address(es) it uses, then call its methods to command the light and onUpdate() to be
- *          notified of status changes from the bus.
+ *          brighter/darker dimming and an optional absolute setBrightness()), and KnxRGB
+ *          (colour). Construct one with the group address(es) it uses, then call its methods to
+ *          command the light and onUpdate() to be notified of status changes from the bus.
 */
 
 //---- Custom module headers ----
@@ -86,11 +86,19 @@ class KnxLight : public KnxObject {
  * @brief A dimmable light. It is a KnxLight — on()/off()/toggle()/isOn()/onUpdate() all work the
  *        same — with brighter()/darker()/stopDimming() added for step dimming on a third group
  *        address. Dimming is relative: each call nudges the light up or down, and stopDimming()
- *        ends a ramp that is still running.
+ *        ends a ramp that is still running. Construct with a fourth (valueGa) address to also
+ *        get setBrightness(), which sends an absolute 0-100 % target in one telegram.
 */
 class KnxDimmLight : public KnxLight {
 	private:
 		uint16_t dimGa;
+		uint16_t valueGa = 0;   // 0 = not configured; setBrightness() then no-ops
+
+		// DPT5.001 scaling: 0..100 % <-> 0..255 raw, rounded to nearest (mirrors KnxPercent).
+		static uint8_t rawFromPercent(uint8_t percent) {
+			if (percent >= 100) return 255;
+			return (uint8_t)((percent * 255u + 50u) / 100u);
+		}
 
 	public:
 		/**
@@ -110,6 +118,17 @@ class KnxDimmLight : public KnxLight {
 		*/
 		KnxDimmLight(KnxCoordinator& knx, uint16_t switchGa, uint16_t dimmingGa)
 			: KnxLight(knx, switchGa), dimGa(dimmingGa) {}
+		/**
+		 * @brief Creates a dimmable light with switch, dimming, status and absolute value addresses.
+		 * @param knx        The bus node this light belongs to.
+		 * @param switchGa    Group address on/off commands are sent to.
+		 * @param dimmingGa   Group address relative brighter/darker steps are sent to.
+		 * @param statusGa    Group address the light's on/off status is reported on.
+		 * @param valueGa     Group address absolute brightness values (0-100 %) are sent to.
+		*/
+		KnxDimmLight(KnxCoordinator& knx, uint16_t switchGa, uint16_t dimmingGa, uint16_t statusGa,
+		             uint16_t valueGa)
+			: KnxLight(knx, switchGa, statusGa), dimGa(dimmingGa), valueGa(valueGa) {}
 
 		/**
 		 * @brief Steps the light brighter.
@@ -132,6 +151,16 @@ class KnxDimmLight : public KnxLight {
 		bool stopDimming(void) {
 			return p_knx->send(dimGa, Dpt3(true, (uint8_t)DimmIncrement::Stop));
 		}
+		/**
+		 * @brief Sets the light to an absolute brightness in one telegram. Requires the ctor
+		 *        overload that takes valueGa; without it this always returns false.
+		 * @param percent Target brightness, 0-100.
+		 * @return true if the bus confirmed the command, false if no valueGa was configured.
+		*/
+		bool setBrightness(uint8_t percent) {
+			if (valueGa == 0) return false;
+			return p_knx->send(valueGa, Dpt5(rawFromPercent(percent)));
+		}
 
 #ifdef ARDUINO
 		/**
@@ -153,6 +182,19 @@ class KnxDimmLight : public KnxLight {
 		KnxDimmLight(KnxCoordinator& knx, String switchGa, String dimmingGa)
 			: KnxLight(knx, switchGa),
 			  dimGa(packedGroupAddressFromString(dimmingGa)) {}
+		/**
+		 * @brief Creates a dimmable light with switch, dimming, status and absolute value addresses.
+		 * @param knx        The bus node this light belongs to.
+		 * @param switchGa    Switch group address as "main/middle/sub", e.g. "0/1/1".
+		 * @param dimmingGa   Dimming group address as "main/middle/sub", e.g. "0/1/2".
+		 * @param statusGa    Status group address as "main/middle/sub", e.g. "0/3/0".
+		 * @param valueGa     Absolute value group address as "main/middle/sub", e.g. "0/1/3".
+		*/
+		KnxDimmLight(KnxCoordinator& knx, String switchGa, String dimmingGa, String statusGa,
+		             String valueGa)
+			: KnxLight(knx, switchGa, statusGa),
+			  dimGa(packedGroupAddressFromString(dimmingGa)),
+			  valueGa(packedGroupAddressFromString(valueGa)) {}
 #endif
 };
 

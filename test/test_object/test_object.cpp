@@ -224,6 +224,36 @@ void test_percent_scaling_roundtrip(void) {
 	TEST_ASSERT_EQUAL_UINT8(100, pct.percent());
 }
 
+//---- KnxDimmLight.setBrightness() sends the DPT5 scaling to the dedicated value GA ----
+void test_dimm_light_set_brightness(void) {
+	MockDriver mock;
+	KnxCoordinator knx(&mock, SELF);
+	uint16_t switchGa = packGroupAddress(GroupAddress{ 0, 1, 1 });
+	uint16_t dimGa    = packGroupAddress(GroupAddress{ 0, 1, 2 });
+	uint16_t statusGa = packGroupAddress(GroupAddress{ 0, 3, 0 });
+	uint16_t valueGa  = packGroupAddress(GroupAddress{ 0, 1, 3 });
+	KnxDimmLight light(knx, switchGa, dimGa, statusGa, valueGa);
+
+	TEST_ASSERT_TRUE(light.setBrightness(50));
+	ParsedTelegram tg;
+	KnxFrame::parse(mock.lastSent, mock.lastLen, tg);
+	TEST_ASSERT_EQUAL_UINT16(valueGa, packGroupAddress(tg.target));
+	uint8_t raw = KnxCodec::decode(KnxDpt::DPT5, tg.payload, tg.payloadLength).asU8();
+	TEST_ASSERT_UINT8_WITHIN(1, 128, raw);
+}
+
+//---- setBrightness() without a configured valueGa no-ops rather than sending to GA 0 ----
+void test_dimm_light_set_brightness_unconfigured(void) {
+	MockDriver mock;
+	KnxCoordinator knx(&mock, SELF);
+	uint16_t switchGa = packGroupAddress(GroupAddress{ 0, 1, 1 });
+	uint16_t dimGa    = packGroupAddress(GroupAddress{ 0, 1, 2 });
+	KnxDimmLight light(knx, switchGa, dimGa);
+
+	TEST_ASSERT_FALSE(light.setBrightness(50));
+	TEST_ASSERT_EQUAL_INT(0, mock.sendCount);
+}
+
 int main(int, char**) {
 	UNITY_BEGIN();
 	RUN_TEST(test_light_receive_decodes_caches_fires);
@@ -233,5 +263,7 @@ int main(int, char**) {
 	RUN_TEST(test_destructor_unlinks);
 	RUN_TEST(test_raw_object_generic_callback);
 	RUN_TEST(test_percent_scaling_roundtrip);
+	RUN_TEST(test_dimm_light_set_brightness);
+	RUN_TEST(test_dimm_light_set_brightness_unconfigured);
 	return UNITY_END();
 }
