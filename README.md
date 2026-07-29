@@ -2,6 +2,10 @@
 
 **Talk to a KNX bus from an Arduino sketch — no ETS, no KNX-stack expertise.**
 
+> **🚧 Under development.** The library works and is tested on real hardware, but the API is
+> still moving and things will change before 1.0. The Konnextra Bridge board and the Konnextra
+> website both launch shortly.
+
 KNX is the building-automation standard behind a lot of professional lighting, blind and
 climate installations. Getting a microcontroller onto that bus normally means an ETS project,
 a stack of datapoint tables and a lot of timing-critical code. This library removes all three:
@@ -62,23 +66,15 @@ The ATtiny handles the KNX physical layer — bit timing, collision detection an
 buffering — and presents a plain UART to your microcontroller. The isolator keeps the bus and
 your board electrically separate.
 
-That UART speaks the **TP-UART2 protocol**, so the library is not limited to this board: it
-drives any standard TP-UART2 transceiver the same way (19200 baud, 8E1, the usual
-`U_Reset.req` / `U_State.req` / `U_SetAddress` command set and `L_Data.con` confirmations).
-The Konnextra Bridge is what it is developed and bench-tested against.
+That UART speaks the **TP-UART2 protocol**, so the library is not limited to this board — it
+drives a standard TP-UART2 transceiver just as well, and is tested against both. The link runs
+at 19200 baud, 8E1, with the usual `U_Reset.req` / `U_State.req` / `U_SetAddress` command set
+and real `L_Data.con` confirmations.
 
 ## Boards
 
 Built on the **Arduino framework** and usable from any Arduino-compatible board. Development
 and bench testing happen on the **Seeed XIAO ESP32-C6**.
-
-| Signal | Default pin |
-|---|---|
-| KNX UART RX | D6 |
-| KNX UART TX | D7 |
-| Co-processor `/RESET` | D0 |
-
-The bus link runs at 19200 baud, 8E1.
 
 ## Examples
 
@@ -152,7 +148,3 @@ Something not behaving? Turn on tracing and watch every telegram go by:
 ```cpp
 knx.enableDebugMode(true);   // call before begin() to trace start-up too
 ```
-
-## Status
-
-Pre-1.0 (`0.1.5`). The API is in use and documented, but still open to change.
