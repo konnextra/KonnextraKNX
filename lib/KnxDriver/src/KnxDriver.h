@@ -11,7 +11,8 @@
  *          layers — the coordinator injects it as an IKnxDriver*.
  *
  *          Hardware paths (UART, pins, timing, con-byte values) follow the TP-UART2 spec and
- *          the thesis implementation; they are code-review-only and unverified without the board.
+ *          are verified on hardware — against the STKNX/ATTiny front end and against a
+ *          standard TP-UART2 transceiver.
 */
 
 //---- Standard / platform libraries ----
@@ -43,7 +44,7 @@ class KnxDriver : public IKnxDriver {
 		static constexpr uint8_t U_STATE_IND_OK = 0x07;
 
 		// L_Data.con: fixed low-nibble pattern 0x_B; bit 7 = positive confirmation.
-		// Verified against docs/TP-UART2.pdf, which encodes L_DATA.confirm as 'x0001011'
+		// Verified against reference/TP-UART2.pdf, which encodes L_DATA.confirm as 'x0001011'
 		// with x = 1 positive — and against a bench run reporting 0x8B.
 		static constexpr uint8_t CON_MASK      = 0x7F;
 		static constexpr uint8_t CON_PATTERN   = 0x0B;
