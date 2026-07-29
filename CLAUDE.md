@@ -6,8 +6,8 @@ PlatformIO / Arduino project running on a **Seeed XIAO ESP32-C6**. The repositor
 primarily an **Adafruit-style cross-platform Arduino KNX library** (the redesign tracked in
 `PLAN.md`), with `src/main.cpp` as a showcase sketch demonstrating its use. The original target
 is a KNX wall controller (capacitive touch pads, OLED, RGB backlight); those sensor/display
-drivers are not part of the library surface and the thesis button layer now lives under
-`examples/`.
+drivers are not part of the library surface. The thesis button layer (`examples/KNX_Device/`)
+was removed — recover it from git history if it is ever needed.
 
 ## Build system
 
@@ -27,7 +27,7 @@ All custom code lives under `lib/`. Third-party dependencies are declared in `pl
 |---|---|
 | `lib/` | all custom library code (see Architecture below) |
 | `src/` | `main.cpp` — the bench-test / showcase sketch |
-| `examples/` | thesis button state machines; not in the build, not part of the library surface |
+| `examples/` | standalone `.ino` sketches, one folder each (`DeviceObject`, `StatelessSend`, `CustomKnxObject`). They mirror `docs/Examples.md` — change one, change the other. Not in the build, so **nothing compiles them**; check them by hand after an API change. |
 | `docs/` | **user-facing Markdown documentation only** — `GettingStarted.md`, `Examples.md`, `Hardware.md`. These are Doxygen's `INPUT` pages; adding a page means adding it there **and** to the `Doxyfile`. |
 | `reference/` | KNX standard specifications + the TP-UART2 datasheet (PDFs, read-only reference) |
 | `.agents/specs/` | design docs from the `superpowers:brainstorming` workflow — the *why* behind completed work. **New specs go here**, not to the skill's default `docs/superpowers/specs/`, which would pollute the user-facing `docs/`. |
@@ -56,8 +56,8 @@ lib/KnxValue/       ← value currency: KnxValue tagged union + symmetric KnxCod
 lib/KnxCommon/      ← shared types + contracts: KnxEnums, KnxAddress, KnxTelegramTypes,
                       KnxInterfaces (IKnxDriver / IKnxReceiver / IKnxDeviceHandler),
                       KnxDebug (runtime logging switch used by every layer). Header-only
-examples/KNX_Device/← thesis button state machines (SingleButton/TwoButtonDimming, …);
-                      NOT in the build, NOT part of the library surface (PLAN §12)
+examples/           ← standalone .ino sketches mirroring docs/Examples.md; NOT in the
+                      build (PlatformIO's LDF excludes this directory)
 ```
 
 Dependency flow: `Konnextra → {KnxDriver, KnxObject, KnxCoordinator, KnxValue, KnxCommon}`,
