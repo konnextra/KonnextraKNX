@@ -2,7 +2,7 @@
 
 ## Context
 
-Step 4a (CI/CD pipeline, `docs/superpowers/specs/2026-07-22-ci-cd-pipeline-design.md`) shipped
+Step 4a (CI/CD pipeline, `.agents/specs/2026-07-22-ci-cd-pipeline-design.md`) shipped
 publishing today's Doxygen output — Step 3's doxygen-awesome theme plus the baked-in Innotree
 navbar/footer — to GitHub Pages as-is, deliberately deferring the "pure content generator"
 rework PLAN.md's Step 4b already described: *"Doxygen becomes a pure content generator, not a

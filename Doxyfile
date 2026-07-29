@@ -8,10 +8,10 @@ PROJECT_BRIEF          = "An Arduino KNX library — simple, no ETS required"
 OUTPUT_DIRECTORY       = doxygen
 CREATE_SUBDIRS         = NO
 
-#---- Input: the README as the landing page, then the public headers ----
-INPUT                  = README.md \
-                         examples.md \
-                         Hardware.md \
+#---- Input: the Getting Started page as the landing page, then the public headers ----
+INPUT                  = docs/GettingStarted.md \
+                         docs/Examples.md \
+                         docs/Hardware.md \
                          lib/Konnextra/src/Konnextra.h \
                          lib/KnxObject/src/KnxObject.h \
                          lib/KnxObject/src/KnxLighting.h \
@@ -24,7 +24,7 @@ INPUT                  = README.md \
                          lib/KnxCommon/src/KnxEnums.h
 FILE_PATTERNS          = *.h *.md
 RECURSIVE              = NO
-USE_MDFILE_AS_MAINPAGE = README.md
+USE_MDFILE_AS_MAINPAGE = docs/GettingStarted.md
 
 #---- What to document: the public surface only ----
 EXTRACT_ALL            = NO
