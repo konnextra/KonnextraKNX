@@ -29,7 +29,7 @@ types, and send raw values.
 ## What you need
 
 - A supported Arduino board (developed on the **Seeed XIAO ESP32-C6**).
-- The **Innotree STKNX breakout board**, which connects the MCU to the KNX bus.
+- The **Konnextra Bridge**, an STKNX breakout board that connects the MCU to the KNX bus.
 - This library, added through PlatformIO or the Arduino IDE.
 
 Each device on a KNX bus has a **physical address** like `1.1.5` (area.line.device),
