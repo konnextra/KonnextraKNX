@@ -44,7 +44,7 @@ directly in your sketch — there is no ETS project to configure.
 
 ```ini
 lib_deps =
-    https://github.com/innotree-labs/KNX_Library.git
+    https://github.com/konnextra/KonnextraKNX.git
 ```
 
 **Arduino IDE** — download the library and add it through

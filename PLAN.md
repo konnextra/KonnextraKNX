@@ -14,7 +14,7 @@ history). This phase is **documentation only** — no behaviour changes.
   produced are not being reverted — they're what's live today — but new work should follow
   Step 4's direction, not Step 3's.
 - **Step 4a — CI/CD pipeline: tests on every push, Doxygen → GitHub Pages on a version tag.**
-  DONE. Live at **https://innotree-labs.github.io/KNX_Library/**. See below.
+  DONE. Live at **https://konnextra.github.io/KonnextraKNX/**. See below.
 - **Step 4b — strip the Doxygen theme/chrome; Doxygen becomes a pure content generator.** DONE —
   not yet live (needs a new version tag to publish). See below.
 - **Step 4c — `Website_` fetches the published content at request time and styles it.** PLANNED,
@@ -198,7 +198,7 @@ only** — publishes today's Step 3 output (doxygen-awesome theme + baked Websit
 the "pure content generator" rework and `Website_`'s runtime fetch are Step 4b, still not
 started.
 
-**Live site: https://innotree-labs.github.io/KNX_Library/**
+**Live site: https://konnextra.github.io/KonnextraKNX/**
 
 ### What exists and works
 
@@ -284,7 +284,7 @@ Verified: `doxygen Doxyfile` regenerates with `doxygen/warnings.txt` still empty
 
 **This does not appear on the live site until the next version tag** — `docs.yml` only
 regenerates and republishes on a `v*.*.*` push; the `v0.1.1` output already live at
-https://innotree-labs.github.io/KNX_Library/ stays themed (Step 3's look) until a new tag is cut.
+https://konnextra.github.io/KonnextraKNX/ stays themed (Step 3's look) until a new tag is cut.
 
 ## Step 4c — PLANNED, NOT STARTED, deferred to a `Website_`-repo session: runtime fetch + styling
 
@@ -297,7 +297,7 @@ session working from the `Website_` repo, not this one.
 
 - **Runtime, in `Website_`:** `documentation.php` does a **server-side fetch** (PHP
   `file_get_contents`/curl, not client-side JS, not a build-time copy) against the GitHub Pages
-  URL (`https://innotree-labs.github.io/KNX_Library/`) for the current content fragment, and
+  URL (`https://konnextra.github.io/KonnextraKNX/`) for the current content fragment, and
   echoes it into `<main>` below the hero — navbar, footer, and hero stay pure Website_ PHP, same
   as every other page on the site. Chosen over two alternatives: CI pushing fragment files into
   `Website_` at build time (rejected: reintroduces a cross-repo write, even if smaller than Step
