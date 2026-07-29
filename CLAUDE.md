@@ -183,10 +183,17 @@ listed in the `Doxyfile`, and published to GitHub Pages. Regenerate locally:
 
 ```
 export PATH="/opt/homebrew/bin:$PATH"   # Homebrew doxygen is not on the default PATH
+rm -rf doxygen                          # Doxygen never deletes, only overwrites
 doxygen Doxyfile                        # -> doxygen/ (gitignored)
 cat doxygen/warnings.txt                # must stay empty
 python3 -m http.server 8080 --directory doxygen/html
 ```
+
+**Purge the output directory first.** Doxygen only overwrites the files it generates this
+run — anything renamed or removed since the last run stays behind and looks current. A stale
+local `doxygen/` has already held pages for a class that no longer existed and CSS from a
+theme that had been deleted. CI is immune (it builds from a fresh checkout); local runs are
+not.
 
 **Zero warnings is a hard invariant, not a nicety** — `docs.yml` fails the build if
 `doxygen/warnings.txt` is non-empty. Hard-refresh the browser after regenerating; the CSS
