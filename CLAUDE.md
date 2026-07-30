@@ -88,11 +88,19 @@ coordinator, objects) against the Arduino-free layers; `pio run` builds the firm
 
 | Signal | Pin | Direction |
 |---|---|---|
-| KNX UART RX | D6 | IN |
-| KNX UART TX | D7 | OUT |
+| KNX UART RX | **D7** | IN |
+| KNX UART TX | **D6** | OUT |
 | NeoPixel data | D3 | OUT |
 | I2C SDA | SDA | Shared: MPR121, SSD1306, SHTC3 |
 | I2C SCL | SCL | Shared bus |
+
+**RX/TX in that table were the wrong way round until the port injection landed**, and the
+correction is counter-intuitive enough to be worth the paragraph. The old bring-up read
+`uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with `rxPin = D6, txPin = D7`, while the ESP32
+signature is `begin(baud, config, rxPin, txPin)` — the two were passed swapped. Since that
+code was hardware-verified, the configuration that actually works is **ESP32 RX = D7, TX = D6**,
+and it is the misleading member names, not the wiring, that were wrong. `src/main.cpp`
+reproduces it with `knxPort.setPins(D7, D6)`; do not "correct" that to `(D6, D7)`.
 
 The KNX pins are **no longer wired into the library**. `KnxDriver` is handed a port it does
 not construct, so the pin columns above describe this board's wiring, not a library constant.

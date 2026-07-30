@@ -31,8 +31,22 @@
 // should be established first and the verbose trace used to explain a broken one.
 #define KNX_VERBOSE         true
 
-//---- KNX node: one object, address typed once; the bus driver is owned internally ----
-Konnextra knx(PHYS_ADDR);
+//---- Bench wiring: UART1 on this board's KNX pins ----
+// The driver no longer owns a UART, so the port is named here and its pins are set in
+// setup(). UART1 is the same peripheral the driver used to construct for itself.
+//
+// The order below is deliberate and NOT what the pin names suggest. Before the port was
+// injected, bring-up read:
+//     uart.begin(baud, SERIAL_8E1, txPin, rxPin);   // txPin = D7, rxPin = D6
+// and the ESP32 signature is begin(baud, config, rxPin, txPin) — so the two were passed
+// swapped, and the configuration that actually worked on the bench is
+//     ESP32 RX = D7,  ESP32 TX = D6.
+// That is what setPins(rx, tx) reproduces below. Do not "fix" it to (D6, D7) without
+// re-checking the board: the pin table in CLAUDE.md says the opposite and is wrong.
+HardwareSerial knxPort(1);
+
+//---- KNX node: address typed once, driving the port declared above ----
+Konnextra knx(PHYS_ADDR, knxPort);
 
 //---- The light under test: (node, switching GA, status GA) ----
 // Sends on/off to 0/1/1, listens for switching status on 1/1/1.
@@ -58,6 +72,11 @@ void setup() {
 
 	// Must be set before begin() so the driver's own bring-up is traced too.
 	knx.enableDebugMode(KNX_VERBOSE);
+
+	// Pins first: setPins() only touches the GPIO matrix and needs no started UART, and
+	// begin() reads the assignment back rather than overriding it. Arguments are (rx, tx) —
+	// see the note above knxPort for why RX is D7 and TX is D6 and not the other way round.
+	knxPort.setPins(D7, D6);
 
 	// begin() brings up the UART and hands the physical address to the transceiver.
 	// If this fails the ATTiny is not answering — nothing below will work, so say so loudly.
