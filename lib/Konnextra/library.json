@@ -3,7 +3,7 @@
   "version": "0.1.6",
   "description": "The library's single public include (Konnextra.h) and nothing else. Sits alone at the top of the DAG: it pulls in the concrete KnxDriver + KnxCoordinator + KnxValue + every KnxObject intent header, then defines class Konnextra : public KnxCoordinator, which owns a KnxDriver and is built from a physical-address string. A sketch writes only #include <Konnextra.h>. Header-only and Arduino-only (it pulls the driver) — native tests include KnxCoordinator.h and the object headers directly and never touch this library.",
   "frameworks": "arduino",
-  "platforms": "espressif32",
+  "platforms": "*",
   "dependencies": {
     "KnxCommon": "*",
     "KnxValue": "*",

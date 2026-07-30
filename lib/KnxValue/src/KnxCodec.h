@@ -9,7 +9,7 @@
 */
 
 //---- Libraries ----
-#include <cstdint>
+#include <stdint.h>
 #include "KnxValue.h"
 
 namespace KnxCodec {

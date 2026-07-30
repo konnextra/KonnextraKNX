@@ -9,7 +9,7 @@
 */
 
 //---- Libraries ----
-#include <cstdint>
+#include <stdint.h>
 #include "KnxEnums.h"
 #include "KnxAddress.h"
 

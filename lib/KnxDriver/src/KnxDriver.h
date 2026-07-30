@@ -4,15 +4,19 @@
  * @date 16.07.2026
  * @authors Florian Wiesner
  * @details Concrete link-layer driver for the STKNX-behind-ATTiny front end, which mirrors
- *          the Siemens TP-UART2 UART protocol. Implements IKnxDriver: UART bring-up, reset/
+ *          the Siemens TP-UART2 UART protocol. Implements IKnxDriver: port bring-up, reset/
  *          state handshake, per-byte telegram transmission with a real L_Data.con result
  *          (PLAN §9), and byte-stream RX via KnxReassembler.
  *          Replaces the thesis KNX_TPUART2 and is decoupled from the telegram/coordinator
  *          layers — the coordinator injects it as an IKnxDriver*.
  *
- *          Hardware paths (UART, pins, timing, con-byte values) follow the TP-UART2 spec and
- *          are verified on hardware — against the STKNX/ATTiny front end and against a
- *          standard TP-UART2 transceiver.
+ *          The port is injected, never constructed: the driver holds a reference to one the
+ *          core already provides (Serial1 and friends). That is what makes it buildable on
+ *          every Arduino core rather than only on ESP32, and it is why there is no
+ *          architecture guard anywhere below.
+ *
+ *          Timing and con-byte values follow the TP-UART2 spec and are verified on hardware —
+ *          against the STKNX/ATTiny front end and against a standard TP-UART2 transceiver.
 */
 
 //---- Standard / platform libraries ----
@@ -26,6 +30,29 @@
 
 //---- Other custom module headers ----
 #include "KnxReassembler.h"
+
+// The port used by the address-only constructor. Resolved once, here, so the rest of the
+// driver never names a board or an architecture. Override it per project if the front end
+// hangs off a different UART:  build_flags = -DKNX_DEFAULT_PORT=Serial2
+#ifndef KNX_DEFAULT_PORT
+	#if defined(SERIAL_PORT_HARDWARE_OPEN)
+		// Arduino's own answer to "the first hardware UART whose pins are not already
+		// dedicated to something else". Correctly absent on boards with only one UART.
+		#define KNX_DEFAULT_PORT SERIAL_PORT_HARDWARE_OPEN
+	#elif defined(HAVE_HWSERIAL1)
+		// AVR and STM32duino both use this name, and both set it only where Serial1 is
+		// really instantiated. Asking the core beats guessing from the architecture:
+		// STM32duino *declares* Serial1 whenever the chip has a USART1 but only defines
+		// it when the sketch enables it, so an architecture test would compile and then
+		// fail at link with "undefined reference to Serial1".
+		#define KNX_DEFAULT_PORT Serial1
+	#elif defined(ARDUINO_ARCH_ESP32)   || defined(ARDUINO_ARCH_RP2040) || \
+	      defined(ARDUINO_ARCH_RENESAS) || defined(ARDUINO_ARCH_SAMD)   || \
+	      defined(ARDUINO_ARCH_MBED)
+		// Cores that always provide Serial1 and expose no macro to ask.
+		#define KNX_DEFAULT_PORT Serial1
+	#endif
+#endif
 
 class KnxDriver : public IKnxDriver {
 	private:
@@ -54,26 +81,26 @@ class KnxDriver : public IKnxDriver {
 		static constexpr uint8_t  RESPONSE_TIME_MS = 10;   // U_ command response window
 		static constexpr uint16_t CON_TIMEOUT_MS   = 100;  // L_Data.con window after TX
 
-		//---- Pin map (XIAO ESP32-C6) ----
-		#define KNX_DRIVER_RX    D6
-		#define KNX_DRIVER_TX    D7
-		#define KNX_DRIVER_RESN  D0
-		#define KNX_DRIVER_BAUD  19200
+		//---- Link settings ----
+		// The TP-UART2 line format. SERIAL_8E1 is never cached in a member: AVR types the
+		// config parameter as uint8_t, the Arduino core API as uint16_t, so it is passed
+		// straight to begin() at the call site instead.
+		static constexpr uint32_t BAUDRATE = 19200;
 
 		//---- Members ----
-		HardwareSerial uart = HardwareSerial(1);
-		KnxReassembler reassembler;
+		// p_io carries every read and write and is always set. p_uart is set only when the
+		// driver was handed a HardwareSerial and therefore owns the line configuration; on
+		// the Stream path it stays null and begin() leaves the port alone.
+		Stream*         p_io   = nullptr;
+		HardwareSerial* p_uart = nullptr;
 
-		uint8_t rxPin;
-		uint8_t txPin;
-		uint8_t resnPin;   // Hard-reset pin
-		uint16_t baudrate;
+		KnxReassembler  reassembler;
 		PhysicalAddress physicalAddress;
 
 		//---- Private methods ----
 		// Writes a raw command byte sequence to the transceiver.
 		void sendCommand(const uint8_t* cmd, uint16_t len);
-		// Sends Reset.request, waits for Reset.indication, falls back to a hardware reset.
+		// Sends Reset.request and waits for Reset.indication.
 		bool resetRequest(void);
 		// Sends State.request and returns the raw State.indication byte (0xFF on timeout).
 		uint8_t stateRequest(void);
@@ -88,16 +115,40 @@ class KnxDriver : public IKnxDriver {
 		static bool isPositiveConfirmation(uint8_t b);
 
 	public:
-		//---- Constructor ----
+		//---- Constructors ----
+#ifdef KNX_DEFAULT_PORT
 		/**
-		 * @brief Constructs the driver, latches the physical address and configures the pins.
+		 * @brief Constructs the driver on this board's default KNX port.
+		 * @details The port is `Serial1` on most boards; begin() opens it at 19200 8E1.
+		 *          Override the choice with `-DKNX_DEFAULT_PORT=Serial2`.
 		 * @param physicalAddress Physical address of this device (e.g. "1.1.5").
 		*/
 		KnxDriver(String physicalAddress);
+#else
+		// This board has no hardware UART free for KNX — its only port is the console.
+		// Pass one explicitly instead:  Konnextra knx("1.1.5", Serial);
+		KnxDriver(String physicalAddress) = delete;
+#endif
+
+		/**
+		 * @brief Constructs the driver on a port you name; begin() opens it at 19200 8E1.
+		 * @param physicalAddress Physical address of this device (e.g. "1.1.5").
+		 * @param port            The serial port the transceiver is wired to.
+		*/
+		KnxDriver(String physicalAddress, HardwareSerial& port);
+
+		/**
+		 * @brief Constructs the driver on a stream you have already configured yourself.
+		 * @details begin() does not touch the line settings on this path, so the stream must
+		 *          already be open at 19200 8E1 — KNX will not work at any other setting.
+		 * @param physicalAddress Physical address of this device (e.g. "1.1.5").
+		 * @param stream          An open stream connected to the transceiver.
+		*/
+		KnxDriver(String physicalAddress, Stream& stream);
 
 		//---- IKnxDriver ----
 		/**
-		 * @brief Initialises the UART (8E1), resets the transceiver and applies the address.
+		 * @brief Opens the port (8E1), resets the transceiver and applies the address.
 		 * @return true if the transceiver reports State OK after bring-up.
 		*/
 		bool begin(void) override;

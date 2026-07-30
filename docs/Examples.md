@@ -1,6 +1,7 @@
 # Examples {#examples}
 
-Three ways to use the library, from the most convenient to the most general.
+Four sketches: three ways to talk to the bus, from the most convenient to the most
+general, and one showing how to name the serial port the transceiver is wired to.
 
 ## Device object
 
@@ -90,3 +91,29 @@ void onCounter(const KnxValue& value) {
 
 `KnxObject` hands your callback a generic ::KnxValue; read it with the accessor for
 its type (`asU16()`, `asFloat()`, `asBool()`, …).
+
+## Naming the serial port
+
+Without a second argument the node uses this board's default KNX port — `Serial1` on
+almost every board. Name a port when the transceiver sits somewhere else, or when the
+board has no second port at all. The Uno is the awkward case: its only hardware UART is
+the one the USB console shares, so KNX takes it and there is no serial monitor left.
+
+```cpp
+#include <Konnextra.h>
+
+Konnextra knx("1.1.5", Serial);         // the transceiver is on the one hardware UART
+KnxLight  lamp(knx, "0/1/1", "0/3/0");
+
+void setup() {
+    knx.begin();                        // opens Serial at 19200 8E1
+}
+
+void loop() {
+    knx.loop();
+}
+```
+
+`begin()` opens whichever port it was given at 19200 8E1. If you need a port the library
+cannot configure — a software serial, say — open it yourself and pass it as a stream
+instead; see Getting Started for that path and the parity caveat that comes with it.

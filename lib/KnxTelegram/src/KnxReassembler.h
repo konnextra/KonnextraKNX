@@ -11,7 +11,7 @@
 */
 
 //---- Libraries ----
-#include <cstdint>
+#include <stdint.h>
 
 class KnxReassembler {
 	private:

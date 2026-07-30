@@ -37,11 +37,42 @@ class Konnextra : public KnxCoordinator {
 		KnxDriver driverImpl;
 
 	public:
+#ifdef KNX_DEFAULT_PORT
 		/**
-		 * @brief Creates the bus node for this device.
+		 * @brief Creates the bus node on this board's default KNX port.
+		 * @details The port is `Serial1` on most boards, and begin() opens it at 19200 8E1.
+		 *          Boards whose only serial port is the console — the Uno, for instance —
+		 *          do not have this constructor; name a port instead. Override the default
+		 *          with `-DKNX_DEFAULT_PORT=Serial2`.
 		 * @param physicalAddress This device's KNX physical address as "area.line.device",
 		 *                        e.g. "1.1.5".
 		*/
 		explicit Konnextra(const String& physicalAddress)
 			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress) {}
+#else
+		// This board has no hardware UART free for KNX — its only port is the console.
+		// Name the port instead:  Konnextra knx("1.1.5", Serial);
+		explicit Konnextra(const String& physicalAddress) = delete;
+#endif
+
+		/**
+		 * @brief Creates the bus node on a serial port you name.
+		 * @details begin() opens the port at 19200 8E1, so it must not be opened beforehand
+		 *          unless you want to keep your own pin assignment.
+		 * @param physicalAddress This device's KNX physical address, e.g. "1.1.5".
+		 * @param port            The serial port the transceiver is wired to, e.g. `Serial1`.
+		*/
+		Konnextra(const String& physicalAddress, HardwareSerial& port)
+			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, port) {}
+
+		/**
+		 * @brief Creates the bus node on a stream you have already opened yourself.
+		 * @details begin() leaves the line settings untouched on this path, so the stream must
+		 *          already run at 19200 8E1 — KNX does not work at any other setting. Use this
+		 *          for ports the library cannot configure, such as a software serial.
+		 * @param physicalAddress This device's KNX physical address, e.g. "1.1.5".
+		 * @param stream          An open stream connected to the transceiver.
+		*/
+		Konnextra(const String& physicalAddress, Stream& stream)
+			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, stream) {}
 };

@@ -9,7 +9,7 @@
 */
 
 //---- Libraries ----
-#include <cstdint>
+#include <stdint.h>
 
 //---- Address structs ----
 struct GroupAddress {

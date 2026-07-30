@@ -20,3 +20,46 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pio
       - run: pio run -e seeed_xiao_esp32c6
+
+  # One job per Arduino core family. Nothing else compiles the examples, and nothing else
+  # would notice a driver change that only builds on ESP32 — this is that safety net.
+  portability:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - megaatmega2560     # AVR, classic core
+          - uno_r4_minima      # Renesas RA
+          - nucleo_f401re      # STM32duino
+          - pico               # RP2040, Earle Philhower core
+          - esp32-s3-devkitc-1 # ESP32, non-XIAO variant
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pio
+      - name: Build every example
+        run: |
+          set -euo pipefail
+          for ex in examples/*/; do
+            echo "::group::${ex} on ${{ matrix.env }}"
+            PLATFORMIO_SRC_DIR="$ex" pio run -e ${{ matrix.env }}
+            echo "::endgroup::"
+          done
+
+  # The Uno has no spare UART, so the address-only constructor must NOT exist there.
+  # Building the explicit-port sketch proves the library works; failing to build any of
+  # the others proves the constructor is correctly withheld rather than silently broken.
+  uno-single-uart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pio
+      - name: Explicit-port sketch builds
+        run: PLATFORMIO_SRC_DIR=examples/ExplicitPort pio run -e uno
+      - name: Address-only sketch is rejected
+        run: |
+          if PLATFORMIO_SRC_DIR=examples/DeviceObject pio run -e uno 2>/dev/null; then
+            echo "::error::DeviceObject built on the Uno — KNX_DEFAULT_PORT resolved to a port that does not exist"
+            exit 1
+          fi
+          echo "correctly rejected"

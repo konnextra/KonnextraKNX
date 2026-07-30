@@ -11,7 +11,7 @@
 #include "KnxFrame.h"
 #include "KnxCodec.h"
 #include "KnxDebug.h"
-#include <cstring>
+#include <string.h>
 
 namespace KnxFrame {
 
@@ -64,7 +64,7 @@ uint8_t build(PhysicalAddress source, uint16_t targetGa, const KnxValue& value,
 	}
 	else {
 		out[7] = 0x80;
-		std::memcpy(&out[8], payload, plen);
+		memcpy(&out[8], payload, plen);
 	}
 
 	out[frameLen] = checksum(out, frameLen);

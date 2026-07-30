@@ -47,7 +47,8 @@ EXCLUDE_SYMBOLS        = KnxPriority GroupValueType KnxAddressType \
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
-PREDEFINED             = ARDUINO
+PREDEFINED             = ARDUINO \
+                         KNX_DEFAULT_PORT=Serial1
 SKIP_FUNCTION_MACROS   = YES
 
 #---- Comment parsing ----

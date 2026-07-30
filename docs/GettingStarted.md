@@ -71,6 +71,41 @@ void loop() {
 > `loop()` must run often. Do not gate it behind a long `delay()`, or incoming
 > status updates will arrive late or be missed. Use `millis()` for timing instead.
 
+### Which serial port
+
+Written like that, the node uses your board's default KNX port — `Serial1` on almost
+every board, the first hardware UART that is not already the USB console. Name a port
+when the transceiver sits somewhere else:
+
+```cpp
+Konnextra knx("1.1.5", Serial2);
+```
+
+Either way `begin()` opens that port at 19200 8E1. You do not open it yourself.
+
+Boards whose only serial port *is* the console — the Uno, for instance — have no
+default, and the one-argument form does not compile there. Name the port, and accept
+that the serial monitor is gone from then on:
+
+```cpp
+Konnextra knx("1.1.5", Serial);
+```
+
+For a port the library cannot configure, such as a software serial, open it yourself
+and hand it over as a stream. `begin()` leaves the line settings alone on this path, so
+they have to be right — **KNX does not work at anything other than 19200 8E1**, and the
+software serial bundled with the AVR core cannot do even parity at all.
+
+```cpp
+EspSoftwareSerial::UART knxPort;
+Konnextra               knx("1.1.5", knxPort);
+
+void setup() {
+    knxPort.begin(19200, SWSERIAL_8E1, 4, 5);
+    knx.begin();
+}
+```
+
 ## Device objects
 
 A device object is created once, usually as a global, from the group address(es)

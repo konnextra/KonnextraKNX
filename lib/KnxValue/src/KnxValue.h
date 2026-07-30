@@ -10,7 +10,7 @@
 */
 
 //---- Libraries ----
-#include <cstdint>
+#include <stdint.h>
 #include "KnxEnums.h"
 
 //---- Composite value types (passed to and received from the multi-field datapoints) ----

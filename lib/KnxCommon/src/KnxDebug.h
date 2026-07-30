@@ -26,7 +26,7 @@
 */
 
 //---- Standard / platform libraries ----
-#include <cstdint>
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #ifdef ARDUINO

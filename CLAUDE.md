@@ -90,10 +90,41 @@ coordinator, objects) against the Arduino-free layers; `pio run` builds the firm
 |---|---|---|
 | KNX UART RX | D6 | IN |
 | KNX UART TX | D7 | OUT |
-| ATTiny /RESET | D0 | OUT (open-drain) |
 | NeoPixel data | D3 | OUT |
 | I2C SDA | SDA | Shared: MPR121, SSD1306, SHTC3 |
 | I2C SCL | SCL | Shared bus |
+
+The KNX pins are **no longer wired into the library**. `KnxDriver` is handed a port it does
+not construct, so the pin columns above describe this board's wiring, not a library constant.
+On ESP32 the UART keeps whatever pins it already has — call `setPins()` before `knx.begin()`
+to move it. The ATTiny `/RESET` line is gone from the hardware; `resetRequest()` therefore has
+no fallback left, and an unanswered soft reset is now simply a failed `begin()`.
+
+## Board portability
+
+`KnxDriver` holds a **`Stream*`** for the byte traffic and a **`HardwareSerial*`** only when
+it was handed one — that second pointer is what tells `begin()` it may configure the line.
+There is no architecture guard anywhere in the driver.
+
+`KNX_DEFAULT_PORT` (top of `KnxDriver.h`) resolves the address-only constructor's port, in
+this order: Arduino's own `SERIAL_PORT_HARDWARE_OPEN`, then `HAVE_HWSERIAL1`, then a short
+list of cores that always ship `Serial1`. Override it per project with
+`-DKNX_DEFAULT_PORT=Serial2`. Where none of them match — the Uno — the constructor is
+`= delete`d with an explanatory comment, in **both** `KnxDriver` and `Konnextra`; the second
+one is the message users actually see.
+
+Two traps that the compile matrix caught and that will bite again:
+- **`HAVE_HWSERIAL1`, not the architecture.** STM32duino *declares* `Serial1` whenever the
+  chip has a USART1 but only *defines* it when the sketch sets `ENABLE_HWSERIAL1`. Testing
+  `ARDUINO_ARCH_STM32` compiles and then fails at link with "undefined reference to Serial1".
+- **AVR has no C++-style C headers and defaults to C++11.** Use `<stdint.h>`/`<string.h>`,
+  never `<cstdint>`/`<cstring>`, and never take the address of a `static constexpr` member
+  (that ODR-uses it and needs an out-of-line definition before C++17 — copy it to a local
+  first, as `resetRequest()` does).
+
+`ci.yml`'s `portability` job builds every sketch in `examples/` against one env per core
+family, and `uno-single-uart` asserts that the address-only constructor **fails** on the Uno.
+The envs live in `platformio.ini` and are compile-only — `default_envs` still pins the firmware.
 
 ## KNX group addresses in the bench test (`src/main.cpp`)
 
@@ -200,8 +231,12 @@ not.
 filenames don't change, so the old look stays cached.
 
 Three `Doxyfile` settings are load-bearing and easy to break:
-- `PREDEFINED = ARDUINO` — **required**. Without it the `#ifdef ARDUINO` `String` constructors
-  are invisible to Doxygen and the primary user API silently goes undocumented.
+- `PREDEFINED = ARDUINO KNX_DEFAULT_PORT=Serial1` — **both required**, and this is the setting
+  that fails silently. Doxygen evaluates the preprocessor itself, so any constructor behind an
+  `#ifdef` it cannot resolve simply vanishes from the output — with an empty `warnings.txt`.
+  Without `ARDUINO` the 25 `String` constructors disappear; without `KNX_DEFAULT_PORT` the
+  address-only `Konnextra(addr)` disappears, which is the one every page and example uses.
+  **Adding a new `#ifdef` around public API means adding its macro here.**
 - `RECURSIVE = NO` with an explicit `INPUT` list — new doc pages and headers must be added to
   `INPUT` by hand, and `USE_MDFILE_AS_MAINPAGE` must keep pointing at `docs/GettingStarted.md`.
 - `EXCLUDE_SYMBOLS` hides the internal enums that share `KnxEnums.h` with the user-facing ones.

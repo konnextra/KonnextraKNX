@@ -11,7 +11,7 @@
 */
 
 //---- Standard / platform libraries ----
-#include <cstdint>
+#include <stdint.h>
 
 //---- Custom module headers ----
 #include "KnxCoordinator.h"   // coordinator: send() + register/unregister

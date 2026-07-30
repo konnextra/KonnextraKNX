@@ -10,61 +10,63 @@
 //----Libraries----
 #include "KnxDriver.h"
 
+#ifdef KNX_DEFAULT_PORT
 KnxDriver::KnxDriver(String physicalAddress)
-	: rxPin(KNX_DRIVER_RX), txPin(KNX_DRIVER_TX), resnPin(KNX_DRIVER_RESN),
-	  baudrate(KNX_DRIVER_BAUD),
-	  physicalAddress(physicalAddressFromString(physicalAddress)) {
-	pinMode(resnPin, INPUT_PULLUP);
-}
+	: KnxDriver(physicalAddress, KNX_DEFAULT_PORT) {}
+#endif
+
+// The port is remembered twice on purpose: as a Stream for the byte traffic, and as a
+// HardwareSerial so begin() knows it may configure the line.
+KnxDriver::KnxDriver(String physicalAddress, HardwareSerial& port)
+	: p_io(&port), p_uart(&port),
+	  physicalAddress(physicalAddressFromString(physicalAddress)) {}
+
+// Stream path: the caller owns the line settings, so p_uart stays null.
+KnxDriver::KnxDriver(String physicalAddress, Stream& stream)
+	: p_io(&stream), p_uart(nullptr),
+	  physicalAddress(physicalAddressFromString(physicalAddress)) {}
 
 //---- Private methods ----
 
 void KnxDriver::sendCommand(const uint8_t* cmd, uint16_t len) {
-	uart.write(cmd, len);
+	p_io->write(cmd, len);
 }
 
 void KnxDriver::clearBuffer(void) {
-	while (uart.available()) (void)uart.read();
+	while (p_io->available()) (void)p_io->read();
 }
 
 bool KnxDriver::resetRequest(void) {
-	sendCommand(&U_RESET_REQ, sizeof(U_RESET_REQ));
+	// Copied into a local first: taking the address of a static constexpr member ODR-uses
+	// it, which needs an out-of-line definition before C++17. The copy keeps the driver
+	// buildable on toolchains that still default to C++11, as AVR does.
+	const uint8_t cmd = U_RESET_REQ;
+	sendCommand(&cmd, sizeof(cmd));
 	clearBuffer();
 	delay(RESPONSE_TIME_MS);
 
 	// Wait for Reset.indication.
 	uint32_t start = millis();
 	while (millis() - start < RESPONSE_TIME_MS) {
-		if (uart.available()) {
-			uint8_t b = uart.read();
+		if (p_io->available()) {
+			uint8_t b = p_io->read();
 			if (b != 0x00 && b == U_RESET_IND) return true;   // ignore RX-idle 0x00
 		}
 	}
 
-	// Fall back to a hardware reset pulse on /RESET.
-	pinMode(resnPin, OUTPUT);
-	digitalWrite(resnPin, LOW);
-	delayMicroseconds(50);
-	pinMode(resnPin, INPUT_PULLUP);
-
-	clearBuffer();
-	start = millis();
-	while (millis() - start < RESPONSE_TIME_MS) {
-		if (uart.available()) {
-			uint8_t b = uart.read();
-			if (b != 0x00) return (b == U_RESET_IND);
-		}
-	}
+	// No hardware fallback: the front end no longer exposes a /RESET line, so a soft reset
+	// that goes unanswered is simply a failure to report.
 	return false;
 }
 
 uint8_t KnxDriver::stateRequest(void) {
-	sendCommand(&U_STATE_REQ, sizeof(U_STATE_REQ));
+	const uint8_t cmd = U_STATE_REQ;   // see resetRequest() for why this is copied
+	sendCommand(&cmd, sizeof(cmd));
 	delay(RESPONSE_TIME_MS);
 
 	uint32_t start = millis();
 	while (millis() - start < RESPONSE_TIME_MS) {
-		if (uart.available()) return uart.read();
+		if (p_io->available()) return p_io->read();
 	}
 	return 0xFF;
 }
@@ -89,8 +91,8 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 	uint8_t  echoed = 0;   // transmit-echo octets matched so far
 
 	while (millis() - start < CON_TIMEOUT_MS) {
-		if (!uart.available()) continue;
-		uint8_t b = uart.read();
+		if (!p_io->available()) continue;
+		uint8_t b = p_io->read();
 
 		// The TP-UART echoes every transmitted octet back before the L_Data.con. Those
 		// octets must be consumed *before* the con test: a data byte may legally be 0x0B
@@ -128,9 +130,15 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 //---- IKnxDriver ----
 
 bool KnxDriver::begin(void) {
-	uart.begin(baudrate, SERIAL_8E1, txPin, rxPin);
-	KnxDebug::log("DRV uart up @ %u baud (rx %u, tx %u)",
-		(unsigned)baudrate, (unsigned)rxPin, (unsigned)txPin);
+	// Only when the driver was handed a HardwareSerial does it own the line settings. The
+	// two-argument form is the one every core provides; on ESP32 it keeps whatever pins the
+	// UART already has, so a caller who assigned their own pins beforehand keeps them.
+	if (p_uart != nullptr) {
+		p_uart->begin(BAUDRATE, SERIAL_8E1);
+		KnxDebug::log("DRV port up @ %u baud 8E1", (unsigned)BAUDRATE);
+	} else {
+		KnxDebug::log("DRV using caller-configured stream");
+	}
 
 	bool reset_ok = resetRequest();
 	applyPhysicalAddress();
@@ -162,8 +170,8 @@ bool KnxDriver::sendTelegram(const uint8_t* frame, uint8_t length) {
 }
 
 bool KnxDriver::poll(uint8_t* out, uint8_t maxLen, uint8_t& outLen) {
-	while (uart.available()) {
-		uint8_t b = uart.read();
+	while (p_io->available()) {
+		uint8_t b = p_io->read();
 		if (reassembler.feed(b)) {
 			uint8_t n = reassembler.length();
 			if (n > maxLen) {          // caller buffer too small — drop, stay in sync

@@ -9,7 +9,7 @@
 */
 
 //---- Libraries ----
-#include <cstdint>
+#include <stdint.h>
 
 /**
  * @brief The datapoint type of a KNX value — what kind of data it holds and how big it is.

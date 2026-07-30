@@ -14,7 +14,7 @@
 */
 
 //---- Standard / platform libraries ----
-#include <cstdint>
+#include <stdint.h>
 #ifdef ARDUINO
 #include <Arduino.h>
 #endif

@@ -9,8 +9,8 @@
 //---- Libraries ----
 #include "KnxCodec.h"
 #include "KnxDebug.h"
-#include <cmath>
-#include <cstring>
+#include <math.h>
+#include <string.h>
 
 namespace KnxCodec {
 
@@ -139,7 +139,7 @@ uint8_t encode(const KnxValue& v, uint8_t* out, uint8_t maxLen) {
 		case KnxDpt::DPT14: {
 			if (maxLen < 4) return 0;
 			uint32_t bits;
-			std::memcpy(&bits, &v.payload.f, 4);    // IEEE-754, then emit big-endian
+			memcpy(&bits, &v.payload.f, 4);    // IEEE-754, then emit big-endian
 			putU32(out, bits);
 			return 4;
 		}
@@ -242,7 +242,7 @@ KnxValue decode(KnxDpt dpt, const uint8_t* in, uint8_t len) {
 			if (len < 4) break;
 			uint32_t bits = getU32(in);
 			float f;
-			std::memcpy(&f, &bits, 4);
+			memcpy(&f, &bits, 4);
 			return Dpt14(f);
 		}
 

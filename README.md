@@ -73,8 +73,19 @@ and real `L_Data.con` confirmations.
 
 ## Boards
 
-Built on the **Arduino framework** and usable from any Arduino-compatible board. Development
-and bench testing happen on the **Seeed XIAO ESP32-C6**.
+Built on the **Arduino framework** and usable from any Arduino-compatible board. Every push
+compiles the examples against AVR, Renesas, STM32duino, RP2040 and ESP32 — one job per core
+family. Development and bench testing happen on the **Seeed XIAO ESP32-C6**.
+
+The node uses your board's default KNX port, `Serial1` on almost every board, and opens it at
+19200 8E1 for you. Name a different one when the transceiver sits elsewhere:
+
+```cpp
+Konnextra knx("1.1.5", Serial2);
+```
+
+A board whose only serial port is the USB console — the Uno — has no default: name the port
+there, and the serial monitor goes with it.
 
 ## Examples
 
