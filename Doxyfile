@@ -12,6 +12,7 @@ CREATE_SUBDIRS         = NO
 INPUT                  = docs/GettingStarted.md \
                          docs/Examples.md \
                          docs/Hardware.md \
+                         docs/Troubleshooting.md \
                          lib/Konnextra/src/Konnextra.h \
                          lib/KnxObject/src/KnxObject.h \
                          lib/KnxObject/src/KnxLighting.h \

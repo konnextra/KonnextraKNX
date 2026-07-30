@@ -190,6 +190,8 @@ knx.enableDebugMode(true);   // call before begin() to trace start-up too
 Leave it off in normal operation — the printing is chatty and slows the receive
 path. Turn it on to explain a run that is misbehaving.
 
+@ref troubleshooting walks through what the output means, symptom by symptom.
+
 ---
 
 Full class and method documentation is in the **API reference**.
