@@ -30,6 +30,7 @@ jobs:
       matrix:
         env:
           - megaatmega2560     # AVR, classic core
+          - giga_r1_m7         # Arduino mbed core (ArduinoCore-API)
           - uno_r4_minima      # Renesas RA
           - nucleo_f401re      # STM32duino
           - pico               # RP2040, Earle Philhower core

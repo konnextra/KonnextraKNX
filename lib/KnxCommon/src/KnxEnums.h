@@ -30,7 +30,6 @@ enum class KnxDpt : uint8_t {
 	DPT12	= 12,	///< 32 bit — unsigned
 	DPT13	= 13,	///< 32 bit — signed
 	DPT14	= 14,	///< 32 bit floating point
-	DPT16	= 16,	///< a short text string
 	DPT19	= 19,	///< combined date and time
 	DPT232	= 232,	///< RGB colour
 	UNKNOWN 		///< no/unknown datapoint type

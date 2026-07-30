@@ -13,6 +13,7 @@ INPUT                  = docs/GettingStarted.md \
                          docs/Examples.md \
                          docs/DatapointTypes.md \
                          docs/Hardware.md \
+                         docs/SupportedBoards.md \
                          docs/Troubleshooting.md \
                          lib/Konnextra/src/Konnextra.h \
                          lib/KnxObject/src/KnxObject.h \
