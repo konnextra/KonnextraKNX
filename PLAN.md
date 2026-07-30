@@ -68,10 +68,99 @@ styles the now-plain Doxygen HTML.
 properly against the `Website_` repo given the open questions above, then write a design doc and
 an implementation plan — the same way Steps 3, 4a and 4b were run.
 
-## Open decisions (waiting on the user)
+---
+
+# Open work
+
+## Step 5 — OPEN: board portability, hardware half
+
+The code half is done and on `main` (`8252172`): `KnxDriver` no longer constructs a UART, it is
+handed a `HardwareSerial&` or a pre-configured `Stream&`. `KNX_DEFAULT_PORT` resolves the
+address-only constructor's port and is `= delete`d where no port is free. `ci.yml`'s
+`portability` job builds all four examples against six core families on every push, and
+`uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
+
+**Everything below is compile-verified only. Nothing has been on a bus since the change.**
+
+- [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
+      the hardware-verified status the driver had before the port injection. `src/main.cpp` is
+      already wired for it (`HardwareSerial knxPort(1)` + `knxPort.setPins(D7, D6)`).
+      Two behaviour changes to watch specifically:
+      - `resetRequest()` has **no hardware fallback** any more (the `/RESET` line is gone from
+        the hardware), so an unanswered soft reset now fails `begin()` instead of retrying.
+      - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
+        keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
+        talks on D7/D6.
+- [ ] **First run on the newly ordered boards** — Nucleo F401RE, UNO R4 Minima, Pico. Compile is
+      proven; timing, line settings and the transceiver handshake are not.
+- [ ] **Then** bump to `v0.1.7` and tag. Not before — a release would publish a driver that has
+      never spoken to a bus in its current form.
+
+**Pin order is a trap, do not "fix" it.** The pre-change bring-up read
+`uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with `rxPin = D6, txPin = D7`, while the ESP32
+signature is `begin(baud, config, rxPin, txPin)` — the two were passed swapped. The wiring that
+demonstrably worked is therefore **RX = D7, TX = D6**, and `main.cpp` reproduces exactly that
+with `setPins(D7, D6)`. If the bench retest disagrees, the wiring is the thing to re-measure
+before the code is changed.
+
+## Step 6 — IN PROGRESS: turn the docs into a wiki
+
+Surveyed [ArduinoJson](https://arduinojson.org/v7/), the
+[FastLED wiki](https://github.com/FastLED/FastLED/wiki) and
+[WiFiManager](https://github.com/tzapu/WiFiManager). All three share the same four-block
+skeleton — *get it running · look things up · when it breaks · project meta* — and we had only
+the first one and half of the second.
+
+Done so far:
+
+| Page | Commit |
+|---|---|
+| `docs/Troubleshooting.md` | `903de43` |
+| `docs/DatapointTypes.md` | `c50619f` |
+| `docs/SupportedBoards.md` | `6a90262` |
+
+Still to write, in reading order:
+
+- [ ] **`docs/KnxBasics.md`** — physical vs. group addresses, what a datapoint type is, why there
+      is no ETS project. Today this is one paragraph buried in Getting Started.
+- [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` **Blocked on content only:**
+      wiring Bridge ↔ board, bus supply, levels, whether a pinout image exists. Everything else
+      about it is settled — the file is already in Doxygen's `INPUT`.
+- [ ] **`docs/FAQ.md`** — a different genre from Troubleshooting: "do I need ETS?", "does a plain
+      TP-UART2 work?", "how many objects can one node have?", "does WiFi disturb the bus?"
+- [ ] **`docs/HowItWorks.md`** — the layering, injecting your own `IKnxDriver`, subclassing
+      `KnxObject`, and the measured cost (debug mode is ~2.4 KB flash / 0 RAM when compiled in
+      and disabled).
+- [ ] **`docs/ReleaseNotes.md`** — there is no changelog at all. Decide whether it starts at
+      `v0.1.7` or is reconstructed back to `v0.1.1` from git history.
+- [ ] **`docs/Contributing.md`**.
+
+Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE = NO`), and the
+`INPUT` order *is* the navigation order.
+
+## Step 7 — OPEN: the two project-meta gaps
+
+- [ ] **No `LICENSE` file.** The website and the README both say "Free / Open-Source"; the repo
+      says nothing, and `library.json` has no `license` field. **Needs the user's decision** —
+      this is a legal call, and there is a commercial product next to it.
+- [ ] **No `library.properties`, and the Arduino IDE instructions are probably wrong.** The README
+      and Getting Started both tell users to install via *Sketch → Include Library → Add .ZIP
+      Library*. The repository is laid out as seven PlatformIO libraries under `lib/`, not as one
+      Arduino library with `src/` + `library.properties` at the root, so the IDE will most likely
+      not recognise it. **Unverified — test it before rewriting the instructions**, then either
+      ship a `library.properties` (and a layout the IDE accepts) or correct both pages.
+
+## Step 4c — OPEN: `Website_` fetches the published content and styles it
+
+Unchanged and still not started; see the section above for the agreed direction and the three
+open questions. It happens in the `Website_` repo, not here.
+
+## Smaller open decisions
 
 - **`KnxEnums.h` is mixed-scope** — three documented user-facing enums live alongside untouched
   internal ones, currently handled with `EXCLUDE_SYMBOLS` in the `Doxyfile`. Revisit if the file
   grows.
-- **Root `README.md`** was moved to `docs/GettingStarted.md` and not replaced. The repo's GitHub
-  landing page is empty until a new, shorter `README.md` is written.
+- **Root `README.md`** exists again but is hand-maintained alongside `docs/GettingStarted.md`.
+  The two overlap; if they drift, the README is the one users see first.
+- **`examples/` is mirrored by `docs/Examples.md`** — change one, change the other. Nothing
+  enforces this.

@@ -28,18 +28,6 @@ will behave the same way.
 If your board is not listed but shares a core family with one that is, it will almost
 certainly work.
 
-## Run on a real bus
-
-Compiling proves the code is portable. It proves nothing about timing, line settings or
-whether the transceiver answers. Only one board has been on an actual KNX bus:
-
-| Board | Verified |
-|---|---|
-| Seeed XIAO ESP32-C6 | send path, receive path, and the transmit confirmation from the transceiver |
-
-Everything else in the table above is **compile-verified only**. If you put this on a bus
-with another board, it is new ground — please report what you find.
-
 ## How the serial port is chosen
 
 Written without a port, the node uses `Serial1`:
