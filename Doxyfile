@@ -11,6 +11,7 @@ CREATE_SUBDIRS         = NO
 #---- Input: the Getting Started page as the landing page, then the public headers ----
 INPUT                  = docs/GettingStarted.md \
                          docs/Examples.md \
+                         docs/DatapointTypes.md \
                          docs/Hardware.md \
                          docs/Troubleshooting.md \
                          lib/Konnextra/src/Konnextra.h \

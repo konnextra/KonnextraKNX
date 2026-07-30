@@ -128,8 +128,7 @@ their status on a different address than the one they take commands on.
 **Values are always 0, or always maximum.**
 
 The datapoint type does not match what the sender uses. A brightness sent as a percentage
-and read as a raw byte gives exactly this. The Datapoint Types page lists what each type
-carries.
+and read as a raw byte gives exactly this. @ref datapoints lists what each type carries.
 
 **The log says the payload could not be decoded.**
 
