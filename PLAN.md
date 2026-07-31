@@ -124,13 +124,17 @@ Done so far:
 | `docs/FAQ.md` | `5459f0e` |
 | `docs/HowItWorks.md` | `9600134` |
 | `docs/ReleaseNotes.md` | `0b0bad2` |
+| `docs/Contributing.md` | `b96daa0` |
 
-Still to write, in reading order:
+Still to write:
 
-- [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` **Blocked on content only:**
-      wiring Bridge ↔ board, bus supply, levels, whether a pinout image exists. Everything else
-      about it is settled — the file is already in Doxygen's `INPUT`.
-- [ ] **`docs/Contributing.md`**.
+- [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` The last page, and
+      **blocked on content only:** wiring Bridge ↔ board, bus supply, levels, whether a pinout
+      image exists. Everything else about it is settled — the file is already in Doxygen's
+      `INPUT`.
+- [ ] **`docs/Contributing.md` has no licensing section**, because there is no `LICENSE` — see
+      Step 7. Add one when that is decided; a contributing page that says nothing about the
+      terms a contribution is made under is incomplete.
 
 Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE = NO`), and the
 `INPUT` order *is* the navigation order.
