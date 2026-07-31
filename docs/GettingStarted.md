@@ -32,11 +32,11 @@ types, and send raw values.
 - The **%Konnextra Bridge**, an STKNX breakout board that connects the MCU to the KNX bus.
 - This library, added through PlatformIO or the Arduino IDE.
 
-Each device on a KNX bus has a **physical address** like `1.1.5` (area.line.device),
-and devices talk to each other through **group addresses** like `0/1/1`
-(main/middle/sub). You set the physical address once when you create the node, and
-give each device object the group address(es) it uses. Group addresses are written
-directly in your sketch — there is no ETS project to configure.
+Each device on a KNX bus has a **physical address** like `1.1.5` that identifies the
+hardware, and devices talk to each other through **group addresses** like `0/1/1`
+that identify a topic. You set the physical address once when you create the node,
+and give each device object the group address(es) it uses — written directly in your
+sketch, with no ETS project to configure. @ref knxbasics explains both, and why.
 
 ## Installing
 
