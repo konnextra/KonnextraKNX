@@ -118,11 +118,10 @@ Done so far:
 | `docs/Troubleshooting.md` | `903de43` |
 | `docs/DatapointTypes.md` | `c50619f` |
 | `docs/SupportedBoards.md` | `6a90262` |
+| `docs/KnxBasics.md` | `a9e442c` |
 
 Still to write, in reading order:
 
-- [ ] **`docs/KnxBasics.md`** — physical vs. group addresses, what a datapoint type is, why there
-      is no ETS project. Today this is one paragraph buried in Getting Started.
 - [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` **Blocked on content only:**
       wiring Bridge ↔ board, bus supply, levels, whether a pinout image exists. Everything else
       about it is settled — the file is already in Doxygen's `INPUT`.
