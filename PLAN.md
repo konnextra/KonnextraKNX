@@ -120,15 +120,13 @@ Done so far:
 | `docs/SupportedBoards.md` | `6a90262` |
 | `docs/KnxBasics.md` | `a9e442c` |
 | `docs/FAQ.md` | `5459f0e` |
+| `docs/HowItWorks.md` | `9600134` |
 
 Still to write, in reading order:
 
 - [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` **Blocked on content only:**
       wiring Bridge ↔ board, bus supply, levels, whether a pinout image exists. Everything else
       about it is settled — the file is already in Doxygen's `INPUT`.
-- [ ] **`docs/HowItWorks.md`** — the layering, injecting your own `IKnxDriver`, subclassing
-      `KnxObject`, and the measured cost (debug mode is ~2.4 KB flash / 0 RAM when compiled in
-      and disabled).
 - [ ] **`docs/ReleaseNotes.md`** — there is no changelog at all. Decide whether it starts at
       `v0.1.7` or is reconstructed back to `v0.1.1` from git history.
 - [ ] **`docs/Contributing.md`**.
