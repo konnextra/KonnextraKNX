@@ -128,10 +128,12 @@ Done so far:
 
 Still to write:
 
-- [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` The last page, and
-      **blocked on content only:** wiring Bridge ↔ board, bus supply, levels, whether a pinout
-      image exists. Everything else about it is settled — the file is already in Doxygen's
-      `INPUT`.
+- [ ] **`docs/Hardware.md` is a placeholder** (`8e4975a`), not a stub any more: it carries the
+      parts that are verifiable from the code — transceiver options, the three wires, 19200 8E1,
+      the ESP32 `setPins()` story, no reset line, the reference board's D7/D6 — and opens with a
+      visible "this page is not finished" banner. **Still needed from the user:** bus supply and
+      current draw, signal levels, the Bridge's pinout and mounting, a wiring diagram. Remove the
+      banner and the "Still to come" section once they land.
 - [ ] **`docs/Contributing.md` has no licensing section**, because there is no `LICENSE` — see
       Step 7. Add one when that is decided; a contributing page that says nothing about the
       terms a contribution is made under is incomplete.
