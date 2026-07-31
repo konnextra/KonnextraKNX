@@ -19,6 +19,7 @@ INPUT                  = docs/GettingStarted.md \
                          docs/Troubleshooting.md \
                          docs/FAQ.md \
                          docs/ReleaseNotes.md \
+                         docs/Contributing.md \
                          lib/Konnextra/src/Konnextra.h \
                          lib/KnxObject/src/KnxObject.h \
                          lib/KnxObject/src/KnxLighting.h \
