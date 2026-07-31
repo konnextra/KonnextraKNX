@@ -94,7 +94,9 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 - [ ] **First run on the newly ordered boards** — Nucleo F401RE, UNO R4 Minima, Pico. Compile is
       proven; timing, line settings and the transceiver handshake are not.
 - [ ] **Then** bump to `v0.1.7` and tag. Not before — a release would publish a driver that has
-      never spoken to a bus in its current form.
+      never spoken to a bus in its current form. Part of that step: drop the word "unreleased"
+      from the `0.1.7` heading in `docs/ReleaseNotes.md`, which is written for the tag that does
+      not exist yet.
 
 **Pin order is a trap, do not "fix" it.** The pre-change bring-up read
 `uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with `rxPin = D6, txPin = D7`, while the ESP32
@@ -121,14 +123,13 @@ Done so far:
 | `docs/KnxBasics.md` | `a9e442c` |
 | `docs/FAQ.md` | `5459f0e` |
 | `docs/HowItWorks.md` | `9600134` |
+| `docs/ReleaseNotes.md` | `0b0bad2` |
 
 Still to write, in reading order:
 
 - [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` **Blocked on content only:**
       wiring Bridge ↔ board, bus supply, levels, whether a pinout image exists. Everything else
       about it is settled — the file is already in Doxygen's `INPUT`.
-- [ ] **`docs/ReleaseNotes.md`** — there is no changelog at all. Decide whether it starts at
-      `v0.1.7` or is reconstructed back to `v0.1.1` from git history.
 - [ ] **`docs/Contributing.md`**.
 
 Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE = NO`), and the
