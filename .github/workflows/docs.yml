@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  # Manual publish from the Actions tab, for getting documentation live between releases.
+  # It deploys whatever ref you pick, so the site can then be ahead of the newest tag.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,12 +26,19 @@ jobs:
       - name: Check tag, VERSION, and every library.json agree
         run: |
           set -euo pipefail
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
           FILE_VERSION="$(cat VERSION)"
 
-          if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
-            echo "::error::tag v$TAG_VERSION does not match VERSION file ($FILE_VERSION)"
-            exit 1
+          # Only a tag run has a version to agree with. A manual run publishes a ref that is
+          # deliberately ahead of the newest tag, so the comparison is skipped there — the
+          # library.json check below still runs, because those must never drift from VERSION.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
+              echo "::error::tag v$TAG_VERSION does not match VERSION file ($FILE_VERSION)"
+              exit 1
+            fi
+          else
+            echo "manual run on ${GITHUB_REF_NAME} — no tag to compare, publishing VERSION $FILE_VERSION"
           fi
 
           for f in lib/*/library.json; do
