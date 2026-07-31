@@ -13,6 +13,7 @@ INPUT                  = docs/GettingStarted.md \
                          docs/KnxBasics.md \
                          docs/Examples.md \
                          docs/DatapointTypes.md \
+                         docs/HowItWorks.md \
                          docs/Hardware.md \
                          docs/SupportedBoards.md \
                          docs/Troubleshooting.md \
