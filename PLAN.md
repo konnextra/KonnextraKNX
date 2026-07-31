@@ -119,14 +119,13 @@ Done so far:
 | `docs/DatapointTypes.md` | `c50619f` |
 | `docs/SupportedBoards.md` | `6a90262` |
 | `docs/KnxBasics.md` | `a9e442c` |
+| `docs/FAQ.md` | `5459f0e` |
 
 Still to write, in reading order:
 
 - [ ] **`docs/Hardware.md`** — still the 3-line stub `To be added.` **Blocked on content only:**
       wiring Bridge ↔ board, bus supply, levels, whether a pinout image exists. Everything else
       about it is settled — the file is already in Doxygen's `INPUT`.
-- [ ] **`docs/FAQ.md`** — a different genre from Troubleshooting: "do I need ETS?", "does a plain
-      TP-UART2 work?", "how many objects can one node have?", "does WiFi disturb the bus?"
 - [ ] **`docs/HowItWorks.md`** — the layering, injecting your own `IKnxDriver`, subclassing
       `KnxObject`, and the measured cost (debug mode is ~2.4 KB flash / 0 RAM when compiled in
       and disabled).
@@ -153,6 +152,28 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
 
 Unchanged and still not started; see the section above for the agreed direction and the three
 open questions. It happens in the `Website_` repo, not here.
+
+## Two defects found while writing the docs — deliberately not fixed yet
+
+Both are behaviour changes, and the driver is frozen until the Step 5 bench retest. Both are
+described accurately in the docs as they behave *today*, so fixing either means updating the
+page named with it.
+
+- [ ] **A read request is decoded as a value of 0** (`KnxObject::receive()`, `KnxObject.h`).
+      `KnxFrame::parse()` classifies a GroupValueRead correctly (`type = Read`, `inline6Data = 0`),
+      `dispatch()` forwards anything with an APCI, and `receive()` never looks at `telegram.type` —
+      so `KnxCodec::decode()` returns a *valid* `Dpt1(false)`. Any device polling a group address
+      one of your objects listens on silently sets that object's cache to off/zero and fires its
+      callback. Minimal fix: ignore `type` other than `Write`/`Response`. The KNX-correct fix is to
+      answer with a GroupValueResponse, which is a feature — `KnxFrame::build()` hard-codes
+      GroupValueWrite and can build neither a Read nor a Response. Needs a host test.
+      **Documented in `docs/FAQ.md`** ("Does it answer read requests from other devices?").
+- [ ] **The address format guards are dead code** (`KnxAddress.h`, both `…FromString()`
+      functions). `uint8_t x = address.indexOf('.')` turns the `-1` "not found" into 255, so
+      `x == -1` is never true and a malformed address never produces its format warning — only
+      the range-clamp warnings, or nothing. Fix is `int` instead of `uint8_t`; decide at the same
+      time whether the guard should stop parsing rather than only log.
+      **Documented in `docs/KnxBasics.md`** ("Bad addresses are corrected, not rejected").
 
 ## Smaller open decisions
 
