@@ -93,10 +93,12 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
         talks on D7/D6.
 - [ ] **First run on the newly ordered boards** — Nucleo F401RE, UNO R4 Minima, Pico. Compile is
       proven; timing, line settings and the transceiver handshake are not.
-- [ ] **Then** bump to `v0.1.7` and tag. Not before — a release would publish a driver that has
-      never spoken to a bus in its current form. Part of that step: drop the word "unreleased"
-      from the `0.1.7` heading in `docs/ReleaseNotes.md`, which is written for the tag that does
-      not exist yet.
+- [x] ~~**Then** bump to `v0.1.7` and tag.~~ **Done out of order, deliberately.** `v0.1.7` was
+      cut on 2 August 2026 at the user's explicit direction, to get the rewritten documentation
+      published, *before* either bench item above was ticked. So the released driver still has
+      not spoken to a bus in its current form. The two boxes above stay open and are now
+      **post-release** verification: if the retest finds a problem, it needs a `v0.1.8`, not an
+      amended tag.
 
 **Pin order is a trap, do not "fix" it.** The pre-change bring-up read
 `uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with `rxPin = D6, txPin = D7`, while the ESP32

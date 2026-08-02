@@ -3,7 +3,7 @@
 Changes that affect your sketch. Releases before 0.1.7 predate the current API and are not
 listed.
 
-## 0.1.7 — unreleased
+## 0.1.7
 
 **The serial port is now yours to choose.** The library no longer builds its own UART on fixed
 pins. Written without a port it uses `Serial1`, or whichever port your core reports as free, and
