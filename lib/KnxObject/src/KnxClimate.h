@@ -27,7 +27,7 @@ class KnxTemperature : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a temperature value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address readings are published to.
 		 * @param statusGa   Group address readings are received on.
 		*/
@@ -35,7 +35,7 @@ class KnxTemperature : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT9) {}
 		/**
 		 * @brief Creates a temperature value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive readings.
 		*/
 		KnxTemperature(KnxCoordinator& knx, uint16_t ga)
@@ -57,7 +57,7 @@ class KnxTemperature : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a temperature value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/6/1".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/6/2".
 		*/
@@ -65,7 +65,7 @@ class KnxTemperature : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT9) {}
 		/**
 		 * @brief Creates a temperature value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/6/1".
 		*/
 		KnxTemperature(KnxCoordinator& knx, String ga)
@@ -89,7 +89,7 @@ class KnxHumidity : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a humidity value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address readings are published to.
 		 * @param statusGa   Group address readings are received on.
 		*/
@@ -97,7 +97,7 @@ class KnxHumidity : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT9) {}
 		/**
 		 * @brief Creates a humidity value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive readings.
 		*/
 		KnxHumidity(KnxCoordinator& knx, uint16_t ga)
@@ -119,7 +119,7 @@ class KnxHumidity : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a humidity value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/6/3".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/6/4".
 		*/
@@ -127,7 +127,7 @@ class KnxHumidity : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT9) {}
 		/**
 		 * @brief Creates a humidity value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/6/3".
 		*/
 		KnxHumidity(KnxCoordinator& knx, String ga)

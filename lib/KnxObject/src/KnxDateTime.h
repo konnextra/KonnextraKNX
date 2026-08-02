@@ -28,7 +28,7 @@ class KnxTime : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a time value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address the time is published to.
 		 * @param statusGa   Group address the time is received on.
 		*/
@@ -36,7 +36,7 @@ class KnxTime : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT10) {}
 		/**
 		 * @brief Creates a time value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive the time.
 		*/
 		KnxTime(KnxCoordinator& knx, uint16_t ga)
@@ -57,7 +57,7 @@ class KnxTime : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a time value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/7/1".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/7/2".
 		*/
@@ -65,7 +65,7 @@ class KnxTime : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT10) {}
 		/**
 		 * @brief Creates a time value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/7/1".
 		*/
 		KnxTime(KnxCoordinator& knx, String ga)
@@ -89,7 +89,7 @@ class KnxDate : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a date value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address the date is published to.
 		 * @param statusGa   Group address the date is received on.
 		*/
@@ -97,7 +97,7 @@ class KnxDate : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT11) {}
 		/**
 		 * @brief Creates a date value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive the date.
 		*/
 		KnxDate(KnxCoordinator& knx, uint16_t ga)
@@ -118,7 +118,7 @@ class KnxDate : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a date value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/7/3".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/7/4".
 		*/
@@ -126,7 +126,7 @@ class KnxDate : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT11) {}
 		/**
 		 * @brief Creates a date value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/7/3".
 		*/
 		KnxDate(KnxCoordinator& knx, String ga)
@@ -150,7 +150,7 @@ class KnxDateTime : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a date-time value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address the date-time is published to.
 		 * @param statusGa   Group address the date-time is received on.
 		*/
@@ -158,7 +158,7 @@ class KnxDateTime : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT19) {}
 		/**
 		 * @brief Creates a date-time value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive the date-time.
 		*/
 		KnxDateTime(KnxCoordinator& knx, uint16_t ga)
@@ -179,7 +179,7 @@ class KnxDateTime : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a date-time value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/7/5".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/7/6".
 		*/
@@ -187,7 +187,7 @@ class KnxDateTime : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT19) {}
 		/**
 		 * @brief Creates a date-time value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/7/5".
 		*/
 		KnxDateTime(KnxCoordinator& knx, String ga)

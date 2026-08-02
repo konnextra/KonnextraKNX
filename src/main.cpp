@@ -45,10 +45,10 @@
 // re-checking the board: the pin table in CLAUDE.md says the opposite and is wrong.
 HardwareSerial knxPort(1);
 
-//---- KNX node: address typed once, driving the port declared above ----
+//---- KNX bus connection: address typed once, driving the port declared above ----
 Konnextra knx(PHYS_ADDR, knxPort);
 
-//---- The light under test: (node, switching GA, status GA) ----
+//---- The light under test: (bus connection, switching GA, status GA) ----
 // Sends on/off to 0/1/1, listens for switching status on 1/1/1.
 KnxLight lamp(knx, "0/1/1", "1/1/1");
 

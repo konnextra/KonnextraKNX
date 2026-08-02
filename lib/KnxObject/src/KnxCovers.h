@@ -21,7 +21,7 @@ class KnxBlind : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a blind with separate move and stop addresses.
-		 * @param knx         The bus node this blind belongs to.
+		 * @param knx         The bus connection this blind belongs to.
 		 * @param moveGa       Group address up/down moves are sent to.
 		 * @param stepStopGa   Group address the stop command is sent to.
 		*/
@@ -38,7 +38,7 @@ class KnxBlind : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a blind with separate move and stop addresses.
-		 * @param knx         The bus node this blind belongs to.
+		 * @param knx         The bus connection this blind belongs to.
 		 * @param moveGa       Move group address as "main/middle/sub", e.g. "0/4/1".
 		 * @param stepStopGa   Stop group address as "main/middle/sub", e.g. "0/4/2".
 		*/

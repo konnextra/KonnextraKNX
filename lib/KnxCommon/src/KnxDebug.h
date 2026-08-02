@@ -18,7 +18,7 @@
  *          The flag is a single library-wide `bool` held in a function-local static, so the
  *          stateless namespaces (KnxFrame, KnxCodec) can log without an object to hang it on.
  *          This is a deliberate, agreed exception to the project's no-globals rule: it is a
- *          log level, not a service locator. Consequence to know: enabling debug on ONE node
+ *          log level, not a service locator. Consequence to know: enabling debug on ONE object
  *          enables it for the whole library, not just that instance.
  *
  *          Note the arguments of a log call are still evaluated when logging is off. Keep

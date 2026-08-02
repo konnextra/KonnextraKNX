@@ -3,7 +3,7 @@
  * @name Konnextra.h
  * @date 18.07.2026
  * @authors Florian Wiesner
- * @details The only header a sketch includes. It brings in the whole KNX library — the bus node,
+ * @details The only header a sketch includes. It brings in the whole KNX library — the bus connection,
  *          the value types (KnxValue and the Dpt*() factories), and every device object (KnxLight,
  *          KnxBlind, KnxTemperature, …) — so a sketch needs just:
  *
@@ -15,7 +15,7 @@
 //---- Bus driver ----
 #include "KnxDriver.h"
 
-//---- Bus node + value types ----
+//---- Bus connection + value types ----
 #include "KnxCoordinator.h"
 #include "KnxValue.h"         // KnxValue + Dpt1(..)..Dpt232(..) factories
 
@@ -39,7 +39,7 @@ class Konnextra : public KnxCoordinator {
 	public:
 #ifdef KNX_DEFAULT_PORT
 		/**
-		 * @brief Creates the bus node on this board's default KNX port.
+		 * @brief Creates the bus connection on this board's default KNX port.
 		 * @details The port is `Serial1` on most boards, and begin() opens it at 19200 8E1.
 		 *          Boards whose only serial port is the console — the Uno, for instance —
 		 *          do not have this constructor; name a port instead. Override the default
@@ -56,7 +56,7 @@ class Konnextra : public KnxCoordinator {
 #endif
 
 		/**
-		 * @brief Creates the bus node on a serial port you name.
+		 * @brief Creates the bus connection on a serial port you name.
 		 * @details begin() opens the port at 19200 8E1, so it must not be opened beforehand
 		 *          unless you want to keep your own pin assignment.
 		 * @param physicalAddress This device's KNX physical address, e.g. "1.1.5".
@@ -66,7 +66,7 @@ class Konnextra : public KnxCoordinator {
 			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, port) {}
 
 		/**
-		 * @brief Creates the bus node on a stream you have already opened yourself.
+		 * @brief Creates the bus connection on a stream you have already opened yourself.
 		 * @details begin() leaves the line settings untouched on this path, so the stream must
 		 *          already run at 19200 8E1 — KNX does not work at any other setting. Use this
 		 *          for ports the library cannot configure, such as a software serial.

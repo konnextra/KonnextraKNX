@@ -36,7 +36,7 @@ class KnxPercent : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a percentage that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address the value is published to.
 		 * @param statusGa   Group address the value is received on.
 		*/
@@ -44,7 +44,7 @@ class KnxPercent : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT5) {}
 		/**
 		 * @brief Creates a percentage that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive the value.
 		*/
 		KnxPercent(KnxCoordinator& knx, uint16_t ga)
@@ -66,7 +66,7 @@ class KnxPercent : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a percentage that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/2/1".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/2/2".
 		*/
@@ -74,7 +74,7 @@ class KnxPercent : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT5) {}
 		/**
 		 * @brief Creates a percentage that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/2/1".
 		*/
 		KnxPercent(KnxCoordinator& knx, String ga)
@@ -98,7 +98,7 @@ class KnxChar : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a character value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address the character is published to.
 		 * @param statusGa   Group address the character is received on.
 		*/
@@ -106,7 +106,7 @@ class KnxChar : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT4) {}
 		/**
 		 * @brief Creates a character value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive the character.
 		*/
 		KnxChar(KnxCoordinator& knx, uint16_t ga)
@@ -127,7 +127,7 @@ class KnxChar : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a character value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/8/1".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/8/2".
 		*/
@@ -135,7 +135,7 @@ class KnxChar : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT4) {}
 		/**
 		 * @brief Creates a character value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/8/1".
 		*/
 		KnxChar(KnxCoordinator& knx, String ga)
@@ -159,7 +159,7 @@ class KnxFloat : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a number value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Group address the number is published to.
 		 * @param statusGa   Group address the number is received on.
 		*/
@@ -167,7 +167,7 @@ class KnxFloat : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT14) {}
 		/**
 		 * @brief Creates a number value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address used to publish and to receive the number.
 		*/
 		KnxFloat(KnxCoordinator& knx, uint16_t ga)
@@ -188,7 +188,7 @@ class KnxFloat : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a number value that publishes on one address and reads on another.
-		 * @param knx       The bus node this value belongs to.
+		 * @param knx       The bus connection this value belongs to.
 		 * @param cmdGa      Publish group address as "main/middle/sub", e.g. "0/9/1".
 		 * @param statusGa   Receive group address as "main/middle/sub", e.g. "0/9/2".
 		*/
@@ -196,7 +196,7 @@ class KnxFloat : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT14) {}
 		/**
 		 * @brief Creates a number value that uses one address to publish and receive.
-		 * @param knx  The bus node this value belongs to.
+		 * @param knx  The bus connection this value belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/9/1".
 		*/
 		KnxFloat(KnxCoordinator& knx, String ga)

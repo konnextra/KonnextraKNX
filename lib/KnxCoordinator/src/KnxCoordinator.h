@@ -3,7 +3,7 @@
  * @name KnxCoordinator.h
  * @date 18.07.2026
  * @authors Florian Wiesner
- * @details The KNX bus node. It sends values to group addresses, receives telegrams and delivers
+ * @details The KNX bus connection. It sends values to group addresses, receives telegrams and delivers
  *          them to the device objects attached to it, and exposes begin(), loop() and the debug
  *          switch a sketch calls on its `knx` object.
  *
@@ -50,9 +50,9 @@ class KnxCoordinator {
 	public:
 		//---- Constructor ----
 		/**
-		 * @brief Advanced: creates a bus node driven by a bus driver you provide. Most sketches
+		 * @brief Advanced: creates a bus connection driven by a bus driver you provide. Most sketches
 		 *        use Konnextra instead, which supplies the driver for you.
-		 * @param driver          The bus driver to use; not owned, and must outlive this node.
+		 * @param driver          The bus driver to use; not owned, and must outlive this object.
 		 * @param physicalAddress This device's physical address.
 		*/
 		KnxCoordinator(IKnxDriver* driver, PhysicalAddress physicalAddress)
@@ -84,7 +84,7 @@ class KnxCoordinator {
 		/**
 		 * @brief Attaches a device object so it receives matching telegrams. Objects do this
 		 *        themselves when created, so you rarely call it directly.
-		 * @param receiver The object to attach; not owned, and must outlive this node.
+		 * @param receiver The object to attach; not owned, and must outlive this object.
 		*/
 		void registerReceiver(IKnxReceiver* receiver);
 
@@ -100,7 +100,7 @@ class KnxCoordinator {
 		 *        address (device management, such as a ping from ETS). Without one, such
 		 *        telegrams are ignored.
 		 * @param handler The handler to install, or nullptr to remove it; not owned, and must
-		 *                outlive this node.
+		 *                outlive this object.
 		*/
 		void setDeviceHandler(IKnxDeviceHandler* handler) { p_deviceHandler = handler; }
 
@@ -137,7 +137,7 @@ class KnxCoordinator {
 
 		/**
 		 * @brief This device's physical address.
-		 * @return The physical address the node was created with.
+		 * @return The physical address this connection was created with.
 		*/
 		PhysicalAddress address(void) const { return physicalAddress; }
 
@@ -148,8 +148,8 @@ class KnxCoordinator {
 		 *        printed over Serial with a [knx] prefix. Useful for diagnosing a problem; leave
 		 *        it off in normal operation, as the printing is chatty and slows the receive path.
 		 * @param on true to enable tracing, false to turn it off.
-		 * @note  This affects the whole library, not just this node: turning it on for one node
-		 *        turns it on everywhere.
+		 * @note  This affects the whole library, not just this one: turning it on
+		 *        anywhere turns it on everywhere.
 		*/
 		void enableDebugMode(bool on) { KnxDebug::setEnabled(on); }
 
@@ -157,8 +157,8 @@ class KnxCoordinator {
 #ifdef ARDUINO
 	public:
 		/**
-		 * @brief Advanced: creates a bus node from a driver you provide and an address string.
-		 * @param driver          The bus driver to use; not owned, and must outlive this node.
+		 * @brief Advanced: creates a bus connection from a driver you provide and an address string.
+		 * @param driver          The bus driver to use; not owned, and must outlive this object.
 		 * @param physicalAddress This device's physical address as "area.line.device", e.g. "1.1.5".
 		*/
 		KnxCoordinator(IKnxDriver* driver, String physicalAddress)

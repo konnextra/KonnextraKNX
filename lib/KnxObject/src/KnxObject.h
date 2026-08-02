@@ -46,7 +46,7 @@ class KnxObject : public IKnxReceiver {
 		//---- Constructors ----
 		/**
 		 * @brief Creates an object that sends on one group address and reads status on another.
-		 * @param knx       The bus node this object belongs to.
+		 * @param knx       The bus connection this object belongs to.
 		 * @param cmdGa      Group address values are sent to.
 		 * @param statusGa   Group address this object reads status on.
 		 * @param dpt        Datapoint type of the values sent and received.
@@ -58,7 +58,7 @@ class KnxObject : public IKnxReceiver {
 
 		/**
 		 * @brief Creates an object that uses one group address to send and read status.
-		 * @param knx  The bus node this object belongs to.
+		 * @param knx  The bus connection this object belongs to.
 		 * @param ga   Group address used to send and to read status.
 		 * @param dpt  Datapoint type of the values sent and received.
 		*/
@@ -68,13 +68,13 @@ class KnxObject : public IKnxReceiver {
 		~KnxObject() override { p_knx->unregisterReceiver(this); }
 
 		//---- IKnxReceiver ----
-		/** @brief Called by the bus node to test whether this object handles a group address.
+		/** @brief Called by the bus connection to test whether this object handles a group address.
 		 *  You do not call this yourself. */
 		bool matches(uint16_t packedGroupAddress) const override {
 			return packedGroupAddress == statusGa;
 		}
 
-		/** @brief Called by the bus node to deliver a matching telegram to this object.
+		/** @brief Called by the bus connection to deliver a matching telegram to this object.
 		 *  You do not call this yourself. */
 		void receive(const ParsedTelegram& telegram) override {
 			const uint8_t* in;
@@ -127,7 +127,7 @@ class KnxObject : public IKnxReceiver {
 	public:
 		/**
 		 * @brief Creates an object that sends on one group address and reads status on another.
-		 * @param knx       The bus node this object belongs to.
+		 * @param knx       The bus connection this object belongs to.
 		 * @param cmdGa      Command group address as "main/middle/sub".
 		 * @param statusGa   Status group address as "main/middle/sub".
 		 * @param dpt        Datapoint type of the values sent and received.
@@ -137,7 +137,7 @@ class KnxObject : public IKnxReceiver {
 			            packedGroupAddressFromString(statusGa), dpt) {}
 		/**
 		 * @brief Creates an object that uses one group address to send and read status.
-		 * @param knx  The bus node this object belongs to.
+		 * @param knx  The bus connection this object belongs to.
 		 * @param ga   Group address as "main/middle/sub".
 		 * @param dpt  Datapoint type of the values sent and received.
 		*/

@@ -30,7 +30,7 @@ class KnxLight : public KnxObject {
 	public:
 		/**
 		 * @brief Creates a light that commands on one group address and reads status on another.
-		 * @param knx       The bus node this light belongs to.
+		 * @param knx       The bus connection this light belongs to.
 		 * @param cmdGa      Group address on/off commands are sent to.
 		 * @param statusGa   Group address the light's status is reported on.
 		*/
@@ -38,7 +38,7 @@ class KnxLight : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT1) {}
 		/**
 		 * @brief Creates a light that uses one group address for both commands and status.
-		 * @param knx  The bus node this light belongs to.
+		 * @param knx  The bus connection this light belongs to.
 		 * @param ga   Group address used to command and to read status.
 		*/
 		KnxLight(KnxCoordinator& knx, uint16_t ga)
@@ -66,7 +66,7 @@ class KnxLight : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a light that commands on one group address and reads status on another.
-		 * @param knx       The bus node this light belongs to.
+		 * @param knx       The bus connection this light belongs to.
 		 * @param cmdGa      Command group address as "main/middle/sub", e.g. "0/1/1".
 		 * @param statusGa   Status group address as "main/middle/sub", e.g. "0/3/0".
 		*/
@@ -74,7 +74,7 @@ class KnxLight : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT1) {}
 		/**
 		 * @brief Creates a light that uses one group address for both commands and status.
-		 * @param knx  The bus node this light belongs to.
+		 * @param knx  The bus connection this light belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/1/1".
 		*/
 		KnxLight(KnxCoordinator& knx, String ga)
@@ -103,7 +103,7 @@ class KnxDimmLight : public KnxLight {
 	public:
 		/**
 		 * @brief Creates a dimmable light with separate switch, dimming and status addresses.
-		 * @param knx        The bus node this light belongs to.
+		 * @param knx        The bus connection this light belongs to.
 		 * @param switchGa    Group address on/off commands are sent to.
 		 * @param dimmingGa   Group address relative brighter/darker steps are sent to.
 		 * @param statusGa    Group address the light's on/off status is reported on.
@@ -112,7 +112,7 @@ class KnxDimmLight : public KnxLight {
 			: KnxLight(knx, switchGa, statusGa), dimGa(dimmingGa) {}
 		/**
 		 * @brief Creates a dimmable light whose status is read on its switch address.
-		 * @param knx        The bus node this light belongs to.
+		 * @param knx        The bus connection this light belongs to.
 		 * @param switchGa    Group address on/off commands are sent to (and status read from).
 		 * @param dimmingGa   Group address relative brighter/darker steps are sent to.
 		*/
@@ -120,7 +120,7 @@ class KnxDimmLight : public KnxLight {
 			: KnxLight(knx, switchGa), dimGa(dimmingGa) {}
 		/**
 		 * @brief Creates a dimmable light with switch, dimming, status and absolute value addresses.
-		 * @param knx        The bus node this light belongs to.
+		 * @param knx        The bus connection this light belongs to.
 		 * @param switchGa    Group address on/off commands are sent to.
 		 * @param dimmingGa   Group address relative brighter/darker steps are sent to.
 		 * @param statusGa    Group address the light's on/off status is reported on.
@@ -165,7 +165,7 @@ class KnxDimmLight : public KnxLight {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates a dimmable light with separate switch, dimming and status addresses.
-		 * @param knx        The bus node this light belongs to.
+		 * @param knx        The bus connection this light belongs to.
 		 * @param switchGa    Switch group address as "main/middle/sub", e.g. "0/1/1".
 		 * @param dimmingGa   Dimming group address as "main/middle/sub", e.g. "0/1/2".
 		 * @param statusGa    Status group address as "main/middle/sub", e.g. "0/3/0".
@@ -175,7 +175,7 @@ class KnxDimmLight : public KnxLight {
 			  dimGa(packedGroupAddressFromString(dimmingGa)) {}
 		/**
 		 * @brief Creates a dimmable light whose status is read on its switch address.
-		 * @param knx        The bus node this light belongs to.
+		 * @param knx        The bus connection this light belongs to.
 		 * @param switchGa    Switch group address as "main/middle/sub", e.g. "0/1/1".
 		 * @param dimmingGa   Dimming group address as "main/middle/sub", e.g. "0/1/2".
 		*/
@@ -184,7 +184,7 @@ class KnxDimmLight : public KnxLight {
 			  dimGa(packedGroupAddressFromString(dimmingGa)) {}
 		/**
 		 * @brief Creates a dimmable light with switch, dimming, status and absolute value addresses.
-		 * @param knx        The bus node this light belongs to.
+		 * @param knx        The bus connection this light belongs to.
 		 * @param switchGa    Switch group address as "main/middle/sub", e.g. "0/1/1".
 		 * @param dimmingGa   Dimming group address as "main/middle/sub", e.g. "0/1/2".
 		 * @param statusGa    Status group address as "main/middle/sub", e.g. "0/3/0".
@@ -217,7 +217,7 @@ class KnxRGB : public KnxObject {
 	public:
 		/**
 		 * @brief Creates an RGB light that commands on one group address and reads status on another.
-		 * @param knx       The bus node this light belongs to.
+		 * @param knx       The bus connection this light belongs to.
 		 * @param cmdGa      Group address colours are sent to.
 		 * @param statusGa   Group address the colour status is reported on.
 		*/
@@ -225,7 +225,7 @@ class KnxRGB : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT232) {}
 		/**
 		 * @brief Creates an RGB light that uses one group address for both commands and status.
-		 * @param knx  The bus node this light belongs to.
+		 * @param knx  The bus connection this light belongs to.
 		 * @param ga   Group address used to set and to read the colour.
 		*/
 		KnxRGB(KnxCoordinator& knx, uint16_t ga)
@@ -252,7 +252,7 @@ class KnxRGB : public KnxObject {
 #ifdef ARDUINO
 		/**
 		 * @brief Creates an RGB light that commands on one group address and reads status on another.
-		 * @param knx       The bus node this light belongs to.
+		 * @param knx       The bus connection this light belongs to.
 		 * @param cmdGa      Command group address as "main/middle/sub", e.g. "0/5/1".
 		 * @param statusGa   Status group address as "main/middle/sub", e.g. "0/5/2".
 		*/
@@ -260,7 +260,7 @@ class KnxRGB : public KnxObject {
 			: KnxObject(knx, cmdGa, statusGa, KnxDpt::DPT232) {}
 		/**
 		 * @brief Creates an RGB light that uses one group address for both commands and status.
-		 * @param knx  The bus node this light belongs to.
+		 * @param knx  The bus connection this light belongs to.
 		 * @param ga   Group address as "main/middle/sub", e.g. "0/5/1".
 		*/
 		KnxRGB(KnxCoordinator& knx, String ga)
