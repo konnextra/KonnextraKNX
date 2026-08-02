@@ -107,7 +107,7 @@ demonstrably worked is therefore **RX = D7, TX = D6**, and `main.cpp` reproduces
 with `setPins(D7, D6)`. If the bench retest disagrees, the wiring is the thing to re-measure
 before the code is changed.
 
-## Step 6 — IN PROGRESS: turn the docs into a wiki
+## Step 6 — turn the docs into a wiki: all pages written, published in `v0.1.7`
 
 Surveyed [ArduinoJson](https://arduinojson.org/v7/), the
 [FastLED wiki](https://github.com/FastLED/FastLED/wiki) and
@@ -128,7 +128,14 @@ Done so far:
 | `docs/ReleaseNotes.md` | `0b0bad2` |
 | `docs/Contributing.md` | `b96daa0` |
 
-Still to write:
+Then revised in one pass on user feedback (`259ec38`): the serial-port explanation was repeated on
+five pages and is now single-sourced on `docs/SupportedBoards.md` with every other page pointing
+there; em-dashes went from 103 to 8; pages reordered so `HowItWorks` sits after `FAQ`. A follow-up
+(`4f79479`) replaced "bus node" with "bus connection" across the public headers so the generated
+reference and the prose pages use the same word. **Do not reintroduce the serial-port explanation
+anywhere except `SupportedBoards`.**
+
+Still open:
 
 - [ ] **`docs/Hardware.md` is a placeholder** (`8e4975a`), not a stub any more: it carries the
       parts that are verifiable from the code — transceiver options, the three wires, 19200 8E1,
@@ -143,8 +150,11 @@ Still to write:
 Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE = NO`), and the
 `INPUT` order *is* the navigation order.
 
-## Step 7 — OPEN: the two project-meta gaps
+## Step 7 — OPEN: project-meta gaps
 
+- [ ] **`support@konnextra.at` is published but unconfirmed.** `docs/Troubleshooting.md` tells
+      users to write there, and that is live as of `v0.1.7`. Confirm the mailbox actually
+      receives, or change the page.
 - [ ] **No `LICENSE` file.** The website and the README both say "Free / Open-Source"; the repo
       says nothing, and `library.json` has no `license` field. **Needs the user's decision** —
       this is a legal call, and there is a commercial product next to it.
@@ -153,32 +163,67 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
       IDE accepts two layouts: 1.0 (headers in the root directory) and 1.5 (`library.properties`
       in the root). This repository has **neither** — no `*.h` and no `library.properties` at
       root, because the code lives in seven PlatformIO libraries under `lib/`. The IDE rejects
-      the archive. This is live on the site as of `v0.1.7`. Either correct both pages or do the
-      restructure below.
+      the archive. This is live on the site as of `v0.1.7`. Either correct both pages, or fix it
+      properly as part of Step 8, which repairs it as a side effect.
 
-- [ ] **Arduino Library Manager submission.** Wanted, not started. Notes from the assessment on
-      2 August 2026:
-      - **Submission itself is trivial:** one line in `repositories.txt` via a PR to
-        `arduino/library-registry`. Their bot runs Arduino Lint; later versions are picked up
-        from git tags automatically, which this repo already produces.
-      - **The cost is the repository restructure**, roughly half a day. All 24 sources have
-        unique basenames and every `#include` is flat (`"KnxCoordinator.h"`, never
-        `"KnxCommon/KnxDebug.h"`), so moving `lib/*/src/*` into a single root `src/` compiles
-        under the 1.5 layout **with no source edits**. What breaks instead is everything that
-        names a `lib/` path: 10 header entries in the `Doxyfile` `INPUT`, `bump_version.py`
-        (3 refs), `docs.yml`'s `verify-version` loop over `lib/*/library.json`, the seven
-        `library.json` files collapsing into one, and `CLAUDE.md`'s layout and architecture
-        sections. `ci.yml`'s portability job survives unchanged.
-      - **`src/` is the collision.** It currently holds the bench sketch. That has to move, and
-        `platformio.ini` needs `src_dir` pointed at whatever replaces it.
-      - **`library.properties` needs `includes=Konnextra.h`.** Without it the IDE's *Include
-        Library* menu inserts an `#include` for all 17 headers instead of the one.
-      - **The name is free.** Checked against the live index (9787 libraries): `Konnextra`,
-        `KonnextraKNX` and `Konnextra KNX` are all unclaimed, and only two entries in the whole
-        index mention KNX at all (`KIMlib`, `KONNEKTING Device Library`).
-      - **Sequence it after the Step 5 bench retest.** The retest needs `src/main.cpp` buildable
-        exactly as it is, and listing a driver that has never been on a bus repeats the trade
-        already made once for `v0.1.7`.
+## Step 8 — OPEN: Arduino Library Manager
+
+Wanted, not started. Assessed on 2 August 2026; nothing below has been attempted, it is the
+research so the work does not have to start cold.
+
+**Do this after the Step 5 bench retest, not before.** The retest needs `src/main.cpp` buildable
+exactly as it is, and Step 8 moves `src/`. Listing a driver in the Library Manager that has never
+been on a bus would repeat the trade already made once for `v0.1.7`.
+
+### Why it is worth doing
+
+The name is free and the field is empty. Checked against the live index (9787 libraries):
+`Konnextra`, `KonnextraKNX` and `Konnextra KNX` are all unclaimed, and only **two** entries in the
+whole index mention KNX at all, `KIMlib` and `KONNEKTING Device Library`. Anyone typing "KNX" into
+the Library Manager today finds almost nothing.
+
+### Effort: the submission is 15 minutes, the restructure is half a day
+
+Submission is one line added to `repositories.txt` in a PR to `arduino/library-registry`. Their
+bot runs Arduino Lint and merges. Later versions are picked up **from git tags automatically**,
+which this repo already produces.
+
+The cost is the repository layout. The IDE accepts the 1.0 layout (headers in the root) or the
+1.5 layout (`library.properties` in the root); this repo has neither.
+
+**The cheap part:** all 24 sources have unique basenames and every `#include` is flat
+(`"KnxCoordinator.h"`, never `"KnxCommon/KnxDebug.h"`). Arduino's 1.5 layout puts only `src/`
+itself on the include path, so moving `lib/*/src/*` into a single root `src/` compiles **with no
+source edits**. Had the includes carried subdirectories, this would have been a rewrite.
+
+**What actually breaks** is everything naming a `lib/` path:
+
+| Breaks | Detail |
+|---|---|
+| `Doxyfile` `INPUT` | 10 explicit `lib/*/src/*.h` entries |
+| `scripts/bump_version.py` | 3 refs |
+| `docs.yml` `verify-version` | loops `lib/*/library.json` |
+| the 7 `library.json` | collapse into one at root |
+| `CLAUDE.md` | repository-layout table and architecture section |
+| `ci.yml` portability job | **survives unchanged** (uses `PLATFORMIO_SRC_DIR` over `examples/*/`) |
+
+### Checklist
+
+- [ ] Move `lib/*/src/*` (24 files) into a single root `src/`.
+- [ ] **`src/` is the collision** — it currently holds the bench sketch. Move that out and point
+      `platformio.ini`'s `src_dir` at wherever it lands.
+- [ ] Write `library.properties` at root. **It needs `includes=Konnextra.h`**: without that field
+      the IDE's *Include Library* menu inserts an `#include` for all 17 headers instead of the
+      one, which breaks the single-include promise every doc page makes.
+- [ ] Collapse the seven `library.json` into one, and fix `bump_version.py` and `verify-version`
+      to match.
+- [ ] Repoint the `Doxyfile` `INPUT` header paths.
+- [ ] Update `CLAUDE.md`'s layout and architecture sections.
+- [ ] Verify: `pio test -e native`, `pio run`, the CI portability matrix, and an actual
+      *Add .ZIP Library* in the Arduino IDE.
+- [ ] Fix the install instructions in `README.md` and `docs/GettingStarted.md`, which are wrong
+      today (see Step 7).
+- [ ] Submit the PR to `arduino/library-registry`.
 
 ## Step 4c — OPEN: `Website_` fetches the published content and styles it
 
