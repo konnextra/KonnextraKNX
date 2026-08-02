@@ -148,12 +148,37 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
 - [ ] **No `LICENSE` file.** The website and the README both say "Free / Open-Source"; the repo
       says nothing, and `library.json` has no `license` field. **Needs the user's decision** —
       this is a legal call, and there is a commercial product next to it.
-- [ ] **No `library.properties`, and the Arduino IDE instructions are probably wrong.** The README
-      and Getting Started both tell users to install via *Sketch → Include Library → Add .ZIP
-      Library*. The repository is laid out as seven PlatformIO libraries under `lib/`, not as one
-      Arduino library with `src/` + `library.properties` at the root, so the IDE will most likely
-      not recognise it. **Unverified — test it before rewriting the instructions**, then either
-      ship a `library.properties` (and a layout the IDE accepts) or correct both pages.
+- [ ] **The Arduino IDE install instructions are wrong, confirmed.** The README and Getting
+      Started both tell users to install via *Sketch → Include Library → Add .ZIP Library*. The
+      IDE accepts two layouts: 1.0 (headers in the root directory) and 1.5 (`library.properties`
+      in the root). This repository has **neither** — no `*.h` and no `library.properties` at
+      root, because the code lives in seven PlatformIO libraries under `lib/`. The IDE rejects
+      the archive. This is live on the site as of `v0.1.7`. Either correct both pages or do the
+      restructure below.
+
+- [ ] **Arduino Library Manager submission.** Wanted, not started. Notes from the assessment on
+      2 August 2026:
+      - **Submission itself is trivial:** one line in `repositories.txt` via a PR to
+        `arduino/library-registry`. Their bot runs Arduino Lint; later versions are picked up
+        from git tags automatically, which this repo already produces.
+      - **The cost is the repository restructure**, roughly half a day. All 24 sources have
+        unique basenames and every `#include` is flat (`"KnxCoordinator.h"`, never
+        `"KnxCommon/KnxDebug.h"`), so moving `lib/*/src/*` into a single root `src/` compiles
+        under the 1.5 layout **with no source edits**. What breaks instead is everything that
+        names a `lib/` path: 10 header entries in the `Doxyfile` `INPUT`, `bump_version.py`
+        (3 refs), `docs.yml`'s `verify-version` loop over `lib/*/library.json`, the seven
+        `library.json` files collapsing into one, and `CLAUDE.md`'s layout and architecture
+        sections. `ci.yml`'s portability job survives unchanged.
+      - **`src/` is the collision.** It currently holds the bench sketch. That has to move, and
+        `platformio.ini` needs `src_dir` pointed at whatever replaces it.
+      - **`library.properties` needs `includes=Konnextra.h`.** Without it the IDE's *Include
+        Library* menu inserts an `#include` for all 17 headers instead of the one.
+      - **The name is free.** Checked against the live index (9787 libraries): `Konnextra`,
+        `KonnextraKNX` and `Konnextra KNX` are all unclaimed, and only two entries in the whole
+        index mention KNX at all (`KIMlib`, `KONNEKTING Device Library`).
+      - **Sequence it after the Step 5 bench retest.** The retest needs `src/main.cpp` buildable
+        exactly as it is, and listing a driver that has never been on a bus repeats the trade
+        already made once for `v0.1.7`.
 
 ## Step 4c — OPEN: `Website_` fetches the published content and styles it
 
