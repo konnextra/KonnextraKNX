@@ -19,4 +19,7 @@ reader is actually scanning for.
 
 <!-- - Breaking: `begin()` no longer opens the port. Call `setPins()` before it. -->
 
-_Nothing yet._
+- The library has a licence: **BSD 3-Clause**. Use it, change it, ship it inside a commercial
+  product; keep the copyright notice, and do not advertise a derived product with the Konnextra
+  name. Until now the repository named no terms at all, which by default left nobody permitted
+  to do any of it.
