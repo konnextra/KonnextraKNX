@@ -83,3 +83,13 @@ git commit -m "Bump version to 0.1.7"
 git tag v0.1.7
 git push && git push --tags
 ```
+
+## Licence
+
+The library is published under the **BSD 3-Clause Licence**, the full text of which is in
+`LICENSE` at the root of the repository. In short: use it, change it, ship it inside a
+commercial product. Keep the copyright notice, and do not use the Konnextra name to advertise
+something you built from it.
+
+BSD 3-Clause says nothing about contributions, so this page does. **Opening a pull request means
+your contribution is offered under those same terms.** There is nothing else to sign.

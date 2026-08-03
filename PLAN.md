@@ -7,8 +7,8 @@ is no longer documentation-only:
 | Open | What | Blocks |
 |---|---|---|
 | **Step 5** | bench retest on real hardware — the driver has not been on a bus since the port injection | Step 8, both defects |
-| **Step 6 rest** | `docs/Hardware.md` content, licensing section | user input |
-| **Step 7** | `LICENSE`, wrong Arduino IDE install instructions | user input (LICENSE) |
+| **Step 6 rest** | `docs/Hardware.md` content | user input |
+| **Step 7** | wrong Arduino IDE install instructions | — |
 | **Step 8** | Arduino Library Manager — moves `src/`, so it waits for Step 5 | Step 5 |
 | **Two defects** | read request decoded as 0; dead address-format guards | Step 5 |
 | **Step 4c** | `Website_` fetches and styles the published content — other repo | — |
@@ -153,23 +153,37 @@ Still open:
       visible "this page is not finished" banner. **Still needed from the user:** bus supply and
       current draw, signal levels, the Bridge's pinout and mounting, a wiring diagram. Remove the
       banner and the "Still to come" section once they land.
-- [ ] **`docs/Contributing.md` has no licensing section**, because there is no `LICENSE` — see
-      Step 7. Add one when that is decided; a contributing page that says nothing about the
-      terms a contribution is made under is incomplete.
+- [x] ~~**`docs/Contributing.md` has no licensing section.**~~ Done, see Step 7. The page now
+      closes with a *Licence* section that names BSD 3-Clause and states that a pull request is
+      offered under the same terms. That sentence is load-bearing: unlike Apache-2.0 §5, BSD
+      3-Clause says nothing at all about contributions, so the page is the only place the terms
+      of an incoming contribution are written down.
 
 Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE = NO`), and the
 `INPUT` order *is* the navigation order.
 
 ## Step 7 — OPEN: project-meta gaps
 
-- [ ] **No `LICENSE` file.** The website says "Free / Open-Source"; the repo says nothing, and
-      `library.json` has no `license` field. The README makes no licensing claim at all (its
-      "no licence" on line 48 is about ETS, not software). **Needs the user's decision** — this
-      is a legal call, and there is a commercial product next to it. Two facts that narrow it:
-      the library has **no third-party code and no `lib_deps`**, so nothing is imposed from
-      outside and any licence is available; and every file is `@authors Florian Wiesner`, so
-      the copyright is undivided and a later relicence or dual-licence stays possible as long
-      as outside contributions are handled deliberately.
+- [x] ~~**No `LICENSE` file.**~~ **Decided on 3 August 2026: BSD 3-Clause**, copyright
+      `Florian Wiesner (Konnextra GesbR)`. `LICENSE` is at the root, all seven `library.json`
+      carry `"license": "BSD-3-Clause"`, and README plus `docs/Contributing.md` say so.
+
+      **Why this one, so it is not re-argued.** Nothing constrained the choice: the library has
+      no third-party code and no `lib_deps`, so no licence was inherited. Adafruit was the
+      reference and is permissive throughout — of 300 org repos, 144 carry their BSD 3-Clause
+      "Software License Agreement" (GFX, SSD1306, SHT31, BME280), 20 are MIT, and NeoPixel's
+      LGPL-3.0 is a historical outlier. Against MIT, clause 3 adds the one thing that matters
+      here: nobody may use the Konnextra name to advertise a derived product. Against
+      Apache-2.0, three things decided it — Apache would have meant granting a patent licence
+      over exactly the hardware IP the library exists to sell, it is incompatible with GPLv2
+      (FSF's position) and so closes off part of the embedded ecosystem, and it wants a `NOTICE`
+      file plus a boilerplate header in all 24 sources, which collides with the JSDoc blocks.
+
+      **The copyright holder is the natural person on purpose.** A GesbR is not rechtsfähig
+      (§§ 1175 ff ABGB) and cannot hold rights in its own name, and § 10 UrhG knows no corporate
+      authorship at all, so the parenthesis names the business context while the person holds
+      the right. This also means **relicensing later needs every author's consent** — today all
+      24 files are `@authors Florian Wiesner`, and that is worth keeping true.
 - [ ] **The Arduino IDE install instructions are wrong, confirmed.** The README and Getting
       Started both tell users to install via *Sketch → Include Library → Add .ZIP Library*. The
       IDE accepts two layouts: 1.0 (headers in the root directory) and 1.5 (`library.properties`
@@ -224,7 +238,8 @@ source edits**. Had the includes carried subdirectories, this would have been a 
 - [ ] Move `lib/*/src/*` (24 files) into a single root `src/`.
 - [ ] **`src/` is the collision** — it currently holds the bench sketch. Move that out and point
       `platformio.ini`'s `src_dir` at wherever it lands.
-- [ ] Write `library.properties` at root. **It needs `includes=Konnextra.h`**: without that field
+- [ ] Write `library.properties` at root, with `license=BSD-3-Clause` to match `LICENSE` and the
+      `library.json` files. **It needs `includes=Konnextra.h`**: without that field
       the IDE's *Include Library* menu inserts an `#include` for all 17 headers instead of the
       one, which breaks the single-include promise every doc page makes.
 - [ ] Collapse the seven `library.json` into one, and fix `bump_version.py` and `verify-version`

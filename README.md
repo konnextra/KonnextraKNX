@@ -159,3 +159,8 @@ Something not behaving? Turn on tracing and watch every telegram go by:
 ```cpp
 knx.enableDebugMode(true);   // call before begin() to trace start-up too
 ```
+
+## Licence
+
+[BSD 3-Clause](LICENSE). Use it, change it, ship it in a commercial product. Keep the copyright
+notice, and do not use the Konnextra name to advertise something you built from it.
