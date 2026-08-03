@@ -1,7 +1,17 @@
-# PLAN — Documentation Phase
+# PLAN
 
-The library itself is complete and on `main`. This phase is **documentation only** — no
-behaviour changes. Everything is done except **Step 4c**.
+The library is feature-complete and on `main`, released as `v0.1.7`. Steps 1–4b (the API
+reference, the Doxygen site, CI/CD) and Step 6 (the documentation wiki) are done. What is left
+is no longer documentation-only:
+
+| Open | What | Blocks |
+|---|---|---|
+| **Step 5** | bench retest on real hardware — the driver has not been on a bus since the port injection | Step 8, both defects |
+| **Step 6 rest** | `docs/Hardware.md` content, licensing section | user input |
+| **Step 7** | support mailbox, `LICENSE`, wrong Arduino IDE install instructions | user input (LICENSE) |
+| **Step 8** | Arduino Library Manager — moves `src/`, so it waits for Step 5 | Step 5 |
+| **Two defects** | read request decoded as 0; dead address-format guards | Step 5 |
+| **Step 4c** | `Website_` fetches and styles the published content — other repo | — |
 
 Design rationale for the completed steps lives in `.agents/specs/`; the blow-by-blow is in git
 history. Operational knowledge that outlived its step (Doxygen invocation, Doxyfile
