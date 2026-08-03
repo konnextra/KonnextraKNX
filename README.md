@@ -18,14 +18,19 @@ timing for you.
 Konnextra knx("1.1.5");                 // this device's KNX address
 KnxLight  lamp(knx, "0/1/1", "0/3/0");  // command address, status address
 
+unsigned long lastToggle = 0;
+
 void setup() {
     knx.begin();
 }
 
 void loop() {
-    knx.loop();
-    lamp.toggle();      // flips the lamp on the bus
-    delay(5000);
+    knx.loop();                         // must run constantly, never block it
+
+    if (millis() - lastToggle >= 5000) {
+        lastToggle = millis();
+        lamp.toggle();                  // flips the lamp on the bus
+    }
 }
 ```
 
