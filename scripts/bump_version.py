@@ -7,7 +7,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSION_FILE = ROOT / "VERSION"
+CHANGES_FILE = ROOT / "Changes.md"
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
+
+def pending_changes() -> int:
+    """Count the collected release-note lines still sitting in Changes.md.
+
+    Nothing enforces that they were folded into docs/ReleaseNotes.md before a tag, and this
+    script runs at exactly the moment it matters, so it reminds rather than checks.
+    """
+    if not CHANGES_FILE.exists():
+        return 0
+    body = CHANGES_FILE.read_text().split("## Changes", 1)[-1]
+    body = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL)  # the template's example line
+    return sum(1 for line in body.splitlines() if line.startswith("- "))
 
 
 def main() -> None:
@@ -34,9 +48,19 @@ def main() -> None:
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         print(f"updated {path.relative_to(ROOT)}")
 
+    waiting = pending_changes()
+    if waiting:
+        print(
+            f"\nChanges.md still holds {waiting} "
+            f"{'entry. Rewrite it' if waiting == 1 else 'entries. Rewrite them'} into "
+            "docs/ReleaseNotes.md under the new version heading, then empty Changes.md."
+        )
+    else:
+        print("\nChanges.md is empty. Check docs/ReleaseNotes.md already covers this release.")
+
     rel_paths = " ".join(str(p.relative_to(ROOT)) for p in library_jsons)
     print(f"\nVersion set to {new_version}. Next steps (not run automatically):")
-    print(f"  git add VERSION {rel_paths}")
+    print(f"  git add VERSION {rel_paths} docs/ReleaseNotes.md Changes.md")
     print(f"  git commit -m 'Bump version to {new_version}'")
     print(f"  git tag v{new_version}")
     print("  git push --tags")

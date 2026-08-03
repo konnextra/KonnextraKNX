@@ -76,9 +76,13 @@ it.
 The version lives in `VERSION` and in each library's `library.json`. CI refuses to publish if
 they disagree. Pushing the tag is what deploys.
 
+A change that a user would notice gets a line in `Changes.md` at the root, at the time you make
+it. Those lines are rewritten into @ref releasenotes when a version is cut, and `Changes.md`
+starts empty again.
+
 ```bash
 python3 scripts/bump_version.py 0.1.7
-git add VERSION lib/*/library.json
+git add VERSION lib/*/library.json docs/ReleaseNotes.md Changes.md
 git commit -m "Bump version to 0.1.7"
 git tag v0.1.7
 git push && git push --tags

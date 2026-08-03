@@ -33,7 +33,9 @@ All custom code lives under `lib/`. Third-party dependencies are declared in `pl
 | `.agents/specs/` | design docs from the `superpowers:brainstorming` workflow — the *why* behind completed work. **New specs go here**, not to the skill's default `docs/superpowers/specs/`, which would pollute the user-facing `docs/`. |
 | `scripts/` | `bump_version.py` — the release helper |
 
-`CLAUDE.md` and `PLAN.md` stay at the repository root.
+`CLAUDE.md`, `PLAN.md` and `Changes.md` stay at the repository root. The three do not overlap:
+`PLAN.md` is what is still to do, `Changes.md` is what is already done but not yet released, and
+`CLAUDE.md` is how the repository works.
 
 ## Architecture
 
@@ -254,17 +256,31 @@ Three `Doxyfile` settings are load-bearing and easy to break:
 `lib/*/library.json`) → `test`/`build` against that exact SHA → Doxygen → Pages deploy. Nothing
 publishes without a tag.
 
+**`Changes.md` at the root is where release notes are collected.** It is a maintainer file, not
+published, and deliberately not in the `Doxyfile` `INPUT` list. Add a line to it *when you make
+a change* that would have a user edit their sketch or behave differently on the bus — that is
+the whole reason the file exists, because notes reconstructed from `git log` at release time
+read like a commit list. Refactors, tests and CI changes do not belong in it.
+
+The release then has one extra step at the front: **rewrite the collected lines into
+`docs/ReleaseNotes.md` under the new version heading, then empty `Changes.md` back to its
+template.** The two files are not the same text. `Changes.md` is raw and complete;
+`ReleaseNotes.md` is the published page and stays short and curated — only what a user needs,
+with the wording worked over.
+
 ```bash
+# 1. fold Changes.md into docs/ReleaseNotes.md by hand, then empty Changes.md
 python3 scripts/bump_version.py 0.1.6   # writes VERSION + all 7 library.json
 git diff                                 # sanity-check: only version fields changed
-git add VERSION lib/*/library.json
+git add VERSION lib/*/library.json docs/ReleaseNotes.md Changes.md
 git commit -m "Bump version to 0.1.6"
 git tag v0.1.6
 git push && git push --tags              # the tag push is what fires docs.yml
 ```
 
 `bump_version.py` deliberately never commits, tags or pushes — cutting a release stays an
-explicit human step, because the tag push *is* the live deploy.
+explicit human step, because the tag push *is* the live deploy. It does count the entries left in
+`Changes.md` and print a reminder, since that is the one step with nothing else to catch it.
 
 One-time setup already done, worth knowing if Pages ever stops deploying: enabling Pages
 auto-creates a `github-pages` environment whose ref policy allows branches but **not tags**, so
