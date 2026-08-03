@@ -8,7 +8,7 @@ is no longer documentation-only:
 |---|---|---|
 | **Step 5** | bench retest on real hardware — the driver has not been on a bus since the port injection | Step 8, both defects |
 | **Step 6 rest** | `docs/Hardware.md` content, licensing section | user input |
-| **Step 7** | support mailbox, `LICENSE`, wrong Arduino IDE install instructions | user input (LICENSE) |
+| **Step 7** | `LICENSE`, wrong Arduino IDE install instructions | user input (LICENSE) |
 | **Step 8** | Arduino Library Manager — moves `src/`, so it waits for Step 5 | Step 5 |
 | **Two defects** | read request decoded as 0; dead address-format guards | Step 5 |
 | **Step 4c** | `Website_` fetches and styles the published content — other repo | — |
@@ -162,12 +162,14 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
 
 ## Step 7 — OPEN: project-meta gaps
 
-- [ ] **`support@konnextra.at` is published but unconfirmed.** `docs/Troubleshooting.md` tells
-      users to write there, and that is live as of `v0.1.7`. Confirm the mailbox actually
-      receives, or change the page.
-- [ ] **No `LICENSE` file.** The website and the README both say "Free / Open-Source"; the repo
-      says nothing, and `library.json` has no `license` field. **Needs the user's decision** —
-      this is a legal call, and there is a commercial product next to it.
+- [ ] **No `LICENSE` file.** The website says "Free / Open-Source"; the repo says nothing, and
+      `library.json` has no `license` field. The README makes no licensing claim at all (its
+      "no licence" on line 48 is about ETS, not software). **Needs the user's decision** — this
+      is a legal call, and there is a commercial product next to it. Two facts that narrow it:
+      the library has **no third-party code and no `lib_deps`**, so nothing is imposed from
+      outside and any licence is available; and every file is `@authors Florian Wiesner`, so
+      the copyright is undivided and a later relicence or dual-licence stays possible as long
+      as outside contributions are handled deliberately.
 - [ ] **The Arduino IDE install instructions are wrong, confirmed.** The README and Getting
       Started both tell users to install via *Sketch → Include Library → Add .ZIP Library*. The
       IDE accepts two layouts: 1.0 (headers in the root directory) and 1.5 (`library.properties`
