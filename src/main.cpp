@@ -39,13 +39,17 @@
 // is a wrong program that still compiles, which is why this is a conditional and not a
 // comment telling you to edit the line per board.
 //
-// Everywhere else the core already provides the instance, so the alias binds to it and the
-// KNX line is that core's default Serial1 pins. STM32duino only *defines* Serial1 when the
-// build asks for it — see the -DENABLE_HWSERIAL1 in platformio.ini.
+// Everywhere else the alias binds to KNX_DEFAULT_PORT — deliberately the same macro the
+// address-only constructor resolves, so this sketch measures the port a user actually gets
+// from `Konnextra knx("1.1.5")` rather than a second opinion about it. That is usually
+// Serial1, but not always: the GIGA defines SERIAL_PORT_HARDWARE_OPEN as Serial2, which the
+// macro checks first. Hardcoding Serial1 here would have sniffed the wrong pins there.
+// On a board with no port to spare the macro is undefined and this line fails to compile,
+// which mirrors the `= delete`d constructor and is the correct answer.
 #if defined(ARDUINO_ARCH_ESP32)
-	HardwareSerial  knxPort(1);         // UART1; the XIAO reassigns its pins in setup()
+	HardwareSerial  knxPort(1);                     // UART1; the XIAO reassigns its pins below
 #else
-	HardwareSerial& knxPort = Serial1;  // the core's own instance, on its default pins
+	HardwareSerial& knxPort = KNX_DEFAULT_PORT;     // whatever this core calls its free UART
 #endif
 
 //---- KNX bus connection: address typed once, driving the port declared above ----
