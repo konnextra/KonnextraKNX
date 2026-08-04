@@ -91,7 +91,7 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
 **Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
-four boards without one, by sniffing the UART (see below); the receive path and the
+five boards without one, by sniffing the UART (see below); the receive path and the
 `L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
@@ -104,11 +104,11 @@ four boards without one, by sniffing the UART (see below); the receive path and 
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
-- [x] **Transmit path verified on three further boards by UART sniffing** (4 August 2026), which
+- [x] **Transmit path verified on four further boards by UART sniffing** (4 August 2026), which
       is the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
       and prints what it sees; no transceiver and no bus are involved. It works because
       `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
-      an unanswered `begin()` does not suppress the sends. All three ran `src/main.cpp`, whose
+      an unanswered `begin()` does not suppress the sends. All four ran `src/main.cpp`, whose
       port selection is now a conditional rather than a line to edit per board:
 
       | Board | Core | KNX port | Pins | Evidence |
@@ -116,6 +116,17 @@ four boards without one, by sniffing the UART (see below); the receive path and 
       | Reichelt DEBO JT ESP32 (NodeMCU-32S, WROOM-32) | Espressif, Xtensa LX6 | `HardwareSerial(1)` | UART1 defaults, RX = GPIO 26, TX = GPIO 27 | sniffer |
       | ST Nucleo-L432KC | STM32duino, Cortex-M4 | `Serial1` (USART1) | first `PinMap_UART_TX/RX` entry, RX = PA10 = D0, TX = PA9 = D1 | sniffer |
       | Arduino UNO R4 Minima | Renesas RA4M1, ArduinoCore-API | `Serial1` | `UART1_TX_PIN`/`UART1_RX_PIN`, TX = D1, RX = D0 | sniffer |
+      | Arduino GIGA R1 | Arduino mbed, STM32H747 M7 | **`Serial2`** | `SERIAL2_TX`/`SERIAL2_RX`, TX = D18, RX = D19 | sniffer |
+
+      **The GIGA is the first board where `KNX_DEFAULT_PORT` is not `Serial1`,** and the capture
+      is the first hardware exercise of the `SERIAL_PORT_HARDWARE_OPEN` branch at the top of the
+      resolution chain — the variant defines it as `Serial2`, and the bytes duly came out on D18.
+      That branch had existed since the port injection with nothing but a compile behind it.
+
+      It also caught a wrong claim in the user docs: `docs/SupportedBoards.md` said flatly that
+      a sketch written without a port uses `Serial1`. A GIGA owner following that would wire D1
+      and see nothing. Corrected in the same pass; the resolution order two paragraphs below it
+      had always been right, which is exactly why the summary sentence went unchallenged.
 
       **The R4 Minima is 5 V I/O.** Its TX went through a 1.8 kΩ / 3.3 kΩ divider to reach the
       3.3 V sniffer input; wiring it straight would destroy the pin. Only the one direction
@@ -153,27 +164,31 @@ four boards without one, by sniffing the UART (see below); the receive path and 
       **One difference showed up, in the cadence and nowhere else**, and it sorts by vendor
       rather than by chip:
 
-      | Board | Toggle interval, sniffer-measured |
-      |---|---|
-      | XIAO ESP32-C6 | 5000 ms |
-      | ESP32 WROOM-32 | 5000 ms |
-      | Nucleo-L432KC | 5003–5004 ms |
-      | UNO R4 Minima | 5004 ms |
+      | Board | Toggle interval, sniffer-measured | Offset |
+      |---|---|---|
+      | XIAO ESP32-C6 | 5000 ms | 0 |
+      | ESP32 WROOM-32 | 5000 ms | 0 |
+      | GIGA R1 | 4999 ms | −200 ppm |
+      | Nucleo-L432KC | 5003–5004 ms | +600…800 ppm |
+      | UNO R4 Minima | 5004 ms | +800 ppm |
 
-      Both Espressif boards land exactly on 5000; both non-Espressif boards sit 600–800 ppm
-      above it — **and the sniffer is itself an Espressif board.** The parsimonious reading is
-      therefore a clock-reference effect: the Beetle agrees with the DUTs that share its clock
-      family and disagrees slightly with the other two, all well inside normal tolerance.
+      **The GIGA's negative offset settles what the other four could not.** A loop iteration that
+      takes a few ms was the competing explanation — the check fires on the first iteration at or
+      after 5000, so slow code lands as a constant, non-accumulating overshoot. But overshoot can
+      only make an interval *longer*. Nothing in that mechanism can produce 4999 ms. So at least
+      on the GIGA the effect is the clock, and parsimony then says it is the clock everywhere.
+      The earlier per-vendor reading dies with the same measurement: the GIGA is not an Espressif
+      board and still lands on the mark.
 
-      The competing explanation was that a loop iteration simply takes ~3 ms on those boards,
-      which would land as a constant, non-accumulating overshoot because `lastToggle = millis()`
-      captures the late value. Two unrelated cores hitting nearly the same figure by coincidence
-      makes that the weaker story now, but it is not ruled out. **The cheap discriminator is to
-      set `KNX_VERBOSE` false and measure again** — if the offset survives, it is the clock.
+      What is left is oscillator quality, which fits: the two ESP32s and the GIGA have proper
+      external crystals, and the Nucleo drives its PLL from **MSI**, an internal RC, with no HSE
+      (`RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI` in the variant). The R4's clock source
+      could not be read from the installed files — it sits in FSP-generated headers — so for that
+      board the explanation is plausible rather than verified.
 
-      Either way it is an observation, not a defect: 800 ppm is nothing to a 19200 baud UART,
-      the sniffer decoded every byte with correct parity on every board, and the bit-level
-      timing lives on the ATTiny rather than on the MCU.
+      An observation, not a defect: 800 ppm is nothing to a 19200 baud UART, the sniffer decoded
+      every byte with correct parity on every board, and the bit-level timing lives on the ATTiny
+      rather than on the MCU.
 
       Keep that capture as the reference. Any board whose frame differs by a byte has found a
       real core difference, which is the entire point of the exercise.
