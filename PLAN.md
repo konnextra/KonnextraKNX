@@ -90,7 +90,9 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `portability` job builds all four examples against six core families on every push, and
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
-**Everything below is compile-verified only. Nothing has been on a bus since the change.**
+**Nothing has been on a KNX bus since the change.** The transmit path has since been verified
+on two boards without one, by sniffing the UART (see below); the receive path and the
+`L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
       the hardware-verified status the driver had before the port injection. `src/main.cpp` is
@@ -101,8 +103,39 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
+- [x] **Transmit path verified on a second board by UART sniffing** (4 August 2026), which is
+      the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
+      and prints what it sees; no transceiver and no bus are involved. It works because
+      `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
+      an unanswered `begin()` does not suppress the sends. Board under test: a Reichelt DEBO JT
+      ESP32 (NodeMCU-32S, ESP32-WROOM-32), running `src/main.cpp` with the `setPins()` line
+      commented out, so UART1 fell back to the core's own defaults — **RX = GPIO 26, TX = GPIO
+      27**, from `cores/esp32/HardwareSerial.h`. `platformio.ini` gained an `[env:esp32dev]` for
+      it; it is a flash env, deliberately not in `ci.yml`.
+
+      The whole wire stream came out **byte-identical to the XIAO ESP32-C6**, control octets
+      included:
+
+      ```
+      01                                                        U_Reset.req
+      28 11 05 02                                               U_SetAddress + U_State.req
+      80 BC 81 11 82 05 83 01 84 01 85 E1 86 00 87 80 48 36     one telegram, paired
+         -> BC 11 05 01 01 E1 00 80 36                          checksum OK
+      ```
+
+      That is Xtensa LX6 against RISC-V — different instruction set, different compiler
+      backend, same bytes. It covers `KNX_DEFAULT_PORT` pins, `SERIAL_8E1`, framing, address
+      packing, the checksum and the `millis()` cadence. It covers **neither** the receive path
+      **nor** the `L_Data.con` verdict, both of which need a transceiver; both are also
+      identical C++ on every core and already host-tested, so they are library risk rather than
+      board risk.
+
+      Keep that capture as the reference. Any board whose frame differs by a byte has found a
+      real core difference, which is the entire point of the exercise.
 - [ ] **First run on the newly ordered boards** — Nucleo F401RE, UNO R4 Minima, Pico. Compile is
-      proven; timing, line settings and the transceiver handshake are not.
+      proven; timing, line settings and the transceiver handshake are not. The sniffer above
+      answers the first two without a bus. **The UNO R4 Minima is 5 V I/O** and the other boards
+      are 3.3 V, so that one needs a level shifter rather than a direct wire.
 - [x] ~~**Then** bump to `v0.1.7` and tag.~~ **Done out of order, deliberately.** `v0.1.7` was
       cut on 2 August 2026 at the user's explicit direction, to get the rewritten documentation
       published, *before* either bench item above was ticked. So the released driver still has

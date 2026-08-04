@@ -115,7 +115,9 @@ framing and parity errors, but nothing guarantees all of it does — a stray `0x
 next two bytes as an address, and a `0x80|i` pattern could start a transmission.
 
 This is inferred from the capture, not proven: to confirm it, sniff D6 at **115200 8N1**
-instead and look for readable `ESP-ROM:esp32c6` / `rst:0x1` text. It is filed as a known trait
+instead and look for readable `ESP-ROM:esp32c6` / `rst:0x1` text. The negative control has
+been run and the explanation survived it — a classic ESP32, whose KNX line is UART1 on GPIO
+26/27 and therefore nowhere near the console on GPIO 1/3, produced no such burst at all. It is filed as a known trait
 rather than a bug because the rig was hardware-verified with it happening, so the ATTiny
 evidently tolerates it. The only reliable fix is moving the KNX UART to other GPIOs, which the
 soldered bench rig cannot do; disabling the ROM log needs a one-way eFuse and is not worth it.
