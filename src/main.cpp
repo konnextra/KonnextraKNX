@@ -31,19 +31,22 @@
 // should be established first and the verbose trace used to explain a broken one.
 #define KNX_VERBOSE         true
 
-//---- Bench wiring: UART1 on this board's KNX pins ----
-// The driver no longer owns a UART, so the port is named here and its pins are set in
-// setup(). UART1 is the same peripheral the driver used to construct for itself.
+//---- Bench wiring: the port the transceiver hangs off ----
+// The driver no longer owns a UART, so the port is named here — and how you name one is not
+// portable. The ESP32 core builds a HardwareSerial from a UART *number*; STM32duino builds
+// one from a peripheral instance and has no such constructor, so `HardwareSerial knxPort(1)`
+// there quietly picks a pin-based overload and gives you half-duplex on a single wire. That
+// is a wrong program that still compiles, which is why this is a conditional and not a
+// comment telling you to edit the line per board.
 //
-// The order below is deliberate and NOT what the pin names suggest. Before the port was
-// injected, bring-up read:
-//     uart.begin(baud, SERIAL_8E1, txPin, rxPin);   // txPin = D7, rxPin = D6
-// and the ESP32 signature is begin(baud, config, rxPin, txPin) — so the two were passed
-// swapped, and the configuration that actually worked on the bench is
-//     ESP32 RX = D7,  ESP32 TX = D6.
-// That is what setPins(rx, tx) reproduces below. Do not "fix" it to (D6, D7) without
-// re-checking the board: the pin table in CLAUDE.md says the opposite and is wrong.
-HardwareSerial knxPort(1);
+// Everywhere else the core already provides the instance, so the alias binds to it and the
+// KNX line is that core's default Serial1 pins. STM32duino only *defines* Serial1 when the
+// build asks for it — see the -DENABLE_HWSERIAL1 in platformio.ini.
+#if defined(ARDUINO_ARCH_ESP32)
+	HardwareSerial  knxPort(1);         // UART1; the XIAO reassigns its pins in setup()
+#else
+	HardwareSerial& knxPort = Serial1;  // the core's own instance, on its default pins
+#endif
 
 //---- KNX bus connection: address typed once, driving the port declared above ----
 Konnextra knx(PHYS_ADDR, knxPort);
@@ -73,15 +76,21 @@ void setup() {
 	// Must be set before begin() so the driver's own bring-up is traced too.
 	knx.enableDebugMode(KNX_VERBOSE);
 
-	// Pins first: setPins() only touches the GPIO matrix and needs no started UART, and
-	// begin() reads the assignment back rather than overriding it. Arguments are (rx, tx) —
-	// see the note above knxPort for why RX is D7 and TX is D6 and not the other way round.
+	// The XIAO's transceiver is not on UART1's default pins, so move them. setPins() only
+	// touches the GPIO matrix and needs no started UART, and begin() reads the assignment
+	// back rather than overriding it.
 	//
-	// Commented out for the ESP32-WROOM bench run: D6/D7 are XIAO aliases and do not exist
-	// on that variant, so the line does not even compile there. Without it UART1 keeps the
-	// core's own defaults — RX = GPIO 26, TX = GPIO 27 on a classic ESP32.
-	// UNCOMMENT BEFORE GOING BACK TO THE XIAO, or it will talk on the wrong pins.
-	// knxPort.setPins(D7, D6);
+	// Arguments are (rx, tx), and the order is deliberate: the pre-injection bring-up read
+	// `uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with txPin = D7 and rxPin = D6, while the
+	// ESP32 signature is begin(baud, config, rxPin, txPin) — the two were passed swapped.
+	// Since that code was hardware-verified, the wiring that actually works is RX = D7 and
+	// TX = D6. Do not "fix" this to (D6, D7) without re-measuring the board.
+	//
+	// Guarded on the board, not the architecture: D6/D7 are XIAO pin aliases that do not
+	// exist on a WROOM, and they are `static const uint8_t`, so #ifdef cannot see them.
+#if defined(ARDUINO_XIAO_ESP32C6)
+	knxPort.setPins(D7, D6);
+#endif
 
 	// begin() brings up the UART and hands the physical address to the transceiver.
 	// If this fails the ATTiny is not answering — nothing below will work, so say so loudly.
