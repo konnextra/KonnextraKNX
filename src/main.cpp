@@ -76,7 +76,12 @@ void setup() {
 	// Pins first: setPins() only touches the GPIO matrix and needs no started UART, and
 	// begin() reads the assignment back rather than overriding it. Arguments are (rx, tx) —
 	// see the note above knxPort for why RX is D7 and TX is D6 and not the other way round.
-	knxPort.setPins(D7, D6);
+	//
+	// Commented out for the ESP32-WROOM bench run: D6/D7 are XIAO aliases and do not exist
+	// on that variant, so the line does not even compile there. Without it UART1 keeps the
+	// core's own defaults — RX = GPIO 26, TX = GPIO 27 on a classic ESP32.
+	// UNCOMMENT BEFORE GOING BACK TO THE XIAO, or it will talk on the wrong pins.
+	// knxPort.setPins(D7, D6);
 
 	// begin() brings up the UART and hands the physical address to the transceiver.
 	// If this fails the ATTiny is not answering — nothing below will work, so say so loudly.
