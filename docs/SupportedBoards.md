@@ -99,8 +99,12 @@ Konnextra knx("1.1.5", Serial);
 ```
 
 But understand the trade. `Serial` now belongs to KNX, so **there is no serial monitor**. No
-`Serial.println()` debugging, no tracing output, and you have to unplug the transceiver to
-upload a sketch. It works, and it is a poor place to develop.
+`Serial.println()` debugging, and you have to unplug the transceiver to upload a sketch. It
+works, and it is a poor place to develop.
+
+Tracing is worse than merely unavailable here: `enableDebugMode(true)` writes its `[knx]` lines
+to `Serial` too, which on this board *is* the KNX line. The log text would go to the transceiver
+interleaved with real telegrams. **Leave debug mode off on a single-UART board.**
 
 The same applies to any single-UART AVR board: **Uno, Nano, Pro Mini, Duemilanove**. Boards with
 a separate USB chip are fine, the Leonardo and Micro keep `Serial` on USB and leave `Serial1`
