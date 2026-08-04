@@ -91,7 +91,7 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
 **Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
-six boards without one, by sniffing the UART (see below); the receive path and the
+seven boards without one, by sniffing the UART (see below); the receive path and the
 `L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
@@ -104,11 +104,11 @@ six boards without one, by sniffing the UART (see below); the receive path and t
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
-- [x] **Transmit path verified on five further boards by UART sniffing** (4 August 2026), which
+- [x] **Transmit path verified on six further boards by UART sniffing** (4 August 2026), which
       is the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
       and prints what it sees; no transceiver and no bus are involved. It works because
       `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
-      an unanswered `begin()` does not suppress the sends. All five ran `src/main.cpp`, whose
+      an unanswered `begin()` does not suppress the sends. All but the Uno ran `src/main.cpp`, whose
       port selection is now a conditional rather than a line to edit per board:
 
       | Board | Core | KNX port | Pins | Evidence |
@@ -118,6 +118,16 @@ six boards without one, by sniffing the UART (see below); the receive path and t
       | Arduino UNO R4 Minima | Renesas RA4M1, ArduinoCore-API | `Serial1` | `UART1_TX_PIN`/`UART1_RX_PIN`, TX = D1, RX = D0 | sniffer |
       | Arduino GIGA R1 | Arduino mbed, STM32H747 M7 | **`Serial2`** | `SERIAL2_TX`/`SERIAL2_RX`, TX = D18, RX = D19 | sniffer |
       | Arduino Mega 2560 | AVR classic, 8-bit | `Serial1` | TX = D18, RX = D19 | sniffer |
+      | Arduino Uno R3 | AVR classic, 8-bit | **`Serial`, passed explicitly** | TX = D1, RX = D0 | sniffer |
+
+      **The Uno is the one board where the library refuses.** It has a single UART and the USB
+      console owns it, so `KNX_DEFAULT_PORT` is undefined and the address-only constructor is
+      `= delete`d — which is why `src/main.cpp` does not build there at all, the mirror image of
+      what `ci.yml`'s `uno-single-uart` job asserts. It ran `examples/ExplicitPort` instead, and
+      that makes it the only run that exercises the **explicitly passed port** rather than the
+      macro, from a different sketch, and it still produced identical bytes. 8424 bytes flash and
+      365 bytes RAM on an ATmega328P, the tightest target of the set. 5 V, so the same divider as
+      the R4 and Mega.
 
       The Mega is the only 8-bit target here, so it is the one that exercises the documented AVR
       traps for real: `<stdint.h>` over `<cstdint>`, C++11 by default, no address-of on a
@@ -180,6 +190,7 @@ six boards without one, by sniffing the UART (see below); the receive path and t
       | Nucleo-L432KC | 5003–5004 ms | +600…800 ppm |
       | UNO R4 Minima | 5004 ms | +800 ppm |
       | Mega 2560 | 5005 ms | +1000 ppm |
+      | Uno R3 | 4996 ms | −800 ppm |
 
       **The GIGA's negative offset settles what the other four could not.** A loop iteration that
       takes a few ms was the competing explanation — the check fires on the first iteration at or
@@ -197,12 +208,15 @@ six boards without one, by sniffing the UART (see below); the receive path and t
       is far outside crystal tolerance and would fit the ceramic resonator that classic Arduino
       boards use for the main MCU — believed, not verified, since that is a schematic question.
 
-      **This was chased far enough.** Three boards in a row each moved the explanation rather
-      than confirming it, and what is being explained is a 1000 ppm effect on a 19200 baud line
-      whose bit-level timing lives on the ATTiny, not the MCU. It is an observation about the
-      boards' oscillators, not about the library: every board decoded with correct parity and
-      produced identical bytes. Recorded so a future reader does not re-derive it from scratch,
-      and left there.
+      **The two AVRs settle it.** Mega and Uno share a core, a compiler, a nominal 16 MHz and
+      the same library code, and they land on opposite sides — +1000 and −800 ppm. Anything
+      systematic would push them the same way. What is left is per-part oscillator scatter, and
+      both figures sit comfortably inside the ±0.5 % of a ceramic resonator.
+
+      So it is an observation about the boards' oscillators, not about the library: every board
+      decoded with correct parity and produced identical bytes. Recorded so a future reader does
+      not re-derive the whole chain, and left there — it is a sub-0.1 % effect on a 19200 baud
+      line whose bit-level timing lives on the ATTiny rather than the MCU.
 
       Keep that capture as the reference. Any board whose frame differs by a byte has found a
       real core difference, which is the entire point of the exercise.
