@@ -90,31 +90,45 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `portability` job builds all four examples against six core families on every push, and
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
-**Nothing has been on a KNX bus since the change.** The transmit path has since been verified
-on two boards without one, by sniffing the UART (see below); the receive path and the
+**Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
+three boards without one, by sniffing the UART (see below); the receive path and the
 `L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
       the hardware-verified status the driver had before the port injection. `src/main.cpp` is
-      already wired for it (`HardwareSerial knxPort(1)` + `knxPort.setPins(D7, D6)`).
-      Two behaviour changes to watch specifically:
+      already wired for it: the ESP32 branch of the port conditional gives `HardwareSerial(1)`,
+      and `setPins(D7, D6)` runs behind `#if defined(ARDUINO_XIAO_ESP32C6)` so it applies on
+      this board and nowhere else. Two behaviour changes to watch specifically:
       - `resetRequest()` has **no hardware fallback** any more (the `/RESET` line is gone from
         the hardware), so an unanswered soft reset now fails `begin()` instead of retrying.
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
-- [x] **Transmit path verified on a second board by UART sniffing** (4 August 2026), which is
-      the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
+- [x] **Transmit path verified on two further boards by UART sniffing** (4 August 2026), which
+      is the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
       and prints what it sees; no transceiver and no bus are involved. It works because
       `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
-      an unanswered `begin()` does not suppress the sends. Board under test: a Reichelt DEBO JT
-      ESP32 (NodeMCU-32S, ESP32-WROOM-32), running `src/main.cpp` with the `setPins()` line
-      commented out, so UART1 fell back to the core's own defaults — **RX = GPIO 26, TX = GPIO
-      27**, from `cores/esp32/HardwareSerial.h`. `platformio.ini` gained an `[env:esp32dev]` for
-      it; it is a flash env, deliberately not in `ci.yml`.
+      an unanswered `begin()` does not suppress the sends. Both boards ran `src/main.cpp`, whose
+      port selection is now a conditional rather than a line to edit per board:
 
-      The whole wire stream came out **byte-identical to the XIAO ESP32-C6**, control octets
-      included:
+      | Board | Core | KNX port | Pins | Evidence |
+      |---|---|---|---|---|
+      | Reichelt DEBO JT ESP32 (NodeMCU-32S, WROOM-32) | Espressif, Xtensa LX6 | `HardwareSerial(1)` | UART1 defaults, RX = GPIO 26, TX = GPIO 27 | sniffer |
+      | ST Nucleo-L432KC | STM32duino, Cortex-M4 | `Serial1` (USART1) | first `PinMap_UART_TX/RX` entry, RX = PA10 = D0, TX = PA9 = D1 | sniffer |
+
+      **Take the sniffer capture, not just the debug hexdump.** `KNX_VERBOSE`'s `DRV tx frame:`
+      line only proves the frame was built and handed to the UART; the sniffer is what proves it
+      left the pin, at 19200 8E1, on the pin the pin map claims. On the Nucleo the hexdump was
+      available first and already matched, and the capture that followed still mattered — it is
+      what confirmed PA9 is really D1.
+
+      `platformio.ini` gained `[env:esp32dev]` and `[env:nucleo_l432kc]` for them — flash envs,
+      deliberately not in `ci.yml`. The Nucleo needs `-DENABLE_HWSERIAL1` or `Serial1` is
+      declared and never defined; its console stays on USART2/ST-LINK, so the KNX line and the
+      debug output do not share pins.
+
+      All three wire streams are **byte-identical**, control octets included, and the bring-up
+      gap between `01` and `28 11 05 02` lands at 21–22 ms everywhere (2 × `RESPONSE_TIME_MS`):
 
       ```
       01                                                        U_Reset.req
@@ -123,19 +137,38 @@ on two boards without one, by sniffing the UART (see below); the receive path an
          -> BC 11 05 01 01 E1 00 80 36                          checksum OK
       ```
 
-      That is Xtensa LX6 against RISC-V — different instruction set, different compiler
-      backend, same bytes. It covers `KNX_DEFAULT_PORT` pins, `SERIAL_8E1`, framing, address
+      That is Xtensa LX6, RISC-V and Cortex-M4 — three instruction sets, and with STM32duino a
+      second Arduino core rather than a second Espressif chip — producing the same bytes. It
+      covers `KNX_DEFAULT_PORT` pins, `SERIAL_8E1`, framing, address
       packing, the checksum and the `millis()` cadence. It covers **neither** the receive path
       **nor** the `L_Data.con` verdict, both of which need a transceiver; both are also
       identical C++ on every core and already host-tested, so they are library risk rather than
       board risk.
 
+      **One difference showed up, in the cadence and nowhere else.** Both ESP32s toggle at
+      exactly 5000 ms as measured by the sniffer; the Nucleo runs 5003–5004 ms, a consistent
+      +600 ppm. Two explanations fit that pattern equally well and four samples cannot separate
+      them: the variant drives its PLL from **MSI**, the internal RC oscillator, with no HSE —
+      though the same file calls `HAL_RCCEx_EnableMSIPLLMode()` to trim MSI against the LSE,
+      which argues against a large clock error — or a loop iteration simply takes ~3 ms there,
+      which lands as a constant, non-accumulating overshoot because `lastToggle = millis()`
+      captures the late value. `Serial` on USART2/ST-LINK blocks when its buffer fills, and
+      `KNX_VERBOSE` pushes about 250 bytes per cycle, so it is a plausible 3 ms. **The cheap
+      discriminator is to set `KNX_VERBOSE` false and measure again.** It is recorded as an
+      observation, not a defect: 600 ppm is nothing to a 19200 baud UART, the sniffer decoded
+      every byte with correct parity, and the bit-level timing lives on the ATTiny anyway.
+
       Keep that capture as the reference. Any board whose frame differs by a byte has found a
       real core difference, which is the entire point of the exercise.
-- [ ] **First run on the newly ordered boards** — Nucleo F401RE, UNO R4 Minima, Pico. Compile is
-      proven; timing, line settings and the transceiver handshake are not. The sniffer above
-      answers the first two without a bus. **The UNO R4 Minima is 5 V I/O** and the other boards
-      are 3.3 V, so that one needs a level shifter rather than a direct wire.
+- [ ] **First run on the remaining boards** — UNO R4 Minima and Pico. Compile is proven; timing,
+      line settings and the transceiver handshake are not. The sniffer above answers the first
+      two without a bus. **The UNO R4 Minima is 5 V I/O** and the other boards are 3.3 V, so that
+      one needs a level shifter rather than a direct wire.
+
+      The **Nucleo F401RE is no longer on this list** — the STM32duino board on the bench is the
+      L432KC, and it has passed. Its `[env:nucleo_f401re]` in `platformio.ini` and `ci.yml`
+      stays: that one is a compile-only proof that the core family still builds, needs no
+      hardware, and is what caught the `ENABLE_HWSERIAL1` trap in the first place.
 - [x] ~~**Then** bump to `v0.1.7` and tag.~~ **Done out of order, deliberately.** `v0.1.7` was
       cut on 2 August 2026 at the user's explicit direction, to get the rewritten documentation
       published, *before* either bench item above was ticked. So the released driver still has
