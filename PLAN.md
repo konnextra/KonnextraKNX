@@ -91,7 +91,7 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
 **Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
-seven boards without one, by sniffing the UART (see below); the receive path and the
+eight boards without one, by sniffing the UART (see below); the receive path and the
 `L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
@@ -104,7 +104,7 @@ seven boards without one, by sniffing the UART (see below); the receive path and
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
-- [x] **Transmit path verified on six further boards by UART sniffing** (4 August 2026), which
+- [x] **Transmit path verified on seven further boards by UART sniffing** (4 August 2026), which
       is the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
       and prints what it sees; no transceiver and no bus are involved. It works because
       `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
@@ -119,6 +119,18 @@ seven boards without one, by sniffing the UART (see below); the receive path and
       | Arduino GIGA R1 | Arduino mbed, STM32H747 M7 | **`Serial2`** | `SERIAL2_TX`/`SERIAL2_RX`, TX = D18, RX = D19 | sniffer |
       | Arduino Mega 2560 | AVR classic, 8-bit | `Serial1` | TX = D18, RX = D19 | sniffer |
       | Arduino Uno R3 | AVR classic, 8-bit | **`Serial`, passed explicitly** | TX = D1, RX = D0 | sniffer |
+      | Raspberry Pi Pico 2 (RP2350) | Earle Philhower | `Serial1` (UART0) | `PIN_SERIAL1_TX/RX`, TX = GP0, RX = GP1 | sniffer |
+
+      The Pico 2 was checked for one thing specifically before wiring: the RP2350 board still
+      sets `-DARDUINO_ARCH_RP2040`, so `KNX_DEFAULT_PORT` resolves through the architecture list
+      as before. A successor board that dropped that macro would silently lose the address-only
+      constructor, which is the kind of failure that looks like broken wiring.
+
+      It is also the one board that gave **no serial monitor at all**: USB CDC never enumerated
+      after the flash, on this core version. The sketch was running the whole time — the 2009 ms
+      between `01` and the first telegram is `while (!Serial && millis() < 3000)` running its
+      full timeout, exactly what happens when `Serial` never goes true. Unexplained, not chased:
+      the sniffer is the instrument here, the monitor was only ever the second witness.
 
       **The Uno is the one board where the library refuses.** It has a single UART and the USB
       console owns it, so `KNX_DEFAULT_PORT` is undefined and the address-only constructor is
@@ -191,6 +203,7 @@ seven boards without one, by sniffing the UART (see below); the receive path and
       | UNO R4 Minima | 5004 ms | +800 ppm |
       | Mega 2560 | 5005 ms | +1000 ppm |
       | Uno R3 | 4996 ms | −800 ppm |
+      | Pico 2 | 5000 ms | 0 |
 
       **The GIGA's negative offset settles what the other four could not.** A loop iteration that
       takes a few ms was the competing explanation — the check fires on the first iteration at or
@@ -220,8 +233,11 @@ seven boards without one, by sniffing the UART (see below); the receive path and
 
       Keep that capture as the reference. Any board whose frame differs by a byte has found a
       real core difference, which is the entire point of the exercise.
-- [ ] **First run on the last board** — the Pico. Compile is proven; timing, line settings and
-      the transceiver handshake are not. The sniffer above answers the first two without a bus.
+      **The board round is finished.** Every core family in `ci.yml`'s portability matrix has now
+      run on real silicon, and all three branches of the port resolution have been exercised:
+      `SERIAL_PORT_HARDWARE_OPEN` (GIGA), the architecture fallback (everything else), and the
+      refusal on a single-UART board (Uno). What no amount of this can reach is the receive path
+      and the `L_Data.con` verdict — both need something at the other end that answers.
 
       The **Nucleo F401RE is no longer on this list** — the STM32duino board on the bench is the
       L432KC, and it has passed. Its `[env:nucleo_f401re]` in `platformio.ini` and `ci.yml`
