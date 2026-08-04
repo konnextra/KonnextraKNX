@@ -91,7 +91,7 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
 **Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
-three boards without one, by sniffing the UART (see below); the receive path and the
+four boards without one, by sniffing the UART (see below); the receive path and the
 `L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
@@ -104,17 +104,22 @@ three boards without one, by sniffing the UART (see below); the receive path and
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
-- [x] **Transmit path verified on two further boards by UART sniffing** (4 August 2026), which
+- [x] **Transmit path verified on three further boards by UART sniffing** (4 August 2026), which
       is the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
       and prints what it sees; no transceiver and no bus are involved. It works because
       `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
-      an unanswered `begin()` does not suppress the sends. Both boards ran `src/main.cpp`, whose
+      an unanswered `begin()` does not suppress the sends. All three ran `src/main.cpp`, whose
       port selection is now a conditional rather than a line to edit per board:
 
       | Board | Core | KNX port | Pins | Evidence |
       |---|---|---|---|---|
       | Reichelt DEBO JT ESP32 (NodeMCU-32S, WROOM-32) | Espressif, Xtensa LX6 | `HardwareSerial(1)` | UART1 defaults, RX = GPIO 26, TX = GPIO 27 | sniffer |
       | ST Nucleo-L432KC | STM32duino, Cortex-M4 | `Serial1` (USART1) | first `PinMap_UART_TX/RX` entry, RX = PA10 = D0, TX = PA9 = D1 | sniffer |
+      | Arduino UNO R4 Minima | Renesas RA4M1, ArduinoCore-API | `Serial1` | `UART1_TX_PIN`/`UART1_RX_PIN`, TX = D1, RX = D0 | sniffer |
+
+      **The R4 Minima is 5 V I/O.** Its TX went through a 1.8 kΩ / 3.3 kΩ divider to reach the
+      3.3 V sniffer input; wiring it straight would destroy the pin. Only the one direction
+      needs it, since sniffing never drives the DUT.
 
       **Take the sniffer capture, not just the debug hexdump.** `KNX_VERBOSE`'s `DRV tx frame:`
       line only proves the frame was built and handed to the UART; the sniffer is what proves it
@@ -145,25 +150,35 @@ three boards without one, by sniffing the UART (see below); the receive path and
       identical C++ on every core and already host-tested, so they are library risk rather than
       board risk.
 
-      **One difference showed up, in the cadence and nowhere else.** Both ESP32s toggle at
-      exactly 5000 ms as measured by the sniffer; the Nucleo runs 5003–5004 ms, a consistent
-      +600 ppm. Two explanations fit that pattern equally well and four samples cannot separate
-      them: the variant drives its PLL from **MSI**, the internal RC oscillator, with no HSE —
-      though the same file calls `HAL_RCCEx_EnableMSIPLLMode()` to trim MSI against the LSE,
-      which argues against a large clock error — or a loop iteration simply takes ~3 ms there,
-      which lands as a constant, non-accumulating overshoot because `lastToggle = millis()`
-      captures the late value. `Serial` on USART2/ST-LINK blocks when its buffer fills, and
-      `KNX_VERBOSE` pushes about 250 bytes per cycle, so it is a plausible 3 ms. **The cheap
-      discriminator is to set `KNX_VERBOSE` false and measure again.** It is recorded as an
-      observation, not a defect: 600 ppm is nothing to a 19200 baud UART, the sniffer decoded
-      every byte with correct parity, and the bit-level timing lives on the ATTiny anyway.
+      **One difference showed up, in the cadence and nowhere else**, and it sorts by vendor
+      rather than by chip:
+
+      | Board | Toggle interval, sniffer-measured |
+      |---|---|
+      | XIAO ESP32-C6 | 5000 ms |
+      | ESP32 WROOM-32 | 5000 ms |
+      | Nucleo-L432KC | 5003–5004 ms |
+      | UNO R4 Minima | 5004 ms |
+
+      Both Espressif boards land exactly on 5000; both non-Espressif boards sit 600–800 ppm
+      above it — **and the sniffer is itself an Espressif board.** The parsimonious reading is
+      therefore a clock-reference effect: the Beetle agrees with the DUTs that share its clock
+      family and disagrees slightly with the other two, all well inside normal tolerance.
+
+      The competing explanation was that a loop iteration simply takes ~3 ms on those boards,
+      which would land as a constant, non-accumulating overshoot because `lastToggle = millis()`
+      captures the late value. Two unrelated cores hitting nearly the same figure by coincidence
+      makes that the weaker story now, but it is not ruled out. **The cheap discriminator is to
+      set `KNX_VERBOSE` false and measure again** — if the offset survives, it is the clock.
+
+      Either way it is an observation, not a defect: 800 ppm is nothing to a 19200 baud UART,
+      the sniffer decoded every byte with correct parity on every board, and the bit-level
+      timing lives on the ATTiny rather than on the MCU.
 
       Keep that capture as the reference. Any board whose frame differs by a byte has found a
       real core difference, which is the entire point of the exercise.
-- [ ] **First run on the remaining boards** — UNO R4 Minima and Pico. Compile is proven; timing,
-      line settings and the transceiver handshake are not. The sniffer above answers the first
-      two without a bus. **The UNO R4 Minima is 5 V I/O** and the other boards are 3.3 V, so that
-      one needs a level shifter rather than a direct wire.
+- [ ] **First run on the last board** — the Pico. Compile is proven; timing, line settings and
+      the transceiver handshake are not. The sniffer above answers the first two without a bus.
 
       The **Nucleo F401RE is no longer on this list** — the STM32duino board on the bench is the
       L432KC, and it has passed. Its `[env:nucleo_f401re]` in `platformio.ini` and `ci.yml`
