@@ -143,13 +143,13 @@ transmit path was checked on eight boards without a bus, by sniffing the UART.
       what `ci.yml`'s `uno-single-uart` job asserts. It ran `examples/ExplicitPort` instead, and
       that makes it the only run that exercises the **explicitly passed port** rather than the
       macro, from a different sketch, and it still produced identical bytes. 8424 bytes flash and
-      365 bytes RAM on an ATmega328P, the tightest target of the set. 5 V, so the same divider as
+      365 bytes RAM on an ATmega328P, the tightest target of the set. 5 V, so the same shifter as
       the R4 and Mega.
 
       The Mega is the only 8-bit target here, so it is the one that exercises the documented AVR
       traps for real: `<stdint.h>` over `<cstdint>`, C++11 by default, no address-of on a
       `static constexpr`. All hold — 14 170 bytes flash, 2195 bytes RAM. It is also 5 V, so it
-      needed the same divider as the R4. Its `SERIAL_PORT_HARDWARE_OPEN` is `Serial1`, unlike
+      needed the same shifter as the R4. Its `SERIAL_PORT_HARDWARE_OPEN` is `Serial1`, unlike
       the GIGA's; that both boards then land on D18 is a coincidence of Mega header numbering,
       not a pattern to rely on.
 
@@ -163,7 +163,7 @@ transmit path was checked on eight boards without a bus, by sniffing the UART.
       and see nothing. Corrected in the same pass; the resolution order two paragraphs below it
       had always been right, which is exactly why the summary sentence went unchallenged.
 
-      **The R4 Minima is 5 V I/O.** Its TX went through a 1.8 kΩ / 3.3 kΩ divider to reach the
+      **The R4 Minima is 5 V I/O.** Its TX went through a level shifter to reach the
       3.3 V sniffer input; wiring it straight would destroy the pin. Only the one direction
       needs it, since sniffing never drives the DUT.
 
