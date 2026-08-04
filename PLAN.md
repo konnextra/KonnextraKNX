@@ -6,11 +6,11 @@ is no longer documentation-only:
 
 | Open | What | Blocks |
 |---|---|---|
-| **Step 5** | bench retest on real hardware — the driver has not been on a bus since the port injection | Step 8, both defects |
+| ~~**Step 5**~~ | ~~bench retest on real hardware~~ — **done**, the XIAO passed on the real TP-UART2 and eight boards passed the sniffer round | — (unblocked Step 8 and both defects) |
 | **Step 6 rest** | `docs/Hardware.md` content | user input |
 | **Step 7** | wrong Arduino IDE install instructions | — |
-| **Step 8** | Arduino Library Manager — moves `src/`, so it waits for Step 5 | Step 5 |
-| **Two defects** | read request decoded as 0; dead address-format guards | Step 5 |
+| **Step 8** | Arduino Library Manager — moves `src/` | — (was Step 5, now clear) |
+| **Two defects** | read request decoded as 0; dead address-format guards | — (was Step 5, now clear) |
 | **Step 4c** | `Website_` fetches and styles the published content — other repo | — |
 
 Design rationale for the completed steps lives in `.agents/specs/`; the blow-by-blow is in git
@@ -82,7 +82,7 @@ an implementation plan — the same way Steps 3, 4a and 4b were run.
 
 # Open work
 
-## Step 5 — OPEN: board portability, hardware half
+## Step 5 — DONE: board portability, hardware half
 
 The code half is done and on `main` (`8252172`): `KnxDriver` no longer constructs a UART, it is
 handed a `HardwareSerial&` or a pre-configured `Stream&`. `KNX_DEFAULT_PORT` resolves the
@@ -90,15 +90,20 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `portability` job builds all four examples against six core families on every push, and
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
-**Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
-eight boards without one, by sniffing the UART (see below); the receive path and the
-`L_Data.con` handling still have no hardware evidence at all.
+**The driver has been back on a KNX bus** — the XIAO retest below passed. Separately, the
+transmit path was checked on eight boards without a bus, by sniffing the UART.
 
-- [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
-      the hardware-verified status the driver had before the port injection. `src/main.cpp` is
-      already wired for it: the ESP32 branch of the port conditional gives `HardwareSerial(1)`,
-      and `setPins(D7, D6)` runs behind `#if defined(ARDUINO_XIAO_ESP32C6)` so it applies on
-      this board and nowhere else. Two behaviour changes to watch specifically:
+- [x] **Bench retest on the XIAO ESP32-C6 — passed**, on the soldered rig with the real TP-UART2,
+      reported by the user on 4 August 2026. This was the gate for everything else, so **Step 8
+      and both defects are unblocked.**
+
+      Recorded from that report, not from a capture taken here: no log was kept, so the entry
+      says the run worked and does not claim more. If it is ever worth being precise about which
+      of `begin()`'s handshake, the positive `L_Data.con` and the receive-to-callback path were
+      each seen, that has to come from a fresh run — the two watch items below say what to look
+      at. `src/main.cpp` is wired for it: the ESP32 branch of the port conditional gives
+      `HardwareSerial(1)`, and `setPins(D7, D6)` runs behind `#if defined(ARDUINO_XIAO_ESP32C6)`
+      so it applies on this board and nowhere else. The two behaviour changes it covered:
       - `resetRequest()` has **no hardware fallback** any more (the `/RESET` line is gone from
         the hardware), so an unanswered soft reset now fails `begin()` instead of retrying.
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
@@ -245,10 +250,10 @@ eight boards without one, by sniffing the UART (see below); the receive path and
       hardware, and is what caught the `ENABLE_HWSERIAL1` trap in the first place.
 - [x] ~~**Then** bump to `v0.1.7` and tag.~~ **Done out of order, deliberately.** `v0.1.7` was
       cut on 2 August 2026 at the user's explicit direction, to get the rewritten documentation
-      published, *before* either bench item above was ticked. So the released driver still has
-      not spoken to a bus in its current form. The two boxes above stay open and are now
-      **post-release** verification: if the retest finds a problem, it needs a `v0.1.8`, not an
-      amended tag.
+      published, *before* either bench item above was ticked. The gamble came off: both boxes
+      were ticked two days later and neither found a problem in the driver, so `v0.1.7` needs no
+      correcting release. Worth remembering as a precedent that paid rather than one that was
+      safe — had the retest failed, the fix would have needed a `v0.1.8`, not an amended tag.
 
 **Pin order is a trap, do not "fix" it.** The pre-change bring-up read
 `uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with `rxPin = D6, txPin = D7`, while the ESP32
