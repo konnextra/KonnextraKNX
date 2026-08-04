@@ -19,6 +19,11 @@ reader is actually scanning for.
 
 <!-- - Breaking: `begin()` no longer opens the port. Call `setPins()` before it. -->
 
+- **On the Arduino Giga R1 the default serial port is `Serial2`, not `Serial1`.** The library
+  always behaved this way — it asks your board's core which UART is free, and the Giga answers
+  `Serial2` — but the documentation claimed `Serial1` flat out. A Giga sketch written without a
+  port talks on D18/D19. Now verified on hardware and corrected on the Supported Boards page.
+
 - The library has a licence: **BSD 3-Clause**. Use it, change it, ship it inside a commercial
   product; keep the copyright notice, and do not advertise a derived product with the Konnextra
   name. Until now the repository named no terms at all, which by default left nobody permitted

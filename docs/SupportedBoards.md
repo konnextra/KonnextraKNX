@@ -19,7 +19,7 @@ the same way.
 | Seeed XIAO ESP32-C6 | ESP32 | the reference board |
 | ESP32-S3-DevKitC-1 | ESP32 | a second variant, without the XIAO pin aliases |
 | Arduino Mega 2560 | AVR (classic) | `Serial1`…`Serial3` free |
-| Arduino Giga R1 | Arduino mbed / ArduinoCore-API | the family SAMD, Nano 33 and Portenta share |
+| Arduino Giga R1 | Arduino mbed / ArduinoCore-API | the family SAMD, Nano 33 and Portenta share; **defaults to `Serial2`, not `Serial1`** |
 | Arduino UNO R4 Minima | Renesas RA | |
 | ST Nucleo F401RE | STM32duino | needs `ENABLE_HWSERIAL1`, see below |
 | Raspberry Pi Pico | RP2040, Earle Philhower core | |
@@ -31,15 +31,20 @@ work.
 ## How the serial port is chosen
 
 This is the one thing you may have to think about per board. Written without a port, the
-library uses `Serial1`:
+library asks your board's core which UART is free:
 
 ```cpp
-Konnextra knx("1.1.5");            // Serial1
+Konnextra knx("1.1.5");            // your board's free UART, usually Serial1
 Konnextra knx("1.1.5", Serial2);   // or name your own
 ```
 
-`Serial1` is the convention for "the first hardware UART that is not the USB console", which is
-why it is the default. The library resolves it in this order:
+On almost every board the answer is `Serial1`, the convention for "the first hardware UART that
+is not the USB console". **The Arduino Giga R1 is the exception: it answers `Serial2`**, so a
+sketch written without a port talks on the Giga's `Serial2` pins and wiring to `Serial1` gets
+you nothing. If you are unsure which port your board picked, name one explicitly — that always
+wins.
+
+The library resolves it in this order:
 
 1. `SERIAL_PORT_HARDWARE_OPEN`, if your core defines it. This is Arduino's own answer to the
    same question.
