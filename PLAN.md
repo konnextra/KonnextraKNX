@@ -91,7 +91,7 @@ address-only constructor's port and is `= delete`d where no port is free. `ci.ym
 `uno-single-uart` asserts the address-only constructor is correctly withheld on the Uno.
 
 **Nothing has been on a KNX bus since the change.** The transmit path has since been checked on
-five boards without one, by sniffing the UART (see below); the receive path and the
+six boards without one, by sniffing the UART (see below); the receive path and the
 `L_Data.con` handling still have no hardware evidence at all.
 
 - [ ] **Bench retest on the XIAO ESP32-C6.** This is the gate for everything else — it restores
@@ -104,11 +104,11 @@ five boards without one, by sniffing the UART (see below); the receive path and 
       - the port is opened with the **two-argument** `begin(19200, SERIAL_8E1)`; on ESP32 that
         keeps the pins already assigned, which is what `setPins()` sets up. Confirm it really
         talks on D7/D6.
-- [x] **Transmit path verified on four further boards by UART sniffing** (4 August 2026), which
+- [x] **Transmit path verified on five further boards by UART sniffing** (4 August 2026), which
       is the method for every board below. A spare board reads the DUT's KNX TX line at 19200 8E1
       and prints what it sees; no transceiver and no bus are involved. It works because
       `KnxCoordinator::begin()` only forwards the driver's verdict and nothing gates on it, so
-      an unanswered `begin()` does not suppress the sends. All four ran `src/main.cpp`, whose
+      an unanswered `begin()` does not suppress the sends. All five ran `src/main.cpp`, whose
       port selection is now a conditional rather than a line to edit per board:
 
       | Board | Core | KNX port | Pins | Evidence |
@@ -117,6 +117,14 @@ five boards without one, by sniffing the UART (see below); the receive path and 
       | ST Nucleo-L432KC | STM32duino, Cortex-M4 | `Serial1` (USART1) | first `PinMap_UART_TX/RX` entry, RX = PA10 = D0, TX = PA9 = D1 | sniffer |
       | Arduino UNO R4 Minima | Renesas RA4M1, ArduinoCore-API | `Serial1` | `UART1_TX_PIN`/`UART1_RX_PIN`, TX = D1, RX = D0 | sniffer |
       | Arduino GIGA R1 | Arduino mbed, STM32H747 M7 | **`Serial2`** | `SERIAL2_TX`/`SERIAL2_RX`, TX = D18, RX = D19 | sniffer |
+      | Arduino Mega 2560 | AVR classic, 8-bit | `Serial1` | TX = D18, RX = D19 | sniffer |
+
+      The Mega is the only 8-bit target here, so it is the one that exercises the documented AVR
+      traps for real: `<stdint.h>` over `<cstdint>`, C++11 by default, no address-of on a
+      `static constexpr`. All hold — 14 170 bytes flash, 2195 bytes RAM. It is also 5 V, so it
+      needed the same divider as the R4. Its `SERIAL_PORT_HARDWARE_OPEN` is `Serial1`, unlike
+      the GIGA's; that both boards then land on D18 is a coincidence of Mega header numbering,
+      not a pattern to rely on.
 
       **The GIGA is the first board where `KNX_DEFAULT_PORT` is not `Serial1`,** and the capture
       is the first hardware exercise of the `SERIAL_PORT_HARDWARE_OPEN` branch at the top of the
@@ -171,6 +179,7 @@ five boards without one, by sniffing the UART (see below); the receive path and 
       | GIGA R1 | 4999 ms | −200 ppm |
       | Nucleo-L432KC | 5003–5004 ms | +600…800 ppm |
       | UNO R4 Minima | 5004 ms | +800 ppm |
+      | Mega 2560 | 5005 ms | +1000 ppm |
 
       **The GIGA's negative offset settles what the other four could not.** A loop iteration that
       takes a few ms was the competing explanation — the check fires on the first iteration at or
@@ -180,15 +189,20 @@ five boards without one, by sniffing the UART (see below); the receive path and 
       The earlier per-vendor reading dies with the same measurement: the GIGA is not an Espressif
       board and still lands on the mark.
 
-      What is left is oscillator quality, which fits: the two ESP32s and the GIGA have proper
-      external crystals, and the Nucleo drives its PLL from **MSI**, an internal RC, with no HSE
-      (`RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI` in the variant). The R4's clock source
-      could not be read from the installed files — it sits in FSP-generated headers — so for that
-      board the explanation is plausible rather than verified.
+      What is left is oscillator quality. It fits the spread — a crystal holds ±30 ppm, an RC
+      oscillator or a ceramic resonator drifts by hundreds to thousands — and it is verified for
+      exactly one board: the Nucleo drives its PLL from **MSI**, an internal RC, with no HSE
+      (`RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI` in the variant). For the R4 the clock
+      source could not be read at all; it sits in FSP-generated headers. For the Mega, +1000 ppm
+      is far outside crystal tolerance and would fit the ceramic resonator that classic Arduino
+      boards use for the main MCU — believed, not verified, since that is a schematic question.
 
-      An observation, not a defect: 800 ppm is nothing to a 19200 baud UART, the sniffer decoded
-      every byte with correct parity on every board, and the bit-level timing lives on the ATTiny
-      rather than on the MCU.
+      **This was chased far enough.** Three boards in a row each moved the explanation rather
+      than confirming it, and what is being explained is a 1000 ppm effect on a 19200 baud line
+      whose bit-level timing lives on the ATTiny, not the MCU. It is an observation about the
+      boards' oscillators, not about the library: every board decoded with correct parity and
+      produced identical bytes. Recorded so a future reader does not re-derive it from scratch,
+      and left there.
 
       Keep that capture as the reference. Any board whose frame differs by a byte has found a
       real core difference, which is the entire point of the exercise.
