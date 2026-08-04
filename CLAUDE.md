@@ -104,6 +104,24 @@ code was hardware-verified, the configuration that actually works is **ESP32 RX 
 and it is the misleading member names, not the wiring, that were wrong. `src/main.cpp`
 reproduces it with `knxPort.setPins(D7, D6)`; do not "correct" that to `(D6, D7)`.
 
+**D6 is also this board's default UART0 TX**, which means the ROM bootloader talks on the KNX
+line. `variants/XIAO_ESP32C6/pins_arduino.h` defines `TX = 16` and `D6 = 16` — the same pin. A
+UART capture of a boot shows a 35-byte burst at 19200 8E1 roughly three seconds before the
+`U_Reset.req`, which is consistent in both size and timing with the ROM banner going out at
+115200 (35 bytes read at 19200 ≈ 200 bytes sent at 115200; the three seconds are the
+`while (!Serial && millis() < 3000)` in `src/main.cpp`). So on every reset the transceiver is
+fed a burst of wrong-baud traffic before the driver ever opens the port. Most of it dies on
+framing and parity errors, but nothing guarantees all of it does — a stray `0x28` consumes the
+next two bytes as an address, and a `0x80|i` pattern could start a transmission.
+
+This is inferred from the capture, not proven: to confirm it, sniff D6 at **115200 8N1**
+instead and look for readable `ESP-ROM:esp32c6` / `rst:0x1` text. It is filed as a known trait
+rather than a bug because the rig was hardware-verified with it happening, so the ATTiny
+evidently tolerates it. The only reliable fix is moving the KNX UART to other GPIOs, which the
+soldered bench rig cannot do; disabling the ROM log needs a one-way eFuse and is not worth it.
+**The other boards do not have this problem** — on the Nucleo, UNO R4 and Pico `Serial1` is a
+separate UART from the console, so the C6 is the exception here, not the pattern.
+
 The KNX pins are **no longer wired into the library**. `KnxDriver` is handed a port it does
 not construct, so the pin columns above describe this board's wiring, not a library constant.
 On ESP32 the UART keeps whatever pins it already has — call `setPins()` before `knx.begin()`
