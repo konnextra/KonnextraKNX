@@ -116,8 +116,16 @@ void loop() {
 		// toggle() flips relative to the cached, status-fed state and returns the driver's
 		// real L_Data.con — "no ACK" here means the transceiver did not confirm the send.
 		bool confirmed = lamp.toggle();
-		Serial.printf("[send] toggle 0/1/1 -> %s (%s)\n",
-			lamp.isOn() ? "ON" : "OFF", confirmed ? "confirmed" : "no ACK");
+
+		// print(), not printf(): printf on Serial is an ESP32/STM32duino extension, not
+		// Arduino API. The Renesas core's Serial has no such member and the sketch does not
+		// compile there. KnxDebug::log() solves the same problem the other way, with
+		// vsnprintf into a buffer — either is fine, chained print() needs no buffer at all.
+		Serial.print("[send] toggle 0/1/1 -> ");
+		Serial.print(lamp.isOn() ? "ON" : "OFF");
+		Serial.print(" (");
+		Serial.print(confirmed ? "confirmed" : "no ACK");
+		Serial.println(")");
 	}
 }
 
@@ -125,13 +133,16 @@ void loop() {
 
 // Switching status on 1/1/1, already decoded to a bool.
 void onLampChanged(bool on) {
-	Serial.printf("[bus]  status 1/1/1 -> lamp is %s\n", on ? "ON" : "OFF");
+	Serial.print("[bus]  status 1/1/1 -> lamp is ");
+	Serial.println(on ? "ON" : "OFF");
 }
 
 // Brightness status on 0/2/1. The wire carries DPT5 raw 0..255; KnxPercent rescales to 0..100 %
 // before this runs, so a full-brightness telegram (0xFF) prints as 100.
 void onBrightnessChanged(uint8_t percent) {
-	Serial.printf("[bus]  status 0/2/1 -> brightness %u %%\n", percent);
+	Serial.print("[bus]  status 0/2/1 -> brightness ");
+	Serial.print(percent);
+	Serial.println(" %");
 }
 
 /*

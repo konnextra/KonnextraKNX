@@ -147,6 +147,12 @@ Two traps that the compile matrix caught and that will bite again:
 - **`HAVE_HWSERIAL1`, not the architecture.** STM32duino *declares* `Serial1` whenever the
   chip has a USART1 but only *defines* it when the sketch sets `ENABLE_HWSERIAL1`. Testing
   `ARDUINO_ARCH_STM32` compiles and then fails at link with "undefined reference to Serial1".
+- **`Serial.printf()` is not Arduino API.** ESP32 and STM32duino ship it as an extension; the
+  Renesas core does not, and there `Serial` is a `_SerialUSB` with only `print`/`println`/
+  `write`. It cost the bench sketch a build on the UNO R4 Minima. Use chained `print()`, or
+  `vsnprintf` into a buffer the way `KnxDebug::log()` does. The library was always clean here —
+  it is sketches and doc snippets that need watching, and `examples/`, `docs/` and `README.md`
+  have been checked and use none.
 - **AVR has no C++-style C headers and defaults to C++11.** Use `<stdint.h>`/`<string.h>`,
   never `<cstdint>`/`<cstring>`, and never take the address of a `static constexpr` member
   (that ODR-uses it and needs an out-of-line definition before C++17 — copy it to a local
