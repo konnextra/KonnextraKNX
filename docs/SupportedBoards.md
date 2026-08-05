@@ -22,11 +22,37 @@ the same way.
 | Arduino Giga R1 | Arduino mbed / ArduinoCore-API | the family SAMD, Nano 33 and Portenta share; **defaults to `Serial2`, not `Serial1`** |
 | Arduino UNO R4 Minima | Renesas RA | |
 | ST Nucleo F401RE | STM32duino | needs `ENABLE_HWSERIAL1`, see below |
-| Raspberry Pi Pico | RP2040, Earle Philhower core | |
+| Raspberry Pi Pico | RP2040, `arduino-pico` core | |
 | Arduino Uno | AVR (classic) | only the explicit-port sketch, see below |
 
 If your board is not listed but shares a core family with one that is, it will almost certainly
 work.
+
+## Run on real hardware
+
+Compiling is not the same as working. These eight boards have been on a bench with the library
+actually running on them:
+
+| Board | Core family | Port it used |
+|---|---|---|
+| Seeed XIAO ESP32-C6 | ESP32 | UART1, on pins the sketch assigns |
+| NodeMCU-32S (ESP32-WROOM-32) | ESP32 | `Serial1`, GPIO 26 and 27 |
+| ST Nucleo-L432KC | STM32duino | `Serial1`, PA9 and PA10 |
+| Arduino UNO R4 Minima | Renesas RA | `Serial1`, D0 and D1 |
+| Arduino GIGA R1 | Arduino mbed | `Serial2`, D18 and D19 |
+| Arduino Mega 2560 | AVR (classic) | `Serial1`, D18 and D19 |
+| Arduino Uno R3 | AVR (classic) | `Serial`, named by hand |
+| Raspberry Pi Pico 2 | `arduino-pico` | `Serial1`, GP0 and GP1 |
+
+On each of them the serial line was captured while the library sent telegrams, and the bytes
+were compared against the other boards. All eight produced the same telegram, down to the
+checksum, so framing, addressing and the line settings behave identically across every core
+family above. The **Seeed XIAO ESP32-C6** additionally runs against a real TP-UART2 transceiver
+on a live bus, which is the board the library is developed on day to day.
+
+Two of these boards are worth reading the notes for before you buy one: the **GIGA R1** uses
+`Serial2` rather than `Serial1`, and the **Uno R3** cannot use the address-only constructor at
+all. Both are covered below.
 
 ## How the serial port is chosen
 

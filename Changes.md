@@ -19,6 +19,11 @@ reader is actually scanning for.
 
 <!-- - Breaking: `begin()` no longer opens the port. Call `setPins()` before it. -->
 
+- **Eight boards are now listed as having actually run the library**, on the Supported Boards
+  page: XIAO ESP32-C6, ESP32-WROOM-32, Nucleo-L432KC, UNO R4 Minima, GIGA R1, Mega 2560, Uno R3
+  and Pico 2. Until now the page only said which boards CI compiles, which is a weaker promise
+  than it looked.
+
 - **On the Arduino Giga R1 the default serial port is `Serial2`, not `Serial1`.** The library
   always behaved this way — it asks your board's core which UART is free, and the Giga answers
   `Serial2` — but the documentation claimed `Serial1` flat out. A Giga sketch written without a
