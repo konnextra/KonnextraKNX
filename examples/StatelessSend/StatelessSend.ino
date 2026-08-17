@@ -6,9 +6,9 @@
  * error rather than a bad telegram on the bus.
  */
 
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 
 void setup() {
     knx.begin();

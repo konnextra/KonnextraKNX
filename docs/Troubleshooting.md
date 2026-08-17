@@ -59,13 +59,13 @@ Swapping RX and TX to test is harmless and takes a minute. Do that before readin
 
 ## Nothing compiles
 
-**`use of deleted function 'Konnextra::Konnextra(const String&)'`**
+**`use of deleted function 'KonnextraKNX::KonnextraKNX(const String&)'`**
 
 Your board has no hardware serial port free for KNX, its only one is the USB console. The Uno is
 the usual case. Name the port explicitly and accept that the serial monitor is gone:
 
 ```cpp
-Konnextra knx("1.1.5", Serial);
+KonnextraKNX knx("1.1.5", Serial);
 ```
 
 **`undefined reference to 'Serial1'`**

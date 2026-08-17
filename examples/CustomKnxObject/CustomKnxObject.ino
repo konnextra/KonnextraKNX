@@ -5,9 +5,9 @@
  * with write() and receive with onUpdate(). Here a 16-bit counter (DPT 7).
  */
 
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 KnxObject counter(knx, "0/5/0", KnxDpt::DPT7);   // 16-bit unsigned value
 
 void onCounter(const KnxValue& value);           // defined below

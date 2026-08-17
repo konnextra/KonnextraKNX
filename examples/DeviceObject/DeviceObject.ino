@@ -5,9 +5,9 @@
  * register a callback that fires when the value changes on the bus.
  */
 
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");                 // this device's KNX address
+KonnextraKNX knx("1.1.5");              // this device's KNX address
 KnxLight  lamp(knx, "0/1/1", "0/3/0");  // command address, status address
 
 void onLampChanged(bool on);            // defined below

@@ -43,8 +43,8 @@ Strict layered design — dependencies only flow downward, acyclic (PLAN §12):
 
 ```
 src/main.cpp        ← showcase sketch: wires the stack + drives intent objects
-lib/Konnextra/      ← THE public surface, and nothing else: Konnextra.h — the single user
-                      include, sole root of the DAG. Defines the Konnextra node class (owns a
+lib/KonnextraKNX/   ← THE public surface, and nothing else: KonnextraKNX.h — the single user
+                      include, sole root of the DAG. Defines the KonnextraKNX node class (owns a
                       KnxDriver, built from the physical address). Header-only, Arduino-only.
 lib/KnxObject/      ← KnxObject : IKnxReceiver + intent classes (KnxLight, KnxDimmLight,
                       KnxRGB, KnxBlind, KnxTemperature, …) grouped by domain header. Header-only.
@@ -62,21 +62,21 @@ examples/           ← standalone .ino sketches mirroring docs/Examples.md; NOT
                       build (PlatformIO's LDF excludes this directory)
 ```
 
-Dependency flow: `Konnextra → {KnxDriver, KnxObject, KnxCoordinator, KnxValue, KnxCommon}`,
+Dependency flow: `KonnextraKNX → {KnxDriver, KnxObject, KnxCoordinator, KnxValue, KnxCommon}`,
 `KnxObject → KnxCoordinator → {KnxTelegram, KnxValue, KnxCommon}`,
 `KnxDriver → {KnxTelegram, KnxCommon}`, `KnxTelegram → KnxValue → KnxCommon`.
 Interfaces (`IKnxDriver`, `IKnxReceiver`) live in `KnxCommon` below their consumers, so the
-coordinator never includes the concrete driver or object headers — no cycle. `Konnextra` is the
+coordinator never includes the concrete driver or object headers — no cycle. `KonnextraKNX` is the
 only library above the driver, and nothing includes it — which is exactly why it can bundle the
 whole stack, and why native tests (which include `KnxCoordinator.h` and the object headers
 directly) never drag the Arduino driver into a host build.
 
 No global singletons. Dependencies are injected by constructor pointer/reference.
 
-**User include & construction:** a sketch needs only `#include <Konnextra.h>` and
-`Konnextra knx("1.1.5");`. `Konnextra.h` (its own library, sole root of the DAG) pulls in the
+**User include & construction:** a sketch needs only `#include <KonnextraKNX.h>` and
+`KonnextraKNX knx("1.1.5");`. `KonnextraKNX.h` (its own library, sole root of the DAG) pulls in the
 driver, the coordinator core, the value currency, and every intent class, then defines the
-user-facing **`Konnextra` node class** — a thin
+user-facing **`KonnextraKNX` node class** — a thin
 Arduino subclass of `KnxCoordinator` that *owns* a `KnxDriver` and is built from the physical
 address, so the user never instantiates or injects a driver (address typed once). The
 dependency-injection **core is `KnxCoordinator`** (`KnxCoordinator.h`): Arduino-free, host-testable
@@ -140,7 +140,7 @@ There is no architecture guard anywhere in the driver.
 this order: Arduino's own `SERIAL_PORT_HARDWARE_OPEN`, then `HAVE_HWSERIAL1`, then a short
 list of cores that always ship `Serial1`. Override it per project with
 `-DKNX_DEFAULT_PORT=Serial2`. Where none of them match — the Uno — the constructor is
-`= delete`d with an explanatory comment, in **both** `KnxDriver` and `Konnextra`; the second
+`= delete`d with an explanatory comment, in **both** `KnxDriver` and `KonnextraKNX`; the second
 one is the message users actually see.
 
 Two traps that the compile matrix caught and that will bite again:
@@ -271,7 +271,7 @@ Three `Doxyfile` settings are load-bearing and easy to break:
   that fails silently. Doxygen evaluates the preprocessor itself, so any constructor behind an
   `#ifdef` it cannot resolve simply vanishes from the output — with an empty `warnings.txt`.
   Without `ARDUINO` the 25 `String` constructors disappear; without `KNX_DEFAULT_PORT` the
-  address-only `Konnextra(addr)` disappears, which is the one every page and example uses.
+  address-only `KonnextraKNX(addr)` disappears, which is the one every page and example uses.
   **Adding a new `#ifdef` around public API means adding its macro here.**
 - `RECURSIVE = NO` with an explicit `INPUT` list — new doc pages and headers must be added to
   `INPUT` by hand, and `USE_MDFILE_AS_MAINPAGE` must keep pointing at `docs/GettingStarted.md`.

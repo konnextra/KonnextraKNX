@@ -60,8 +60,8 @@ This is the one thing you may have to think about per board. Written without a p
 library asks your board's core which UART is free:
 
 ```cpp
-Konnextra knx("1.1.5");            // your board's free UART, usually Serial1
-Konnextra knx("1.1.5", Serial2);   // or name your own
+KonnextraKNX knx("1.1.5");            // your board's free UART, usually Serial1
+KonnextraKNX knx("1.1.5", Serial2);   // or name your own
 ```
 
 On almost every board the answer is `Serial1`, the convention for "the first hardware UART that
@@ -95,7 +95,7 @@ in. `begin()` leaves the line settings alone on this path, so they have to be ri
 
 ```cpp
 EspSoftwareSerial::UART knxPort;
-Konnextra               knx("1.1.5", knxPort);
+KonnextraKNX            knx("1.1.5", knxPort);
 
 void setup() {
     knxPort.begin(19200, SWSERIAL_8E1, 4, 5);
@@ -115,13 +115,13 @@ The library does not pretend otherwise. On such a board the one-argument constru
 exist at all, and using it is a compile error rather than a device that mysteriously fails:
 
 ```
-error: use of deleted function 'Konnextra::Konnextra(const String&)'
+error: use of deleted function 'KonnextraKNX::KonnextraKNX(const String&)'
 ```
 
 You can still use the Uno by naming the port explicitly:
 
 ```cpp
-Konnextra knx("1.1.5", Serial);
+KonnextraKNX knx("1.1.5", Serial);
 ```
 
 But understand the trade. `Serial` now belongs to KNX, so **there is no serial monitor**. No
@@ -144,7 +144,7 @@ wired the transceiver. Assign them before `begin()`:
 
 ```cpp
 HardwareSerial knxPort(1);
-Konnextra      knx("1.1.5", knxPort);
+KonnextraKNX   knx("1.1.5", knxPort);
 
 void setup() {
     knxPort.setPins(rxPin, txPin);

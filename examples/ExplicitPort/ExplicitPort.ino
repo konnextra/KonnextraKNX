@@ -8,9 +8,9 @@
  * here on, so there is no serial monitor to print to.
  */
 
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5", Serial);         // the transceiver is on the one hardware UART
+KonnextraKNX knx("1.1.5", Serial);         // the transceiver is on the one hardware UART
 KnxLight  lamp(knx, "0/1/1", "0/3/0");
 
 unsigned long lastToggle = 0;

@@ -126,7 +126,7 @@ class KnxDriver : public IKnxDriver {
 		KnxDriver(String physicalAddress);
 #else
 		// This board has no hardware UART free for KNX — its only port is the console.
-		// Pass one explicitly instead:  Konnextra knx("1.1.5", Serial);
+		// Pass one explicitly instead:  KonnextraKNX knx("1.1.5", Serial);
 		KnxDriver(String physicalAddress) = delete;
 #endif
 

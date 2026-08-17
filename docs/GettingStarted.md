@@ -5,9 +5,9 @@ You describe things by what they are, a light, a blind, a temperature, and the l
 handles the datapoints, framing and bus timing.
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");                 // this device's KNX address
+KonnextraKNX knx("1.1.5");              // this device's KNX address
 KnxLight  lamp(knx, "0/1/1", "0/3/0");  // command address, status address
 
 unsigned long lastToggle = 0;
@@ -61,16 +61,16 @@ lib_deps =
 ```
 
 **Arduino IDE**, download the library and add it through
-*Sketch → Include Library → Add .ZIP Library…*, then `#include <Konnextra.h>`.
+*Sketch → Include Library → Add .ZIP Library…*, then `#include <KonnextraKNX.h>`.
 
 ## The knx object
 
-Everything starts with one `Konnextra`, created from this device's physical address. It is
+Everything starts with one `KonnextraKNX`, created from this device's physical address. It is
 your sketch's connection to the bus. Call `begin()` once in `setup()`, and `loop()` on every
 pass of your sketch's `loop()` so the library can receive telegrams:
 
 ```cpp
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 
 void setup() {
     knx.begin();
@@ -95,7 +95,7 @@ commands, remembers the last value it saw, and calls a function you provide when
 changes on the bus.
 
 ```cpp
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 KnxLight  lamp(knx, "0/1/1", "0/3/0");   // sends on 0/1/1, reads status on 0/3/0
 
 void onLampChanged(bool on);             // declared here, defined below

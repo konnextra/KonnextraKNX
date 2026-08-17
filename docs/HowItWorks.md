@@ -11,13 +11,13 @@ Nothing ever reaches upwards.
 
 | Layer | Does | You see it |
 |---|---|---|
-| `Konnextra` | the `knx` object you write in a sketch, and the driver it owns | always |
+| `KonnextraKNX` | the `knx` object you write in a sketch, and the driver it owns | always |
 | Device objects | `KnxLight`, `KnxTemperature`, `KnxObject`, … a group address plus a datapoint type plus a cached value | always |
 | `KnxCoordinator` | sends to group addresses, receives telegrams and hands them to the objects that want them | rarely |
 | `KnxDriver` | speaks the transceiver's serial command set and reports whether a send was confirmed | no |
 | Framing and codec | builds and parses telegrams, converts values to and from bus bytes | no |
 
-`Konnextra` is the convenience on top. It is a `KnxCoordinator` that also constructs its own
+`KonnextraKNX` is the convenience on top. It is a `KnxCoordinator` that also constructs its own
 `KnxDriver`, so you type the physical address once and nothing has to be wired together by
 hand.
 
@@ -68,7 +68,7 @@ The pattern: pick the type in the constructor, wrap `write()` in named methods, 
 `onValueUpdated()` to turn the cached value into a callback with a real type.
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
 class KnxCounter : public KnxObject {
     private:
@@ -100,13 +100,13 @@ Three things worth knowing:
 - Registration is automatic. The constructor attaches the object and the destructor detaches
   it, so an object that goes out of scope simply stops receiving.
 
-Note the constructor takes a `KnxCoordinator&`, not a `Konnextra&`. That costs you nothing:
-`Konnextra` is a `KnxCoordinator`, so passing your `knx` object works as it does for every
+Note the constructor takes a `KnxCoordinator&`, not a `KonnextraKNX&`. That costs you nothing:
+`KonnextraKNX` is a `KnxCoordinator`, so passing your `knx` object works as it does for every
 built-in class.
 
 ## Testing without hardware
 
-Everything below `Konnextra` is free of Arduino headers, which is what lets the test suite run
+Everything below `KonnextraKNX` is free of Arduino headers, which is what lets the test suite run
 on your computer instead of on a board:
 
 ```bash

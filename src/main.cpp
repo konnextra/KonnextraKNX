@@ -18,7 +18,7 @@
 
 //---- Libraries ----
 #include <Arduino.h>
-#include <Konnextra.h>     // the whole library: driver + coordinator + values + intent objects
+#include <KonnextraKNX.h>     // the whole library: driver + coordinator + values + intent objects
 
 //---- Configuration ----
 #define BAUDRATE_SERIAL     115200
@@ -41,7 +41,7 @@
 //
 // Everywhere else the alias binds to KNX_DEFAULT_PORT — deliberately the same macro the
 // address-only constructor resolves, so this sketch measures the port a user actually gets
-// from `Konnextra knx("1.1.5")` rather than a second opinion about it. That is usually
+// from `KonnextraKNX knx("1.1.5")` rather than a second opinion about it. That is usually
 // Serial1, but not always: the GIGA defines SERIAL_PORT_HARDWARE_OPEN as Serial2, which the
 // macro checks first. Hardcoding Serial1 here would have sniffed the wrong pins there.
 // On a board with no port to spare the macro is undefined and this line fails to compile,
@@ -53,7 +53,7 @@
 #endif
 
 //---- KNX bus connection: address typed once, driving the port declared above ----
-Konnextra knx(PHYS_ADDR, knxPort);
+KonnextraKNX knx(PHYS_ADDR, knxPort);
 
 //---- The light under test: (bus connection, switching GA, status GA) ----
 // Sends on/off to 0/1/1, listens for switching status on 1/1/1.

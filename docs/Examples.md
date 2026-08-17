@@ -9,9 +9,9 @@ methods, and register a callback for status changes. Here a light is switched an
 tracked.
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");                 // this device's KNX address
+KonnextraKNX knx("1.1.5");              // this device's KNX address
 KnxLight  lamp(knx, "0/1/1", "0/3/0");  // command address, status address
 
 void onLampChanged(bool on);            // defined below
@@ -71,9 +71,9 @@ To send a one-off value to any group address without keeping an object, use `knx
 a typed value. There is no status callback on this path. It only sends.
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 
 void setup() {
     knx.begin();
@@ -97,9 +97,9 @@ address and the datapoint type once, then send with `write()` and receive with `
 Here a 16-bit counter (DPT 7) is published and read.
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 KnxObject counter(knx, "0/5/0", KnxDpt::DPT7);   // 16-bit unsigned value
 
 void onCounter(const KnxValue& value);

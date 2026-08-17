@@ -1,9 +1,9 @@
-# Doxyfile for the Konnextra KNX library — user-facing API reference.
+# Doxyfile for the KonnextraKNX library — user-facing API reference.
 # Scoped to the public headers only; the lower layers (framing, driver, codec) are omitted
 # on purpose. Regenerate with:  doxygen Doxyfile
 
 #---- Project ----
-PROJECT_NAME           = "Konnextra"
+PROJECT_NAME           = "KonnextraKNX"
 PROJECT_BRIEF          = "An Arduino KNX library — simple, no ETS required"
 OUTPUT_DIRECTORY       = doxygen
 CREATE_SUBDIRS         = NO
@@ -20,7 +20,7 @@ INPUT                  = docs/GettingStarted.md \
                          docs/HowItWorks.md \
                          docs/ReleaseNotes.md \
                          docs/Contributing.md \
-                         lib/Konnextra/src/Konnextra.h \
+                         lib/KonnextraKNX/src/KonnextraKNX.h \
                          lib/KnxObject/src/KnxObject.h \
                          lib/KnxObject/src/KnxLighting.h \
                          lib/KnxObject/src/KnxCovers.h \

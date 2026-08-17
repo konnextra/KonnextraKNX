@@ -384,7 +384,7 @@ source edits**. Had the includes carried subdirectories, this would have been a 
 - [ ] **`src/` is the collision** — it currently holds the bench sketch. Move that out and point
       `platformio.ini`'s `src_dir` at wherever it lands.
 - [ ] Write `library.properties` at root, with `license=BSD-3-Clause` to match `LICENSE` and the
-      `library.json` files. **It needs `includes=Konnextra.h`**: without that field
+      `library.json` files. **It needs `includes=KonnextraKNX.h`**: without that field
       the IDE's *Include Library* menu inserts an `#include` for all 17 headers instead of the
       one, which breaks the single-include promise every doc page makes.
 - [ ] Collapse the seven `library.json` into one, and fix `bump_version.py` and `verify-version`

@@ -20,7 +20,7 @@ group address names a *topic*, for example "the kitchen ceiling light" or "the o
 temperature", and it is what devices actually use to talk to each other.
 
 ```cpp
-Konnextra knx("1.1.5");                 // who this device is
+KonnextraKNX knx("1.1.5");              // who this device is
 KnxLight  lamp(knx, "0/1/1", "0/3/0");  // what it talks about
 ```
 
@@ -127,9 +127,9 @@ each address's datapoint type, which you need anyway.
 tracing on and run a sketch that does nothing but receive:
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");     // pick a free address
+KonnextraKNX knx("1.1.5");     // pick a free address
 
 void setup() {
     Serial.begin(115200);

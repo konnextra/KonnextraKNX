@@ -1,4 +1,4 @@
-# Konnextra KNX
+# KonnextraKNX
 
 **Talk to a KNX bus from an Arduino sketch — no ETS, no KNX-stack expertise.**
 
@@ -13,9 +13,9 @@ you describe devices by **what they are**, and it handles the datapoints, framin
 timing for you.
 
 ```cpp
-#include <Konnextra.h>
+#include <KonnextraKNX.h>
 
-Konnextra knx("1.1.5");                 // this device's KNX address
+KonnextraKNX knx("1.1.5");              // this device's KNX address
 KnxLight  lamp(knx, "0/1/1", "0/3/0");  // command address, status address
 
 unsigned long lastToggle = 0;
@@ -86,7 +86,7 @@ The node uses your board's default KNX port, `Serial1` on almost every board, an
 19200 8E1 for you. Name a different one when the transceiver sits elsewhere:
 
 ```cpp
-Konnextra knx("1.1.5", Serial2);
+KonnextraKNX knx("1.1.5", Serial2);
 ```
 
 A board whose only serial port is the USB console — the Uno — has no default: name the port
@@ -98,7 +98,7 @@ there, and the serial monitor goes with it.
 a callback when it changes:
 
 ```cpp
-Konnextra knx("1.1.5");
+KonnextraKNX knx("1.1.5");
 KnxLight  lamp(knx, "0/1/1", "0/3/0");
 
 void setup() {
@@ -148,7 +148,7 @@ lib_deps =
 ```
 
 **Arduino IDE** — download the library and add it through *Sketch → Include Library → Add .ZIP
-Library…*, then `#include <Konnextra.h>`.
+Library…*, then `#include <KonnextraKNX.h>`.
 
 ## Documentation
 
