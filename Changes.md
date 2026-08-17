@@ -33,3 +33,7 @@ reader is actually scanning for.
   product; keep the copyright notice, and do not advertise a derived product with the Konnextra
   name. Until now the repository named no terms at all, which by default left nobody permitted
   to do any of it.
+
+- **Breaking: the library and its class are now `KonnextraKNX`, not `Konnextra`.** Change
+  `#include <Konnextra.h>` to `#include <KonnextraKNX.h>`, and `Konnextra knx(...)` to
+  `KonnextraKNX knx(...)`, in every sketch. Nothing else about the API changed.
