@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pio
-      - run: pio run -e seeed_xiao_esp32c6
+      - run: PLATFORMIO_SRC_DIR=examples/BenchTest pio run -e seeed_xiao_esp32c6
 
   # One job per Arduino core family. Nothing else compiles the examples, and nothing else
   # would notice a driver change that only builds on ESP32 — this is that safety net.
@@ -64,3 +64,12 @@ jobs:
             exit 1
           fi
           echo "correctly rejected"
+
+  arduino-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/arduino-lint-action@v1
+        with:
+          library-manager: update
+          compliance: strict

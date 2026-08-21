@@ -41,13 +41,11 @@ jobs:
             echo "manual run on ${GITHUB_REF_NAME} — no tag to compare, publishing VERSION $FILE_VERSION"
           fi
 
-          for f in lib/*/library.json; do
-            LIB_VERSION="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['version'])" "$f")"
-            if [ "$LIB_VERSION" != "$FILE_VERSION" ]; then
-              echo "::error::$f version ($LIB_VERSION) does not match VERSION file ($FILE_VERSION)"
-              exit 1
-            fi
-          done
+          LP_VERSION="$(grep '^version=' library.properties | cut -d= -f2)"
+          if [ "$LP_VERSION" != "$FILE_VERSION" ]; then
+            echo "::error::library.properties version ($LP_VERSION) does not match VERSION file ($FILE_VERSION)"
+            exit 1
+          fi
 
           echo "All versions agree: $FILE_VERSION"
 
@@ -65,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pio
-      - run: pio run -e seeed_xiao_esp32c6
+      - run: PLATFORMIO_SRC_DIR=examples/BenchTest pio run -e seeed_xiao_esp32c6
 
   docs:
     needs: [test, build]
