@@ -1,0 +1,52 @@
+#######################################
+# Syntax Coloring Map for KonnextraKNX
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+KonnextraKNX	KEYWORD1
+KnxCoordinator	KEYWORD1
+KnxObject	KEYWORD1
+KnxValue	KEYWORD1
+KnxLight	KEYWORD1
+KnxDimmLight	KEYWORD1
+KnxRGB	KEYWORD1
+KnxBlind	KEYWORD1
+KnxTemperature	KEYWORD1
+KnxHumidity	KEYWORD1
+KnxTime	KEYWORD1
+KnxDate	KEYWORD1
+KnxDateTime	KEYWORD1
+KnxPercent	KEYWORD1
+KnxChar	KEYWORD1
+KnxFloat	KEYWORD1
+IKnxDriver	KEYWORD1
+IKnxReceiver	KEYWORD1
+IKnxDeviceHandler	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+loop	KEYWORD2
+reset	KEYWORD2
+send	KEYWORD2
+sendIndividual	KEYWORD2
+sendControl	KEYWORD2
+registerReceiver	KEYWORD2
+unregisterReceiver	KEYWORD2
+setDeviceHandler	KEYWORD2
+enableDebugMode	KEYWORD2
+onUpdate	KEYWORD2
+on	KEYWORD2
+off	KEYWORD2
+set	KEYWORD2
+toggle	KEYWORD2
+isOn	KEYWORD2
+brighter	KEYWORD2
+darker	KEYWORD2
+stopDimming	KEYWORD2
+setBrightness	KEYWORD2
