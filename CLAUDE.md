@@ -25,6 +25,14 @@ layout (root `library.properties` + root `src/`), so `pio run` alone has nothing
 point `PLATFORMIO_SRC_DIR` at a sketch under `examples/`. Third-party dependencies are declared
 in `platformio.ini` and fetched automatically.
 
+Each `examples/` sketch resolves `#include <KonnextraKNX.h>` via `lib_deps = symlink://.` in
+`platformio.ini`'s shared `[env]` block: flattening `lib/*/src/` into root `src/` removed the
+automatic LDF discovery that used to make the library visible to those builds, so
+`symlink://.` links this project's own root (`library.properties` + `src/`) back in as a
+library, anchored to the project directory itself. `[env:native]` clears `lib_deps` back to
+empty, since it already pulls `src/` in via `test_build_src` — self-referencing there too would
+compile every `.cpp` twice and fail to link on duplicate symbols.
+
 ## Repository layout
 
 | Path | Contents |
@@ -50,8 +58,10 @@ src/                ← THE library, flat — everything below is one PlatformIO
                       one file per class or module, no per-file library.json:
   KonnextraKNX.h    ← the single user include, sole root of the DAG. Defines the KonnextraKNX
                       node class (owns a KnxDriver, built from the physical address).
+  KnxObject.h       ← generic device object : IKnxReceiver — group address(es) + KnxDpt,
+                      write()/value()/onUpdate(); base class for the intent classes below
   Knx{Light,DimmLight,RGB,Blind,Temperature,Humidity,Time,Date,DateTime,Percent,Char,Float}
-                    ← KnxObject : IKnxReceiver + intent classes, grouped by domain file
+                    ← intent classes built on KnxObject, grouped by domain file
                       (KnxLighting.h, KnxCovers.h, KnxClimate.h, KnxDateTime.h, KnxScalars.h)
   KnxCoordinator.h  ← DI core class KnxCoordinator: group send(ga, KnxValue) + intrusive
                       IKnxReceiver registry, point-to-point sendIndividual/sendControl + one
@@ -61,6 +71,7 @@ src/                ← THE library, flat — everything below is one PlatformIO
                     ← stateless L_Data framing + reassembler; Arduino-free, host-tested
   KnxValue.h, KnxCodec.h/.cpp
                     ← value currency: KnxValue tagged union + symmetric KnxCodec. Pure
+  KnxCommon.h       ← umbrella header pulling in the shared vocabulary below
   KnxEnums.h, KnxAddress.h, KnxTelegramTypes.h, KnxInterfaces.h, KnxDebug.h
                     ← shared types + contracts (IKnxDriver / IKnxReceiver / IKnxDeviceHandler,
                       runtime logging switch used by every layer)
@@ -78,10 +89,13 @@ per-module `library.json` dependencies or blocks an upward include at build time
 (`IKnxDriver`, `IKnxReceiver`) still live in the lowest-level headers below their consumers, so
 the coordinator still never includes the concrete driver or object headers by convention — but
 nothing except code review catches a violation now. `KonnextraKNX.h` is still the only header
-that pulls in the driver, and nothing includes it — native tests (which include
-`KnxCoordinator.h` and the object headers directly) still never drag the Arduino driver into a
-host build, because `pio test -e native` only needs `test_build_src = true` to see `src/` at
-all, and the test files themselves choose which headers they include.
+that pulls in the driver, and nothing includes it — but that convention alone no longer keeps
+the Arduino driver out of a host build the way per-folder `lib/` libraries used to: `pio test
+-e native`'s `test_build_src = true` compiles **every** `.cpp` under `src/` unconditionally,
+regardless of what any test file `#include`s. What actually keeps `KnxDriver.cpp` out is an
+explicit `build_src_filter = +<*> -<KnxDriver.cpp>` in `platformio.ini`'s `[env:native]` — add
+another Arduino-only `.cpp` to `src/` and it silently joins the native build too unless that
+filter is updated to exclude it as well.
 
 No global singletons. Dependencies are injected by constructor pointer/reference.
 
@@ -97,9 +111,10 @@ inject their own `IKnxDriver` by constructing a `KnxCoordinator` directly.
 
 **Testing:** `pio test -e native` runs the host Unity suite (codec, framing, reassembler,
 coordinator, objects) against the Arduino-free layers (needs `test_build_src = true` in
-`platformio.ini`'s `[env:native]`, since `src/` is no longer pulled in automatically the way
-per-folder `lib/` libraries used to be); `PLATFORMIO_SRC_DIR=examples/BenchTest pio run` builds
-the firmware.
+`platformio.ini`'s `[env:native]` to compile `src/` at all — it's no longer pulled in
+automatically the way per-folder `lib/` libraries used to be — plus that same env's
+`build_src_filter = +<*> -<KnxDriver.cpp>` to keep the Arduino-only driver out of the host
+build); `PLATFORMIO_SRC_DIR=examples/BenchTest pio run` builds the firmware.
 
 ## Hardware pin map (XIAO ESP32-C6)
 
@@ -217,7 +232,7 @@ the bench work is done rather than rewriting it.
 late or get dropped. Objects are declared at global scope — they self-register into the
 coordinator's receiver registry on construction and must outlive it (PLAN §6).
 
-**Callback style in the showcase:** handlers are **named free functions**, prototyped above
+**Callback style in the bench sketch:** handlers are **named free functions**, prototyped above
 `setup()` and defined below `loop()` (the thesis layout), so `setup()` stays a flat wiring
 manifest — one line per binding, no handler bodies inline. `onUpdate` takes a plain
 `void(*)(native)`, so a non-capturing lambda works identically; the named form is the idiom the
