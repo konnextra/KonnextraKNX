@@ -4,7 +4,7 @@
 
 PlatformIO / Arduino project running on a **Seeed XIAO ESP32-C6**. The repository is now
 primarily an **Adafruit-style cross-platform Arduino KNX library** (the redesign tracked in
-`PLAN.md`), with `src/main.cpp` as a showcase sketch demonstrating its use. The original target
+`PLAN.md`), with `examples/BenchTest/BenchTest.ino` as a bench sketch demonstrating its use. The original target
 is a KNX wall controller (capacitive touch pads, OLED, RGB backlight); those sensor/display
 drivers are not part of the library surface. The thesis button layer (`examples/KNX_Device/`)
 was removed — recover it from git history if it is ever needed.
@@ -14,20 +14,23 @@ was removed — recover it from git history if it is ever needed.
 PlatformIO, Arduino framework. Build and upload via PlatformIO CLI or the PlatformIO IDE extension.
 
 ```
-pio run              # build
-pio run --target upload
+PLATFORMIO_SRC_DIR=examples/BenchTest pio run              # build the bench firmware
+PLATFORMIO_SRC_DIR=examples/BenchTest pio run --target upload
 pio device monitor   # 115200 baud
+pio test -e native   # host unit tests
 ```
 
-All custom code lives under `lib/`. Third-party dependencies are declared in `platformio.ini` and fetched automatically.
+All library code lives under `src/`, flat — this is the Arduino Library Manager–compliant
+layout (root `library.properties` + root `src/`), so `pio run` alone has nothing to link;
+point `PLATFORMIO_SRC_DIR` at a sketch under `examples/`. Third-party dependencies are declared
+in `platformio.ini` and fetched automatically.
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
-| `lib/` | all custom library code (see Architecture below) |
-| `src/` | `main.cpp` — the bench-test / showcase sketch |
-| `examples/` | standalone `.ino` sketches, one folder each (`DeviceObject`, `StatelessSend`, `CustomKnxObject`). They mirror `docs/Examples.md` — change one, change the other. Not in the build, so **nothing compiles them**; check them by hand after an API change. |
+| `src/` | the library's own source — flat, one file per class/module (see Architecture below) |
+| `examples/` | standalone `.ino` sketches, one folder each (`DeviceObject`, `StatelessSend`, `CustomKnxObject`, `ExplicitPort`). They mirror `docs/Examples.md` — change one, change the other. `BenchTest` is the exception: it's the hardware bench-test sketch (formerly root `src/main.cpp`), not part of the public showcase, and has no `docs/Examples.md` entry. All of them, `BenchTest` included, are compile-checked by CI's `portability` job (`PLATFORMIO_SRC_DIR=<folder> pio run -e <env>`); check them by hand only for behavior CI can't compile-check (docs staying in sync, runtime correctness). |
 | `docs/` | **user-facing Markdown documentation only** — `GettingStarted.md`, `Examples.md`, `Hardware.md`. These are Doxygen's `INPUT` pages; adding a page means adding it there **and** to the `Doxyfile`. |
 | `reference/` | KNX standard specifications + the TP-UART2 datasheet (PDFs, read-only reference) |
 | `.agents/specs/` | design docs from the `superpowers:brainstorming` workflow — the *why* behind completed work. **New specs go here**, not to the skill's default `docs/superpowers/specs/`, which would pollute the user-facing `docs/`. |
@@ -42,40 +45,49 @@ All custom code lives under `lib/`. Third-party dependencies are declared in `pl
 Strict layered design — dependencies only flow downward, acyclic (PLAN §12):
 
 ```
-src/main.cpp        ← showcase sketch: wires the stack + drives intent objects
-lib/KonnextraKNX/   ← THE public surface, and nothing else: KonnextraKNX.h — the single user
-                      include, sole root of the DAG. Defines the KonnextraKNX node class (owns a
-                      KnxDriver, built from the physical address). Header-only, Arduino-only.
-lib/KnxObject/      ← KnxObject : IKnxReceiver + intent classes (KnxLight, KnxDimmLight,
-                      KnxRGB, KnxBlind, KnxTemperature, …) grouped by domain header. Header-only.
-lib/KnxCoordinator/ ← DI core class KnxCoordinator (KnxCoordinator.h): group send(ga, KnxValue)
-                      + intrusive IKnxReceiver registry, point-to-point sendIndividual/
-                      sendControl + one optional IKnxDeviceHandler, loop(); injected IKnxDriver*
-lib/KnxDriver/      ← concrete ATTiny / TP-UART UART driver : IKnxDriver (target-only)
-lib/KnxTelegram/    ← stateless L_Data framing + reassembler (KnxFrame, KnxReassembler);
-                      Arduino-free, host-tested
-lib/KnxValue/       ← value currency: KnxValue tagged union + symmetric KnxCodec. Pure
-lib/KnxCommon/      ← shared types + contracts: KnxEnums, KnxAddress, KnxTelegramTypes,
-                      KnxInterfaces (IKnxDriver / IKnxReceiver / IKnxDeviceHandler),
-                      KnxDebug (runtime logging switch used by every layer). Header-only
-examples/           ← standalone .ino sketches mirroring docs/Examples.md; NOT in the
-                      build (PlatformIO's LDF excludes this directory)
+examples/BenchTest/ ← hardware bench sketch: wires the stack + drives two device objects
+src/                ← THE library, flat — everything below is one PlatformIO/Arduino library,
+                      one file per class or module, no per-file library.json:
+  KonnextraKNX.h    ← the single user include, sole root of the DAG. Defines the KonnextraKNX
+                      node class (owns a KnxDriver, built from the physical address).
+  Knx{Light,DimmLight,RGB,Blind,Temperature,Humidity,Time,Date,DateTime,Percent,Char,Float}
+                    ← KnxObject : IKnxReceiver + intent classes, grouped by domain file
+                      (KnxLighting.h, KnxCovers.h, KnxClimate.h, KnxDateTime.h, KnxScalars.h)
+  KnxCoordinator.h  ← DI core class KnxCoordinator: group send(ga, KnxValue) + intrusive
+                      IKnxReceiver registry, point-to-point sendIndividual/sendControl + one
+                      optional IKnxDeviceHandler, loop(); injected IKnxDriver*
+  KnxDriver.h/.cpp  ← concrete ATTiny/TP-UART UART driver : IKnxDriver (target-only)
+  KnxFrame.h/.cpp, KnxReassembler.h/.cpp
+                    ← stateless L_Data framing + reassembler; Arduino-free, host-tested
+  KnxValue.h, KnxCodec.h/.cpp
+                    ← value currency: KnxValue tagged union + symmetric KnxCodec. Pure
+  KnxEnums.h, KnxAddress.h, KnxTelegramTypes.h, KnxInterfaces.h, KnxDebug.h
+                    ← shared types + contracts (IKnxDriver / IKnxReceiver / IKnxDeviceHandler,
+                      runtime logging switch used by every layer)
+examples/           ← standalone .ino sketches mirroring docs/Examples.md (plus BenchTest,
+                      which doesn't); NOT in the build, so nothing compiles them automatically
+                      except CI's portability matrix
 ```
 
-Dependency flow: `KonnextraKNX → {KnxDriver, KnxObject, KnxCoordinator, KnxValue, KnxCommon}`,
-`KnxObject → KnxCoordinator → {KnxTelegram, KnxValue, KnxCommon}`,
-`KnxDriver → {KnxTelegram, KnxCommon}`, `KnxTelegram → KnxValue → KnxCommon`.
-Interfaces (`IKnxDriver`, `IKnxReceiver`) live in `KnxCommon` below their consumers, so the
-coordinator never includes the concrete driver or object headers — no cycle. `KonnextraKNX` is the
-only library above the driver, and nothing includes it — which is exactly why it can bundle the
-whole stack, and why native tests (which include `KnxCoordinator.h` and the object headers
-directly) never drag the Arduino driver into a host build.
+Dependency flow is unchanged in spirit: `KonnextraKNX → {KnxDriver, KnxObject, KnxCoordinator,
+KnxValue, KnxCommon-tier headers}`, `KnxObject → KnxCoordinator → {KnxFrame, KnxValue, common
+headers}`, `KnxDriver → {KnxFrame, common headers}`, `KnxFrame → KnxValue → common headers`.
+This is now a **documentation and file-naming convention, not an LDF-enforced one** — flattening
+into one `src/` for Arduino Library Manager compliance means PlatformIO no longer tracks
+per-module `library.json` dependencies or blocks an upward include at build time. Interfaces
+(`IKnxDriver`, `IKnxReceiver`) still live in the lowest-level headers below their consumers, so
+the coordinator still never includes the concrete driver or object headers by convention — but
+nothing except code review catches a violation now. `KonnextraKNX.h` is still the only header
+that pulls in the driver, and nothing includes it — native tests (which include
+`KnxCoordinator.h` and the object headers directly) still never drag the Arduino driver into a
+host build, because `pio test -e native` only needs `test_build_src = true` to see `src/` at
+all, and the test files themselves choose which headers they include.
 
 No global singletons. Dependencies are injected by constructor pointer/reference.
 
 **User include & construction:** a sketch needs only `#include <KonnextraKNX.h>` and
-`KonnextraKNX knx("1.1.5");`. `KonnextraKNX.h` (its own library, sole root of the DAG) pulls in the
-driver, the coordinator core, the value currency, and every intent class, then defines the
+`KonnextraKNX knx("1.1.5");`. `KonnextraKNX.h` (root of the DAG within the flattened `src/`)
+pulls in the driver, the coordinator core, the value currency, and every intent class, then defines the
 user-facing **`KonnextraKNX` node class** — a thin
 Arduino subclass of `KnxCoordinator` that *owns* a `KnxDriver` and is built from the physical
 address, so the user never instantiates or injects a driver (address typed once). The
@@ -84,7 +96,10 @@ with a mock driver, and the type intent objects reference (`KnxCoordinator&`). A
 inject their own `IKnxDriver` by constructing a `KnxCoordinator` directly.
 
 **Testing:** `pio test -e native` runs the host Unity suite (codec, framing, reassembler,
-coordinator, objects) against the Arduino-free layers; `pio run` builds the firmware.
+coordinator, objects) against the Arduino-free layers (needs `test_build_src = true` in
+`platformio.ini`'s `[env:native]`, since `src/` is no longer pulled in automatically the way
+per-folder `lib/` libraries used to be); `PLATFORMIO_SRC_DIR=examples/BenchTest pio run` builds
+the firmware.
 
 ## Hardware pin map (XIAO ESP32-C6)
 
@@ -101,7 +116,7 @@ correction is counter-intuitive enough to be worth the paragraph. The old bring-
 `uart.begin(baud, SERIAL_8E1, txPin, rxPin)` with `rxPin = D6, txPin = D7`, while the ESP32
 signature is `begin(baud, config, rxPin, txPin)` — the two were passed swapped. Since that
 code was hardware-verified, the configuration that actually works is **ESP32 RX = D7, TX = D6**,
-and it is the misleading member names, not the wiring, that were wrong. `src/main.cpp`
+and it is the misleading member names, not the wiring, that were wrong. `examples/BenchTest/BenchTest.ino`
 reproduces it with `knxPort.setPins(D7, D6)`; do not "correct" that to `(D6, D7)`.
 
 **D6 is also this board's default UART0 TX**, which means the ROM bootloader talks on the KNX
@@ -109,7 +124,7 @@ line. `variants/XIAO_ESP32C6/pins_arduino.h` defines `TX = 16` and `D6 = 16` —
 UART capture of a boot shows a 35-byte burst at 19200 8E1 roughly three seconds before the
 `U_Reset.req`, which is consistent in both size and timing with the ROM banner going out at
 115200 (35 bytes read at 19200 ≈ 200 bytes sent at 115200; the three seconds are the
-`while (!Serial && millis() < 3000)` in `src/main.cpp`). So on every reset the transceiver is
+`while (!Serial && millis() < 3000)` in `examples/BenchTest/BenchTest.ino`). So on every reset the transceiver is
 fed a burst of wrong-baud traffic before the driver ever opens the port. Most of it dies on
 framing and parity errors, but nothing guarantees all of it does — a stray `0x28` consumes the
 next two bytes as an address, and a `0x80|i` pattern could start a transmission.
@@ -162,7 +177,7 @@ Two traps that the compile matrix caught and that will bite again:
 family, and `uno-single-uart` asserts that the address-only constructor **fails** on the Uno.
 The envs live in `platformio.ini` and are compile-only — `default_envs` still pins the firmware.
 
-## KNX group addresses in the bench test (`src/main.cpp`)
+## KNX group addresses in the bench test (`examples/BenchTest/BenchTest.ino`)
 
 | Address | DPT | Direction | Purpose |
 |---|---|---|---|
@@ -173,8 +188,8 @@ The envs live in `platformio.ini` and are compile-only — `default_envs` still 
 The `lamp` object is `KnxLight lamp(knx, "0/1/1", "1/1/1")` — the ctor is
 `KnxLight(knx, commandGa, statusGa)`, so it *sends* to 0/1/1 and *listens* on 1/1/1. The bench
 log confirms it (`TX -> GA 0/1/1`). Note: several comments and `Serial.printf` strings inside
-`src/main.cpp` still say "1/1/1" for the toggled address — those are stale text, not a wiring
-change; the code is correct.
+`examples/BenchTest/BenchTest.ino` still say "1/1/1" for the toggled address — those are stale
+text, not a wiring change; the code is correct.
 
 Note 0/2/1 is a DPT5 **brightness status**, not a DPT3 relative-dim command GA — so the sketch
 uses `KnxLight` + a listen-only `KnxPercent`, not `KnxDimmLight` (whose third GA is a *send*
@@ -183,10 +198,10 @@ address for dim steps). No relative-dim command GA is configured on this device.
 Group addresses are hardcoded in the sketch (no ETS) — the Adafruit-style trade-off (PLAN §1).
 Physical address of this device: **1.1.5**
 
-## Bench-test sketch (`src/main.cpp`)
+## Bench-test sketch (`examples/BenchTest/BenchTest.ino`)
 
-`src/main.cpp` is currently a **hardware bench test**, not the API showcase: no buttons, one
-`KnxLight` toggled every 5 s on a `millis()` cadence, plus a listen-only `KnxPercent` for the
+`examples/BenchTest/BenchTest.ino` is currently a **hardware bench test**, not the API showcase:
+no buttons, one `KnxLight` toggled every 5 s on a `millis()` cadence, plus a listen-only `KnxPercent` for the
 dimmer's brightness status, with every status telegram printed over Serial at 115200. Its job is
 to exercise the two paths host tests cannot reach — the driver's real transmit path (positive
 `L_Data.con`?) and the full receive path (reassemble → parse → match → decode → callback), the
@@ -206,8 +221,11 @@ coordinator's receiver registry on construction and must outlive it (PLAN §6).
 `setup()` and defined below `loop()` (the thesis layout), so `setup()` stays a flat wiring
 manifest — one line per binding, no handler bodies inline. `onUpdate` takes a plain
 `void(*)(native)`, so a non-capturing lambda works identically; the named form is the idiom the
-example teaches because it matches `attachInterrupt(pin, handler, …)` and names the intent. The
-prototypes are only needed because this is a `.cpp` — a user's `.ino` gets them generated.
+example teaches because it matches `attachInterrupt(pin, handler, …)` and names the intent. Now
+that the bench sketch is itself a `.ino`, its build tooling would auto-generate these forward
+declarations — the prototypes are written out anyway, matching the convention every other
+`examples/` sketch teaches (see `DeviceObject.ino`, `CustomKnxObject.ino`), not because the
+compiler requires it.
 
 ## Debug mode
 
@@ -223,7 +241,7 @@ mismatches), codec decode failures, per-object decode/cache updates, and **every
 dispatched — including telegrams addressed to other devices** (logged as "0 receiver(s)", which
 is normal foreign traffic, not an error). Address-validation warnings ride the same switch.
 
-Implementation is `KnxCommon/src/KnxDebug.h`: a single library-wide `bool` in an inline
+Implementation is `src/KnxDebug.h`: a single library-wide `bool` in an inline
 function-local static, plus `log()` / `logBytes()`. Both the `#ifdef ARDUINO` guard and the
 runtime check live **inside** those functions, so call sites elsewhere carry no preprocessor
 noise and the Arduino-free layers stay Arduino-free — on a host build the bodies compile away
@@ -278,8 +296,8 @@ Three `Doxyfile` settings are load-bearing and easy to break:
 - `EXCLUDE_SYMBOLS` hides the internal enums that share `KnxEnums.h` with the user-facing ones.
 
 **Publishing is tag-driven.** `ci.yml` runs tests and the firmware build on branch pushes only;
-`docs.yml` fires on a `v*.*.*` tag and runs `verify-version` (tag == `VERSION` == all 7
-`lib/*/library.json`) → `test`/`build` against that exact SHA → Doxygen → Pages deploy. Nothing
+`docs.yml` fires on a `v*.*.*` tag and runs `verify-version` (tag == `VERSION` ==
+`library.properties`) → `test`/`build` against that exact SHA → Doxygen → Pages deploy. Nothing
 publishes without a tag.
 
 **`Changes.md` at the root is where release notes are collected.** It is a maintainer file, not
@@ -296,9 +314,9 @@ with the wording worked over.
 
 ```bash
 # 1. fold Changes.md into docs/ReleaseNotes.md by hand, then empty Changes.md
-python3 scripts/bump_version.py 0.1.6   # writes VERSION + all 7 library.json
+python3 scripts/bump_version.py 0.1.6   # writes VERSION + library.properties
 git diff                                 # sanity-check: only version fields changed
-git add VERSION lib/*/library.json docs/ReleaseNotes.md Changes.md
+git add VERSION library.properties docs/ReleaseNotes.md Changes.md
 git commit -m "Bump version to 0.1.6"
 git tag v0.1.6
 git push && git push --tags              # the tag push is what fires docs.yml
@@ -327,7 +345,7 @@ Key consequences:
 - **Bit timing, collision detection, and STKNX GPIO drive live on the ATTiny.**
   The main MCU never runs timing-critical ISRs for KNX, so the library stays
   reliable when WiFi/MQTT/Matter stacks share the main core.
-- All layers above the physical driver (`KnxTelegram`, `KnxCoordinator`, application) keep a
+- All layers above the physical driver (`KnxFrame`, `KnxCoordinator`, application) keep a
   UART-shaped link-layer interface (send frame / poll for events / TX
   confirmation), so the swap is contained to the driver.
 - The ATTiny is expected to return a **transmit confirmation** (TP-UART-style
