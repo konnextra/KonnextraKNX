@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Sync the project version into VERSION and every lib/*/library.json file."""
-import json
 import re
 import sys
 from pathlib import Path
@@ -34,19 +33,23 @@ def main() -> None:
         print(f"error: '{new_version}' is not of the form X.Y.Z", file=sys.stderr)
         sys.exit(1)
 
-    library_jsons = sorted(ROOT.glob("lib/*/library.json"))
-    if not library_jsons:
-        print("error: no lib/*/library.json files found", file=sys.stderr)
+    lib_properties = ROOT / "library.properties"
+    if not lib_properties.exists():
+        print("error: library.properties not found at repo root", file=sys.stderr)
         sys.exit(1)
 
     VERSION_FILE.write_text(new_version + "\n")
     print(f"wrote VERSION ({new_version})")
 
-    for path in library_jsons:
-        data = json.loads(path.read_text())
-        data["version"] = new_version
-        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
-        print(f"updated {path.relative_to(ROOT)}")
+    text = lib_properties.read_text()
+    new_text, count = re.subn(
+        r"^version=.*$", f"version={new_version}", text, count=1, flags=re.MULTILINE
+    )
+    if count != 1:
+        print("error: no 'version=' line found in library.properties", file=sys.stderr)
+        sys.exit(1)
+    lib_properties.write_text(new_text)
+    print("updated library.properties")
 
     waiting = pending_changes()
     if waiting:
@@ -58,9 +61,8 @@ def main() -> None:
     else:
         print("\nChanges.md is empty. Check docs/ReleaseNotes.md already covers this release.")
 
-    rel_paths = " ".join(str(p.relative_to(ROOT)) for p in library_jsons)
     print(f"\nVersion set to {new_version}. Next steps (not run automatically):")
-    print(f"  git add VERSION {rel_paths} docs/ReleaseNotes.md Changes.md")
+    print("  git add VERSION library.properties docs/ReleaseNotes.md Changes.md")
     print(f"  git commit -m 'Bump version to {new_version}'")
     print(f"  git tag v{new_version}")
     print("  git push --tags")
