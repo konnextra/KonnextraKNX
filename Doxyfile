@@ -20,16 +20,16 @@ INPUT                  = docs/GettingStarted.md \
                          docs/HowItWorks.md \
                          docs/ReleaseNotes.md \
                          docs/Contributing.md \
-                         lib/KonnextraKNX/src/KonnextraKNX.h \
-                         lib/KnxObject/src/KnxObject.h \
-                         lib/KnxObject/src/KnxLighting.h \
-                         lib/KnxObject/src/KnxCovers.h \
-                         lib/KnxObject/src/KnxClimate.h \
-                         lib/KnxObject/src/KnxDateTime.h \
-                         lib/KnxObject/src/KnxScalars.h \
-                         lib/KnxValue/src/KnxValue.h \
-                         lib/KnxCoordinator/src/KnxCoordinator.h \
-                         lib/KnxCommon/src/KnxEnums.h
+                         src/KonnextraKNX.h \
+                         src/KnxObject.h \
+                         src/KnxLighting.h \
+                         src/KnxCovers.h \
+                         src/KnxClimate.h \
+                         src/KnxDateTime.h \
+                         src/KnxScalars.h \
+                         src/KnxValue.h \
+                         src/KnxCoordinator.h \
+                         src/KnxEnums.h
 FILE_PATTERNS          = *.h *.md
 RECURSIVE              = NO
 USE_MDFILE_AS_MAINPAGE = docs/GettingStarted.md
