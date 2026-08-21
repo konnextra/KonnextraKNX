@@ -1,5 +1,5 @@
 /**
- * @name main.cpp
+ * @name BenchTest.ino
  * @date 19.07.2026
  * @authors Florian Wiesner
  * @details HARDWARE BENCH TEST for the KNX library — no buttons, no user input.
