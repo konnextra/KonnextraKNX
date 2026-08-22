@@ -310,8 +310,9 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
 ## Step 7 — DONE: project-meta gaps
 
 - [x] ~~**No `LICENSE` file.**~~ **Decided on 3 August 2026: BSD 3-Clause**, copyright
-      `Florian Wiesner (Konnextra GesbR)`. `LICENSE` is at the root, all seven `library.json`
-      carry `"license": "BSD-3-Clause"`, and README plus `docs/Contributing.md` say so.
+      `Florian Wiesner (Konnextra GesbR)`. `LICENSE` is at the root, the root `library.properties`
+      carries `license=BSD-3-Clause` (the seven `library.json` files that used to carry this were
+      collapsed into it — see Step 8), and README plus `docs/Contributing.md` say so.
 
       **Why this one, so it is not re-argued.** Nothing constrained the choice: the library has
       no third-party code and no `lib_deps`, so no licence was inherited. Adafruit was the
