@@ -23,14 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check tag, VERSION, and every library.json agree
+      - name: Check tag, VERSION, and library.properties agree
         run: |
           set -euo pipefail
           FILE_VERSION="$(cat VERSION)"
 
           # Only a tag run has a version to agree with. A manual run publishes a ref that is
           # deliberately ahead of the newest tag, so the comparison is skipped there — the
-          # library.json check below still runs, because those must never drift from VERSION.
+          # library.properties check below still runs, because it must never drift from VERSION.
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             TAG_VERSION="${GITHUB_REF_NAME#v}"
             if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then

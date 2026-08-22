@@ -37,3 +37,9 @@ reader is actually scanning for.
 - **Breaking: the library and its class are now `KonnextraKNX`, not `Konnextra`.** Change
   `#include <Konnextra.h>` to `#include <KonnextraKNX.h>`, and `Konnextra knx(...)` to
   `KonnextraKNX knx(...)`, in every sketch. Nothing else about the API changed.
+
+- **The library now installs through the Arduino IDE Library Manager / "Add .ZIP Library".**
+  The repository root previously carried no library manifest at all, so both install paths were
+  rejected; it now has a root `library.properties` and a flat root `src/`, the layout the IDE's
+  1.5 spec expects. PlatformIO users pointing `lib_deps` straight at the repository URL may see
+  the dependency resolve differently as a result.

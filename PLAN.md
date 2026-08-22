@@ -8,8 +8,8 @@ is no longer documentation-only:
 |---|---|---|
 | ~~**Step 5**~~ | ~~bench retest on real hardware~~ — **done**, the XIAO passed on the real TP-UART2 and eight boards passed the sniffer round | — (unblocked Step 8 and both defects) |
 | **Step 6 rest** | `docs/Hardware.md` content | user input |
-| **Step 7** | wrong Arduino IDE install instructions | — |
-| **Step 8** | Arduino Library Manager — moves `src/` | — (was Step 5, now clear) |
+| ~~**Step 7**~~ | ~~wrong Arduino IDE install instructions~~ — **done**, fixed as a side effect of Step 8 | — |
+| ~~**Step 8**~~ | ~~Arduino Library Manager — moves `src/`~~ — **done**, registry submission PR still pending | — (was Step 5, now clear) |
 | **Two defects** | read request decoded as 0; dead address-format guards | — (was Step 5, now clear) |
 | **Step 4c** | `Website_` fetches and styles the published content — other repo | — |
 
@@ -307,7 +307,7 @@ Still open:
 Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE = NO`), and the
 `INPUT` order *is* the navigation order.
 
-## Step 7 — OPEN: project-meta gaps
+## Step 7 — DONE: project-meta gaps
 
 - [x] ~~**No `LICENSE` file.**~~ **Decided on 3 August 2026: BSD 3-Clause**, copyright
       `Florian Wiesner (Konnextra GesbR)`. `LICENSE` is at the root, all seven `library.json`
@@ -329,22 +329,16 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
       authorship at all, so the parenthesis names the business context while the person holds
       the right. This also means **relicensing later needs every author's consent** — today all
       24 files are `@authors Florian Wiesner`, and that is worth keeping true.
-- [ ] **The Arduino IDE install instructions are wrong, confirmed.** The README and Getting
-      Started both tell users to install via *Sketch → Include Library → Add .ZIP Library*. The
-      IDE accepts two layouts: 1.0 (headers in the root directory) and 1.5 (`library.properties`
-      in the root). This repository has **neither** — no `*.h` and no `library.properties` at
-      root, because the code lives in seven PlatformIO libraries under `lib/`. The IDE rejects
-      the archive. This is live on the site as of `v0.1.7`. Either correct both pages, or fix it
-      properly as part of Step 8, which repairs it as a side effect.
+- [x] ~~**The Arduino IDE install instructions are wrong, confirmed.**~~ Fixed as a side effect
+      of Step 8: the root now carries `library.properties` + a flat root `src/`, exactly the 1.5
+      layout the IDE's *Sketch → Include Library → Add .ZIP Library* expects. The README and
+      Getting Started instructions were correct all along about the *procedure*; what was missing
+      was the repository layout to back it, and that gap is closed.
 
-## Step 8 — OPEN: Arduino Library Manager
+## Step 8 — DONE (registry submission pending): Arduino Library Manager
 
-Wanted, not started. Assessed on 2 August 2026; nothing below has been attempted, it is the
-research so the work does not have to start cold.
-
-**Do this after the Step 5 bench retest, not before.** The retest needs `src/main.cpp` buildable
-exactly as it is, and Step 8 moves `src/`. Listing a driver in the Library Manager that has never
-been on a bus would repeat the trade already made once for `v0.1.7`.
+Restructure complete on this branch. Assessed on 2 August 2026, executed after the Step 5 bench
+retest as planned — the driver had already been on a real bus before the layout moved under it.
 
 ### Why it is worth doing
 
@@ -380,22 +374,36 @@ source edits**. Had the includes carried subdirectories, this would have been a 
 
 ### Checklist
 
-- [ ] Move `lib/*/src/*` (24 files) into a single root `src/`.
-- [ ] **`src/` is the collision** — it currently holds the bench sketch. Move that out and point
-      `platformio.ini`'s `src_dir` at wherever it lands.
-- [ ] Write `library.properties` at root, with `license=BSD-3-Clause` to match `LICENSE` and the
-      `library.json` files. **It needs `includes=KonnextraKNX.h`**: without that field
-      the IDE's *Include Library* menu inserts an `#include` for all 17 headers instead of the
-      one, which breaks the single-include promise every doc page makes.
-- [ ] Collapse the seven `library.json` into one, and fix `bump_version.py` and `verify-version`
-      to match.
-- [ ] Repoint the `Doxyfile` `INPUT` header paths.
-- [ ] Update `CLAUDE.md`'s layout and architecture sections.
-- [ ] Verify: `pio test -e native`, `pio run`, the CI portability matrix, and an actual
-      *Add .ZIP Library* in the Arduino IDE.
-- [ ] Fix the install instructions in `README.md` and `docs/GettingStarted.md`, which are wrong
-      today (see Step 7).
-- [ ] Submit the PR to `arduino/library-registry`.
+- [x] Move `lib/*/src/*` (24 files) into a single root `src/`.
+- [x] **`src/` was the collision** — it held the bench sketch. Moved that out to
+      `examples/BenchTest/BenchTest.ino`. The original plan was to point `platformio.ini`'s
+      `src_dir` at the sketch's new home; what actually shipped is better — `src_dir` stays
+      unset and each `examples/` sketch (five of them, not just the bench one) sets
+      `PLATFORMIO_SRC_DIR=examples/<name>` at invocation time, via `lib_deps = symlink://.` in
+      the shared `[env]` block linking the root library back in. One `platformio.ini` still
+      serves every example instead of hardcoding a single path.
+- [x] Wrote `library.properties` at root, with `license=BSD-3-Clause` to match `LICENSE` and the
+      (now-deleted) `library.json` files, and `includes=KonnextraKNX.h` so the IDE's *Include
+      Library* menu inserts the one intended `#include` rather than all 17 headers. Also added
+      root `keywords.txt` for the IDE's syntax highlighting, which the old `lib/*/` layout had no
+      single place for.
+- [x] Collapsed the seven `library.json` into the one root `library.properties`, and fixed
+      `bump_version.py` and `docs.yml`'s `verify-version` to match.
+- [x] Repointed the `Doxyfile` `INPUT` header paths at flat `src/`.
+- [x] Updated `CLAUDE.md`'s layout and architecture sections.
+- [x] Verified: `pio test -e native`, `PLATFORMIO_SRC_DIR=examples/BenchTest pio run`, and the CI
+      portability matrix all pass against the flattened `src/`. Added a new `arduino-lint` CI job
+      that checks the root layout against the Arduino Library Manager spec; running in
+      `--library-manager submit` mode for now (see below) rather than a manual *Add .ZIP Library*
+      test in the IDE.
+- [x] The install instructions in `README.md` and `docs/GettingStarted.md` needed no separate
+      fix — the new root `library.properties` + root `src/` layout makes them correct as written
+      (see Step 7).
+- [ ] Submit the PR to `arduino/library-registry` — still open. Until it merges, the
+      `arduino-lint` CI job (`.github/workflows/ci.yml`) runs in `--library-manager submit` mode,
+      not `update` (`update` mode assumes the library is already in the registry index and would
+      fail against an unlisted one). **Flip it to `update` mode once the registry PR is
+      accepted.**
 
 ## Step 4c — OPEN: `Website_` fetches the published content and styles it
 

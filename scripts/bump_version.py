@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync the project version into VERSION and every lib/*/library.json file."""
+"""Sync the project version into VERSION and the root library.properties file."""
 import re
 import sys
 from pathlib import Path
