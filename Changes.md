@@ -1,10 +1,11 @@
 # Unreleased changes
 
 Working notes for the next release. This file is **not published** — it is not in the `Doxyfile`
-`INPUT` list. Before a tag its contents are rewritten into `docs/ReleaseNotes.md`, which is the
-user-facing page; afterwards this file is emptied back to the template below.
+`INPUT` list. Before a tag its contents are rewritten into the Release Notes page, which lives in
+the website repo (`docs/content/en/releasenotes.md` and `de/releasenotes.md` in
+`konnextra/Website_`); afterwards this file is emptied back to the template below.
 
-**What earns a line.** The same bar `docs/ReleaseNotes.md` sets for itself: a change that makes
+**What earns a line.** The same bar the Release Notes page sets for itself: a change that makes
 someone edit their sketch, behave differently on the bus, or see something new. Refactors, tests,
 CI and documentation touch-ups do not belong here.
 

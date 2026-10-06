@@ -13,7 +13,7 @@ VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 def pending_changes() -> int:
     """Count the collected release-note lines still sitting in Changes.md.
 
-    Nothing enforces that they were folded into docs/ReleaseNotes.md before a tag, and this
+    Nothing enforces that they were folded into the website's Release Notes before a tag, and this
     script runs at exactly the moment it matters, so it reminds rather than checks.
     """
     if not CHANGES_FILE.exists():
@@ -56,13 +56,14 @@ def main() -> None:
         print(
             f"\nChanges.md still holds {waiting} "
             f"{'entry. Rewrite it' if waiting == 1 else 'entries. Rewrite them'} into "
-            "docs/ReleaseNotes.md under the new version heading, then empty Changes.md."
+            "the website's Release Notes (Website_/docs/content/{en,de}/releasenotes.md) under the "
+            "new version heading, then empty Changes.md."
         )
     else:
-        print("\nChanges.md is empty. Check docs/ReleaseNotes.md already covers this release.")
+        print("\nChanges.md is empty. Check the website's Release Notes already cover this release.")
 
     print(f"\nVersion set to {new_version}. Next steps (not run automatically):")
-    print("  git add VERSION library.properties docs/ReleaseNotes.md Changes.md")
+    print("  git add VERSION library.properties Changes.md")
     print(f"  git commit -m 'Bump version to {new_version}'")
     print(f"  git tag v{new_version}")
     print("  git push --tags")

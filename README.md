@@ -136,7 +136,7 @@ Device types available out of the box: `KnxLight`, `KnxDimmLight`, `KnxRGB`, `Kn
 `KnxFloat`, plus `KnxObject` for anything else.
 
 Full versions of these three sketches are on the [Examples
-page](https://konnextra.github.io/KonnextraKNX/examples.html).
+page](https://konnextra.at/docs/?page=examples&lang=en).
 
 ## Installing
 
@@ -152,7 +152,7 @@ Library…*, then `#include <KonnextraKNX.h>`.
 
 ## Documentation
 
-- **[Getting Started](https://konnextra.github.io/KonnextraKNX/)** — the guided introduction:
+- **[Getting Started](https://konnextra.at/docs/?lang=en)** — the guided introduction:
   addresses, device objects, callbacks, raw sends, debugging.
 - **[API reference](https://konnextra.github.io/KonnextraKNX/annotated.html)** — every class
   and method.

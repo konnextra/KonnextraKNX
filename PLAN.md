@@ -7,7 +7,7 @@ is no longer documentation-only:
 | Open | What | Blocks |
 |---|---|---|
 | ~~**Step 5**~~ | ~~bench retest on real hardware~~ — **done**, the XIAO passed on the real TP-UART2 and eight boards passed the sniffer round | — (unblocked Step 8 and both defects) |
-| **Step 6 rest** | `docs/Hardware.md` content | user input |
+| **Step 6 rest** | Hardware guide content (now in `Website_/docs/content/{en,de}/hardware.md`) | user input |
 | ~~**Step 7**~~ | ~~wrong Arduino IDE install instructions~~ — **done**, fixed as a side effect of Step 8 | — |
 | ~~**Step 8**~~ | ~~Arduino Library Manager — moves `src/`~~ — **done**, registry submission PR still pending | — (was Step 5, now clear) |
 | **Two defects** | read request decoded as 0; dead address-format guards | — (was Step 5, now clear) |
@@ -68,8 +68,8 @@ styles the now-plain Doxygen HTML.
 - **Caching for the PHP fetch.** Hitting GitHub on every page view is fragile and slow. Needs
   some cache layer (APCu, file cache with TTL, or HTTP conditional GET) — which one was never
   discussed.
-- **Hardware description content.** The mechanism is settled — `docs/Hardware.md` exists and is
-  already in Doxygen's `INPUT`, so it flows through the same pipeline as every other page. What
+- **Hardware description content.** The mechanism is settled — the Hardware guide exists in the
+  website repo (`Website_/docs/content/{en,de}/hardware.md`) like every other guide. What
   is *not* settled: who writes the content and from what source. The file is still a stub.
 - **Transition for the already-published Step 3 output** sitting in `Website_/main` (commit
   `f153b37`): replaced outright, or does `documentation.php` need a fallback path?
@@ -292,7 +292,7 @@ anywhere except `SupportedBoards`.**
 
 Still open:
 
-- [ ] **`docs/Hardware.md` is a placeholder** (`8e4975a`), not a stub any more: it carries the
+- [ ] **The Hardware guide is a placeholder** (`8e4975a`; now `Website_/docs/content/{en,de}/hardware.md`), not a stub any more: it carries the
       parts that are verifiable from the code — transceiver options, the three wires, 19200 8E1,
       the ESP32 `setPins()` story, no reset line, the reference board's D7/D6 — and opens with a
       visible "this page is not finished" banner. **Still needed from the user:** bus supply and
@@ -438,7 +438,7 @@ page named with it.
 - **`KnxEnums.h` is mixed-scope** — three documented user-facing enums live alongside untouched
   internal ones, currently handled with `EXCLUDE_SYMBOLS` in the `Doxyfile`. Revisit if the file
   grows.
-- **Root `README.md`** exists again but is hand-maintained alongside `docs/GettingStarted.md`.
-  The two overlap; if they drift, the README is the one users see first.
-- **`examples/` is mirrored by `docs/Examples.md`** — change one, change the other. Nothing
-  enforces this.
+- **Root `README.md`** exists again but is hand-maintained alongside the website's Getting
+  Started guide. The two overlap; if they drift, the README is the one users see first.
+- **`examples/` is mirrored by the website's Examples guide** (`Website_/docs/content/{en,de}/examples.md`)
+  — change one, change the other. Nothing enforces this.
