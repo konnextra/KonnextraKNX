@@ -18,28 +18,3 @@ reader is actually scanning for.
 ## Changes
 
 <!-- - Breaking: `begin()` no longer opens the port. Call `setPins()` before it. -->
-
-- **Eight boards are now listed as having actually run the library**, on the Supported Boards
-  page: XIAO ESP32-C6, ESP32-WROOM-32, Nucleo-L432KC, UNO R4 Minima, GIGA R1, Mega 2560, Uno R3
-  and Pico 2. Until now the page only said which boards CI compiles, which is a weaker promise
-  than it looked.
-
-- **On the Arduino Giga R1 the default serial port is `Serial2`, not `Serial1`.** The library
-  always behaved this way — it asks your board's core which UART is free, and the Giga answers
-  `Serial2` — but the documentation claimed `Serial1` flat out. A Giga sketch written without a
-  port talks on D18/D19. Now verified on hardware and corrected on the Supported Boards page.
-
-- The library has a licence: **BSD 3-Clause**. Use it, change it, ship it inside a commercial
-  product; keep the copyright notice, and do not advertise a derived product with the Konnextra
-  name. Until now the repository named no terms at all, which by default left nobody permitted
-  to do any of it.
-
-- **Breaking: the library and its class are now `KonnextraKNX`, not `Konnextra`.** Change
-  `#include <Konnextra.h>` to `#include <KonnextraKNX.h>`, and `Konnextra knx(...)` to
-  `KonnextraKNX knx(...)`, in every sketch. Nothing else about the API changed.
-
-- **The library now installs through the Arduino IDE Library Manager / "Add .ZIP Library".**
-  The repository root previously carried no library manifest at all, so both install paths were
-  rejected; it now has a root `library.properties` and a flat root `src/`, the layout the IDE's
-  1.5 spec expects. PlatformIO users pointing `lib_deps` straight at the repository URL may see
-  the dependency resolve differently as a result.

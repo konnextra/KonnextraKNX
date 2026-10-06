@@ -3,6 +3,28 @@
 Changes that affect your sketch. Releases before 0.1.7 predate the current API and are not
 listed.
 
+## 0.1.8
+
+**Breaking: the library and its class are now `KonnextraKNX`.** Change `#include <Konnextra.h>`
+to `#include <KonnextraKNX.h>`, and `Konnextra knx(...)` to `KonnextraKNX knx(...)`, in every
+sketch. Nothing else about the API changed.
+
+**Installs from the Arduino IDE.** The Library Manager and "Add .ZIP Library" both rejected the
+repository before, because it carried no library manifest at its root. It now has one, and the
+flat `src/` layout the IDE expects. If you point PlatformIO's `lib_deps` straight at the
+repository URL, the dependency may resolve differently.
+
+**Eight boards have actually run it.** @ref boards now lists the boards the library was tested
+on, not just the ones CI compiles: XIAO ESP32-C6, ESP32-WROOM-32, Nucleo-L432KC, UNO R4 Minima,
+GIGA R1, Mega 2560, Uno R3 and Pico 2.
+
+**The Giga's default port is `Serial2`.** The library always picked it, because it asks the core
+which UART is free, but the documentation said `Serial1`. A Giga sketch written without a port
+talks on D18/D19.
+
+**Licensed under BSD 3-Clause.** Use it, change it and ship it inside a commercial product. Keep
+the copyright notice, and do not advertise a derived product with the Konnextra name.
+
 ## 0.1.7
 
 **The serial port is now yours to choose.** The library no longer builds its own UART on fixed
