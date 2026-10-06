@@ -10,14 +10,14 @@ jobs:
   native-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-pio
       - run: pio test -e native
 
   firmware-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-pio
       - run: PLATFORMIO_SRC_DIR=examples/BenchTest pio run -e seeed_xiao_esp32c6
 
@@ -36,7 +36,7 @@ jobs:
           - pico               # RP2040, Earle Philhower core
           - esp32-s3-devkitc-1 # ESP32, non-XIAO variant
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-pio
       - name: Build every example
         run: |
@@ -53,7 +53,7 @@ jobs:
   uno-single-uart:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-pio
       - name: Explicit-port sketch builds
         run: PLATFORMIO_SRC_DIR=examples/ExplicitPort pio run -e uno
@@ -71,8 +71,8 @@ jobs:
   arduino-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: arduino/arduino-lint-action@v1
+      - uses: actions/checkout@v7
+      - uses: arduino/arduino-lint-action@v3
         with:
           library-manager: submit
           compliance: strict
