@@ -21,3 +21,6 @@ doxygen/
 
 # Local git worktrees (scratch, not project content)
 .worktrees/
+
+# KNX specs + TP-UART2 datasheet: third-party copyrighted PDFs, kept local only
+reference/

@@ -40,7 +40,7 @@ compile every `.cpp` twice and fail to link on duplicate symbols.
 | `src/` | the library's own source — flat, one file per class/module (see Architecture below) |
 | `examples/` | standalone `.ino` sketches, one folder each (`DeviceObject`, `StatelessSend`, `CustomKnxObject`, `ExplicitPort`). They mirror the Examples guide in the website repo (`konnextra/Website_`, `docs/content/en/examples.md` and `de/examples.md`) — change one, change the other. `BenchTest` is the exception: it's the hardware bench-test sketch (formerly root `src/main.cpp`), not part of the public showcase, and has no entry there. All of them, `BenchTest` included, are compile-checked by CI's `portability` job (`PLATFORMIO_SRC_DIR=<folder> pio run -e <env>`); check them by hand only for behavior CI can't compile-check (docs staying in sync, runtime correctness). |
 | `docs/` | `ApiReference.md`, the landing page of the generated API reference. The user guides are **not** here: they live in the website repo (`konnextra/Website_`, `docs/content/{en,de}/`), in English and German. |
-| `reference/` | KNX standard specifications + the TP-UART2 datasheet (PDFs, read-only reference) |
+| `reference/` | KNX standard specifications + the TP-UART2 datasheet (PDFs, read-only reference). **Local only, gitignored** — third-party copyrighted documents, and the Library Manager would ship them with every install. Older tags (≤ v0.1.8) still contain them. |
 | `.agents/specs/` | design docs from the `superpowers:brainstorming` workflow — the *why* behind completed work. **New specs go here**, not to the skill's default `docs/superpowers/specs/`, which would pollute the user-facing `docs/`. |
 | `scripts/` | `bump_version.py` — the release helper |
 
