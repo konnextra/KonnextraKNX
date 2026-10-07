@@ -3,8 +3,7 @@
 **Talk to a KNX bus from an Arduino sketch — no ETS, no KNX-stack expertise.**
 
 > **🚧 Under development.** The library works and is tested on real hardware, but the API is
-> still moving and things will change before 1.0. The Konnextra Bridge board and the Konnextra
-> website both launch shortly.
+> still moving and things will change before 1.0. The Konnextra Bridge board launches shortly.
 
 KNX is the building-automation standard behind a lot of professional lighting, blind and
 climate installations. Getting a microcontroller onto that bus normally means an ETS project,
@@ -79,8 +78,8 @@ and real `L_Data.con` confirmations.
 ## Boards
 
 Built on the **Arduino framework** and usable from any Arduino-compatible board. Every push
-compiles the examples against AVR, Renesas, STM32duino, RP2040 and ESP32 — one job per core
-family. Development and bench testing happen on the **Seeed XIAO ESP32-C6**.
+compiles the examples against AVR, Renesas, Arduino Mbed, STM32duino, RP2040 and ESP32 — one
+job per core family. Development and bench testing happen on the **Seeed XIAO ESP32-C6**.
 
 The node uses your board's default KNX port, `Serial1` on almost every board, and opens it at
 19200 8E1 for you. Name a different one when the transceiver sits elsewhere:
@@ -135,10 +134,20 @@ Device types available out of the box: `KnxLight`, `KnxDimmLight`, `KnxRGB`, `Kn
 `KnxTemperature`, `KnxHumidity`, `KnxPercent`, `KnxTime`, `KnxDate`, `KnxDateTime`, `KnxChar`,
 `KnxFloat`, plus `KnxObject` for anything else.
 
-Full versions of these three sketches are on the [Examples
+Full versions of these three sketches ship with the library — in the Arduino IDE under
+*File → Examples → KonnextraKNX* — and are walked through on the [Examples
 page](https://konnextra.at/docs/?page=examples&lang=en).
 
 ## Installing
+
+**Arduino IDE** — open the Library Manager (*Tools → Manage Libraries…*), search for
+**KonnextraKNX** and click *Install*. Then `#include <KonnextraKNX.h>`.
+
+**Arduino CLI**:
+
+```sh
+arduino-cli lib install KonnextraKNX
+```
 
 **PlatformIO** — add to your `platformio.ini`:
 
@@ -147,8 +156,7 @@ lib_deps =
     https://github.com/konnextra/KonnextraKNX.git
 ```
 
-**Arduino IDE** — download the library and add it through *Sketch → Include Library → Add .ZIP
-Library…*, then `#include <KonnextraKNX.h>`.
+To pin a release, append its tag to the URL: `…/KonnextraKNX.git#v<version>`.
 
 ## Documentation
 
