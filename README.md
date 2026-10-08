@@ -153,10 +153,10 @@ arduino-cli lib install KonnextraKNX
 
 ```ini
 lib_deps =
-    https://github.com/konnextra/KonnextraKNX.git
+    konnextra/KonnextraKNX
 ```
 
-To pin a release, append its tag to the URL: `…/KonnextraKNX.git#v<version>`.
+To pin a release, give a version: `konnextra/KonnextraKNX@^0.1.9`.
 
 ## Documentation
 
