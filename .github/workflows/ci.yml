@@ -65,14 +65,13 @@ jobs:
           fi
           echo "correctly rejected"
 
-  # library-manager: submit until the registry PR (arduino/library-registry) is accepted —
-  # `update` mode fails every run with LP018 ("not found in the Library Manager index") until
-  # then, since it assumes the library is already registered. Flip to `update` once accepted.
+  # library-manager: update — the library is registered (arduino/library-registry#9305), so
+  # this checks each push against the rules for releases of an already-listed library.
   arduino-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: arduino/arduino-lint-action@v3
         with:
-          library-manager: submit
+          library-manager: update
           compliance: strict

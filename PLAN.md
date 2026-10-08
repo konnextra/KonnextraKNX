@@ -9,7 +9,7 @@ is no longer documentation-only:
 | ~~**Step 5**~~ | ~~bench retest on real hardware~~ — **done**, the XIAO passed on the real TP-UART2 and eight boards passed the sniffer round | — (unblocked Step 8 and both defects) |
 | **Step 6 rest** | Hardware guide content (now in `Website_/docs/content/{en,de}/hardware.md`) | user input |
 | ~~**Step 7**~~ | ~~wrong Arduino IDE install instructions~~ — **done**, fixed as a side effect of Step 8 | — |
-| ~~**Step 8**~~ | ~~Arduino Library Manager — moves `src/`~~ — **done**, registry submission PR still pending | — (was Step 5, now clear) |
+| ~~**Step 8**~~ | ~~Arduino Library Manager — moves `src/`~~ — **done**, listed in the Library Manager since 0.1.9 | — (was Step 5, now clear) |
 | **Two defects** | read request decoded as 0; dead address-format guards | — (was Step 5, now clear) |
 | **Step 4c** | `Website_` fetches and styles the published content — other repo | — |
 
@@ -336,7 +336,7 @@ Each new page must be added to the `Doxyfile` `INPUT` list by hand (`RECURSIVE =
       Getting Started instructions were correct all along about the *procedure*; what was missing
       was the repository layout to back it, and that gap is closed.
 
-## Step 8 — DONE (registry submission pending): Arduino Library Manager
+## Step 8 — DONE: Arduino Library Manager
 
 Restructure complete on this branch. Assessed on 2 August 2026, executed after the Step 5 bench
 retest as planned — the driver had already been on a real bus before the layout moved under it.
@@ -400,11 +400,9 @@ source edits**. Had the includes carried subdirectories, this would have been a 
 - [x] The install instructions in `README.md` and `docs/GettingStarted.md` needed no separate
       fix — the new root `library.properties` + root `src/` layout makes them correct as written
       (see Step 7).
-- [ ] Submit the PR to `arduino/library-registry` — still open. Until it merges, the
-      `arduino-lint` CI job (`.github/workflows/ci.yml`) runs in `--library-manager submit` mode,
-      not `update` (`update` mode assumes the library is already in the registry index and would
-      fail against an unlisted one). **Flip it to `update` mode once the registry PR is
-      accepted.**
+- [x] Submitted as arduino/library-registry#9305, merged 7 October 2026; `0.1.8` and `0.1.9`
+      are in the index since 8 October. `v0.1.9` was cut first so the indexed tag no longer
+      carries the `reference/` PDFs. The `arduino-lint` CI job now runs in `update` mode.
 
 ## Step 4c — OPEN: `Website_` fetches the published content and styles it
 
