@@ -6,26 +6,27 @@
  * @details See KnxDriver.h. Adapted from the thesis KNX_TPUART2 driver; the telegram-layer
  *          coupling is removed (RX is exposed as reassembled frames via poll()) and the send
  *          path now reads the real L_Data.con instead of hard-returning true (PLAN §9).
+ *          Bring-up is chip-specific and lives in KnxBringUp; this file only pumps it.
 */
 
 //----Libraries----
 #include "KnxDriver.h"
 
 #ifdef KNX_DEFAULT_PORT
-KnxDriver::KnxDriver(String physicalAddress)
-	: KnxDriver(physicalAddress, KNX_DEFAULT_PORT) {}
+KnxDriver::KnxDriver(String physicalAddress, KnxTransceiver chip)
+	: KnxDriver(physicalAddress, KNX_DEFAULT_PORT, chip) {}
 #endif
 
 // The port is remembered twice on purpose: as a Stream for the byte traffic, and as a
 // HardwareSerial so begin() knows it may configure the line.
-KnxDriver::KnxDriver(String physicalAddress, HardwareSerial& port)
+KnxDriver::KnxDriver(String physicalAddress, HardwareSerial& port, KnxTransceiver chip)
 	: p_io(&port), p_uart(&port),
-	  physicalAddress(physicalAddressFromString(physicalAddress)) {}
+	  physicalAddress(physicalAddressFromString(physicalAddress)), chip(chip) {}
 
 // Stream path: the caller owns the line settings, so p_uart stays null.
-KnxDriver::KnxDriver(String physicalAddress, Stream& stream)
+KnxDriver::KnxDriver(String physicalAddress, Stream& stream, KnxTransceiver chip)
 	: p_io(&stream), p_uart(nullptr),
-	  physicalAddress(physicalAddressFromString(physicalAddress)) {}
+	  physicalAddress(physicalAddressFromString(physicalAddress)), chip(chip) {}
 
 //---- Private methods ----
 
@@ -33,58 +34,65 @@ void KnxDriver::sendCommand(const uint8_t* cmd, uint16_t len) {
 	p_io->write(cmd, len);
 }
 
-void KnxDriver::clearBuffer(void) {
-	while (p_io->available()) (void)p_io->read();
+// Readable name of a bring-up step, for the debug log.
+static const char* stepName(KnxBringUp::Step s) {
+	switch (s) {
+		case KnxBringUp::Step::Reset:          return "reset";
+		case KnxBringUp::Step::SystemStatus:   return "system status";
+		case KnxBringUp::Step::SetAddress:     return "set address";
+		case KnxBringUp::Step::AwaitConfigure: return "address confirmation";
+		case KnxBringUp::Step::State:          return "state";
+		default:                               return "-";
+	}
 }
 
-bool KnxDriver::resetRequest(void) {
-	// Copied into a local first: taking the address of a static constexpr member ODR-uses
-	// it, which needs an out-of-line definition before C++17. The copy keeps the driver
-	// buildable on toolchains that still default to C++11, as AVR does.
-	const uint8_t cmd = U_RESET_REQ;
-	sendCommand(&cmd, sizeof(cmd));
-	clearBuffer();
-	delay(RESPONSE_TIME_MS);
+bool KnxDriver::bringUp(const char* phase) {
+	const bool ncn = (chip == KnxTransceiver::Ncn5130);
+	const char* chipName = ncn ? "ncn5130" : "tpuart2";
 
-	// Wait for Reset.indication.
-	uint32_t start = millis();
-	while (millis() - start < RESPONSE_TIME_MS) {
-		if (p_io->available()) {
-			uint8_t b = p_io->read();
-			if (b != 0x00 && b == U_RESET_IND) return true;   // ignore RX-idle 0x00
-		}
+	bringUpSm.start(chip, physicalAddress, millis());
+	while (!bringUpSm.finished()) {
+		const uint8_t* cmd;
+		uint8_t len;
+		if (bringUpSm.nextCommand(cmd, len)) sendCommand(cmd, len);
+		while (p_io->available()) bringUpSm.feed((uint8_t)p_io->read(), millis());
+		bringUpSm.tick(millis());
+	}
+	reassembler.reset();   // frames seen during bring-up are dropped, never half-kept
+
+	if (ncn && bringUpSm.systemStatusByte() != 0) {
+		const KnxTransceiverProtocol::SystemStatus st =
+			KnxTransceiverProtocol::decodeSystemStatus(bringUpSm.systemStatusByte());
+		static const char* const MODES[] = { "power-up", "sync", "stop", "normal" };
+		KnxDebug::log("DRV ncn5130 sysstat 0x%02X: v20v %s vdd2 %s vbus %s vfilt %s xtal %s%s, mode %s",
+			(unsigned)bringUpSm.systemStatusByte(),
+			st.v20v ? "ok" : "LOW", st.vdd2 ? "ok" : "LOW", st.vbus ? "ok" : "LOW",
+			st.vfilt ? "ok" : "LOW", st.xtal ? "ok" : "BAD",
+			st.thermalWarning ? ", THERMAL WARNING" : "", MODES[st.mode]);
+	}
+	if (ncn && bringUpSm.configureByte() != 0) {
+		KnxDebug::log("DRV ncn5130 address %u.%u.%u confirmed, configure 0x%02X (auto-ack %s)",
+			(unsigned)physicalAddress.area, (unsigned)physicalAddress.line,
+			(unsigned)physicalAddress.device, (unsigned)bringUpSm.configureByte(),
+			KnxTransceiverProtocol::autoAcknowledgeActive(bringUpSm.configureByte()) ? "on" : "OFF");
 	}
 
-	// No hardware fallback: the front end no longer exposes a /RESET line, so a soft reset
-	// that goes unanswered is simply a failure to report.
+	if (bringUpSm.succeeded()) {
+		KnxDebug::log("DRV %s %s: ok, state 0x%02X", chipName, phase,
+			(unsigned)bringUpSm.stateByte());
+		return true;
+	}
+
+	const KnxBringUp::Step at = bringUpSm.failedAt();
+	KnxDebug::log("DRV !! %s %s FAILED at %s (state 0x%02X)", chipName, phase, stepName(at),
+		(unsigned)bringUpSm.stateByte());
+	if (ncn && (at == KnxBringUp::Step::SystemStatus || at == KnxBringUp::Step::AwaitConfigure)) {
+		KnxDebug::log("DRV    is this really an NCN5130? For a TP-UART2 pass KnxTransceiver::TpUart2");
+	}
+	if (at == KnxBringUp::Step::Reset) {
+		KnxDebug::log("DRV    no reset answer: check wiring (RX/TX), bus voltage and the chip choice");
+	}
 	return false;
-}
-
-uint8_t KnxDriver::stateRequest(void) {
-	const uint8_t cmd = U_STATE_REQ;   // see resetRequest() for why this is copied
-	sendCommand(&cmd, sizeof(cmd));
-	delay(RESPONSE_TIME_MS);
-
-	uint32_t start = millis();
-	while (millis() - start < RESPONSE_TIME_MS) {
-		if (p_io->available()) return p_io->read();
-	}
-	return 0xFF;
-}
-
-void KnxDriver::applyPhysicalAddress(void) {
-	uint8_t addressHigh = (physicalAddress.area << 4) | physicalAddress.line;
-	uint8_t addressLow  = physicalAddress.device;
-	uint8_t cmd[3]      = { U_SET_ADDRESS, addressHigh, addressLow };
-	sendCommand(cmd, sizeof(cmd));
-}
-
-bool KnxDriver::isConfirmation(uint8_t b) {
-	return (b & CON_MASK) == CON_PATTERN;
-}
-
-bool KnxDriver::isPositiveConfirmation(uint8_t b) {
-	return (b & CON_POSITIVE) != 0;
 }
 
 bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
@@ -106,7 +114,7 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 			continue;
 		}
 
-		if (isConfirmation(b)) {
+		if (KnxTransceiverProtocol::isConfirmation(b)) {
 			if (echoed != 0 && echoed != length) {
 				// Partial echo: the transceiver confirmed mid-echo, so the frame on the
 				// bus may differ from what was handed to sendTelegram().
@@ -117,8 +125,8 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 			// The con byte itself is logged: these are the spec-derived CON_* constants,
 			// the least verified part of the driver, so show the raw byte behind the verdict.
 			KnxDebug::log("DRV con byte 0x%02X -> %s", (unsigned)b,
-				isPositiveConfirmation(b) ? "positive" : "NEGATIVE");
-			return isPositiveConfirmation(b);
+				KnxTransceiverProtocol::isPositiveConfirmation(b) ? "positive" : "NEGATIVE");
+			return KnxTransceiverProtocol::isPositiveConfirmation(b);
 		}
 		KnxDebug::log("DRV unexpected byte 0x%02X while awaiting con (echo %u/%u)",
 			(unsigned)b, (unsigned)echoed, (unsigned)length);
@@ -141,21 +149,11 @@ bool KnxDriver::begin(void) {
 		KnxDebug::log("DRV using caller-configured stream");
 	}
 
-	bool reset_ok = resetRequest();
-	applyPhysicalAddress();
-	uint8_t state = stateRequest();
-	KnxDebug::log("DRV begin: reset %s, state 0x%02X",
-		reset_ok ? "ok" : "FAILED", (unsigned)state);
-	return reset_ok && (state == U_STATE_IND_OK);
+	return bringUp("begin");
 }
 
 bool KnxDriver::reset(void) {
-	bool reset_ok = resetRequest();
-	applyPhysicalAddress();
-	uint8_t state = stateRequest();
-	KnxDebug::log("DRV reset: %s, state 0x%02X",
-		reset_ok ? "ok" : "FAILED", (unsigned)state);
-	return reset_ok && (state == U_STATE_IND_OK);
+	return bringUp("reset");
 }
 
 bool KnxDriver::sendTelegram(const uint8_t* frame, uint8_t length) {
@@ -163,7 +161,8 @@ bool KnxDriver::sendTelegram(const uint8_t* frame, uint8_t length) {
 
 	uint8_t pair[2];
 	for (uint8_t i = 0; i < length; i++) {
-		pair[0] = (uint8_t)((i == length - 1 ? U_DATA_END : U_DATA_START_CONTINUE) | (i & 0x3F));
+		pair[0] = (uint8_t)((i == length - 1 ? KnxTransceiverProtocol::U_DATA_END
+		                                   : KnxTransceiverProtocol::U_DATA_START_CONTINUE) | (i & 0x3F));
 		pair[1] = frame[i];
 		sendCommand(pair, sizeof(pair));
 	}

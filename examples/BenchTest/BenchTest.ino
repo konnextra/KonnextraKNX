@@ -25,6 +25,10 @@
 #define PHYS_ADDR           "1.1.5"   // this device's KNX physical address
 #define TOGGLE_INTERVAL_MS  5000      // how often to flip the light
 
+// The bus coupler chip on the bench board: the KONNEXTRA BCU light is an NCN5130, the older
+// STKNX/ATtiny bridge and a stock TP-UART2 both speak the TP-UART2 protocol.
+#define KNX_CHIP            KnxTransceiver::Ncn5130   // or KnxTransceiver::TpUart2
+
 // Flip to true when something misbehaves: traces every telegram sent and received (including
 // foreign ones), frame build/parse, value coding and driver traffic, all prefixed with [knx].
 // Left off by default — the printing itself costs time on the receive path, so a clean run
@@ -53,7 +57,7 @@
 #endif
 
 //---- KNX bus connection: address typed once, driving the port declared above ----
-KonnextraKNX knx(PHYS_ADDR, knxPort);
+KonnextraKNX knx(PHYS_ADDR, knxPort, KNX_CHIP);
 
 //---- The light under test: (bus connection, switching GA, status GA) ----
 // Sends on/off to 0/1/1, listens for switching status on 1/1/1.

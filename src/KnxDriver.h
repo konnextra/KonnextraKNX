@@ -4,9 +4,9 @@
  * @name KnxDriver.h
  * @date 16.07.2026
  * @authors Florian Wiesner
- * @details Concrete link-layer driver for the STKNX-behind-ATTiny front end, which mirrors
- *          the Siemens TP-UART2 UART protocol. Implements IKnxDriver: port bring-up, reset/
- *          state handshake, per-byte telegram transmission with a real L_Data.con result
+ * @details Concrete link-layer driver for a UART bus coupler: the onsemi NCN5130 (default)
+ *          or the Siemens TP-UART2 and compatibles, incl. the STKNX-behind-ATTiny front end.
+ *          Implements IKnxDriver: port bring-up (chip-specific, via KnxBringUp), per-byte telegram transmission with a real L_Data.con result
  *          (PLAN §9), and byte-stream RX via KnxReassembler.
  *          Replaces the thesis KNX_TPUART2 and is decoupled from the telegram/coordinator
  *          layers — the coordinator injects it as an IKnxDriver*.
@@ -17,7 +17,8 @@
  *          architecture guard anywhere below.
  *
  *          Timing and con-byte values follow the TP-UART2 spec and are verified on hardware —
- *          against the STKNX/ATTiny front end and against a standard TP-UART2 transceiver.
+ *          against the STKNX/ATTiny front end and against a standard TP-UART2 transceiver. The
+ *          NCN5130 shares the send path, echo and con byte; only bring-up differs.
 */
 
 //---- Standard / platform libraries ----
@@ -31,6 +32,8 @@
 
 //---- Other custom module headers ----
 #include "KnxReassembler.h"
+#include "KnxTransceiverProtocol.h"
+#include "KnxBringUp.h"
 
 // The port used by the address-only constructor. Resolved once, here, so the rest of the
 // driver never names a board or an architecture. Override it per project if the front end
@@ -57,34 +60,12 @@
 
 class KnxDriver : public IKnxDriver {
 	private:
-		//---- TP-UART2 command bytes ----
-		static constexpr uint8_t U_RESET_REQ           = 0x01;
-		static constexpr uint8_t U_STATE_REQ           = 0x02;
-		static constexpr uint8_t U_ACK_INFO_ACK        = 0x11;
-		static constexpr uint8_t U_ACK_INFO_BUSY       = 0x12;
-		static constexpr uint8_t U_ACK_INFO_NACK       = 0x14;
-		static constexpr uint8_t U_SET_ADDRESS         = 0x28;
-		static constexpr uint8_t U_DATA_START_CONTINUE = 0x80;
-		static constexpr uint8_t U_DATA_END            = 0x40;
-
-		//---- TP-UART2 response codes ----
-		static constexpr uint8_t U_RESET_IND    = 0x03;
-		static constexpr uint8_t U_STATE_IND_OK = 0x07;
-
-		// L_Data.con: fixed low-nibble pattern 0x_B; bit 7 = positive confirmation.
-		// Verified against reference/TP-UART2.pdf, which encodes L_DATA.confirm as 'x0001011'
-		// with x = 1 positive — and against a bench run reporting 0x8B.
-		static constexpr uint8_t CON_MASK      = 0x7F;
-		static constexpr uint8_t CON_PATTERN   = 0x0B;
-		static constexpr uint8_t CON_POSITIVE  = 0x80;
-
 		//---- Timing ----
-		static constexpr uint8_t  RESPONSE_TIME_MS = 10;   // U_ command response window
 		static constexpr uint16_t CON_TIMEOUT_MS   = 100;  // L_Data.con window after TX
 
 		//---- Link settings ----
-		// The TP-UART2 line format. SERIAL_8E1 is never cached in a member: AVR types the
-		// config parameter as uint8_t, the Arduino core API as uint16_t, so it is passed
+		// The line format both chips use (the NCN5130 board is strapped for 9-bit UART, which
+		// is 8E1). SERIAL_8E1 is never cached in a member: AVR types the config parameter as uint8_t, the Arduino core API as uint16_t, so it is passed
 		// straight to begin() at the call site instead.
 		static constexpr uint32_t BAUDRATE = 19200;
 
@@ -97,23 +78,17 @@ class KnxDriver : public IKnxDriver {
 
 		KnxReassembler  reassembler;
 		PhysicalAddress physicalAddress;
+		KnxTransceiver  chip;        // fixed at construction
+		KnxBringUp      bringUpSm;
 
 		//---- Private methods ----
 		// Writes a raw command byte sequence to the transceiver.
 		void sendCommand(const uint8_t* cmd, uint16_t len);
-		// Sends Reset.request and waits for Reset.indication.
-		bool resetRequest(void);
-		// Sends State.request and returns the raw State.indication byte (0xFF on timeout).
-		uint8_t stateRequest(void);
-		// Sends the stored physical address to the transceiver (address filtering / ACK).
-		void applyPhysicalAddress(void);
-		// Flushes pending RX bytes.
-		void clearBuffer(void);
+		// Shared by begin() and reset(): runs KnxBringUp to completion, pumping its commands to
+		// the port and RX bytes into it, then logs the outcome. Returns bringUpSm.succeeded().
+		bool bringUp(const char* phase);
 		// Consumes the transmit echo, then reads the L_Data.con within CON_TIMEOUT_MS.
 		bool awaitConfirmation(const uint8_t* frame, uint8_t length);
-		// Classifies a byte as an L_Data.con and its polarity.
-		static bool isConfirmation(uint8_t b);
-		static bool isPositiveConfirmation(uint8_t b);
 
 	public:
 		//---- Constructors ----
@@ -123,20 +98,25 @@ class KnxDriver : public IKnxDriver {
 		 * @details The port is `Serial1` on most boards; begin() opens it at 19200 8E1.
 		 *          Override the choice with `-DKNX_DEFAULT_PORT=Serial2`.
 		 * @param physicalAddress Physical address of this device (e.g. "1.1.5").
+		 * @param chip            The bus coupler chip: KnxTransceiver::Ncn5130 (default) or
+		 *                        KnxTransceiver::TpUart2.
 		*/
-		KnxDriver(String physicalAddress);
+		KnxDriver(String physicalAddress, KnxTransceiver chip = KnxTransceiver::Ncn5130);
 #else
 		// This board has no hardware UART free for KNX — its only port is the console.
 		// Pass one explicitly instead:  KonnextraKNX knx("1.1.5", Serial);
-		KnxDriver(String physicalAddress) = delete;
+		KnxDriver(String physicalAddress, KnxTransceiver chip = KnxTransceiver::Ncn5130) = delete;
 #endif
 
 		/**
 		 * @brief Constructs the driver on a port you name; begin() opens it at 19200 8E1.
 		 * @param physicalAddress Physical address of this device (e.g. "1.1.5").
 		 * @param port            The serial port the transceiver is wired to.
+		 * @param chip            The bus coupler chip: KnxTransceiver::Ncn5130 (default) or
+		 *                        KnxTransceiver::TpUart2.
 		*/
-		KnxDriver(String physicalAddress, HardwareSerial& port);
+		KnxDriver(String physicalAddress, HardwareSerial& port,
+		          KnxTransceiver chip = KnxTransceiver::Ncn5130);
 
 		/**
 		 * @brief Constructs the driver on a stream you have already configured yourself.
@@ -144,8 +124,17 @@ class KnxDriver : public IKnxDriver {
 		 *          already be open at 19200 8E1 — KNX will not work at any other setting.
 		 * @param physicalAddress Physical address of this device (e.g. "1.1.5").
 		 * @param stream          An open stream connected to the transceiver.
+		 * @param chip            The bus coupler chip: KnxTransceiver::Ncn5130 (default) or
+		 *                        KnxTransceiver::TpUart2.
 		*/
-		KnxDriver(String physicalAddress, Stream& stream);
+		KnxDriver(String physicalAddress, Stream& stream,
+		          KnxTransceiver chip = KnxTransceiver::Ncn5130);
+
+		/**
+		 * @brief The bus coupler chip this driver was configured for.
+		 * @return KnxTransceiver::Ncn5130 or KnxTransceiver::TpUart2.
+		*/
+		KnxTransceiver transceiver(void) const { return chip; }
 
 		//---- IKnxDriver ----
 		/**

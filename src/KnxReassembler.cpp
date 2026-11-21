@@ -12,16 +12,16 @@
 void KnxReassembler::reset(void) {
 	index        = 0;
 	expectedLen  = 0;
-	inFrame      = false;
+	receiving    = false;
 }
 
 bool KnxReassembler::feed(uint8_t byte) {
 	// Idle: wait for any legal L_Data_Standard control byte, ignore everything else.
-	if (!inFrame) {
+	if (!receiving) {
 		if (!isControlByte(byte)) return false;
 		index       = 0;
 		expectedLen = 0;
-		inFrame     = true;
+		receiving   = true;
 	}
 
 	// Guard against a runaway frame (never saw a valid length).
@@ -45,7 +45,7 @@ bool KnxReassembler::feed(uint8_t byte) {
 	// Complete frame buffered — hand it off and arm for the next one.
 	if (expectedLen != 0 && index >= expectedLen) {
 		completedLen = index;
-		inFrame      = false;
+		receiving    = false;
 		return true;
 	}
 

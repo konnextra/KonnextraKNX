@@ -36,6 +36,15 @@ enum class KnxDpt : uint8_t {
 	UNKNOWN 		///< no/unknown datapoint type
 };
 
+/**
+ * @brief Which bus coupler chip the KNX serial port is wired to. Pass it as the last
+ *        constructor argument of KonnextraKNX; the default is the NCN5130.
+*/
+enum class KnxTransceiver : uint8_t {
+	Ncn5130,	///< onsemi NCN5130 (KONNEXTRA BCU light) — the default
+	TpUart2		///< Siemens TP-UART2 and compatibles, incl. the STKNX/ATtiny bridge
+};
+
 //---- Link-layer acknowledge codes ----
 enum class AcknowledgeInfo : uint8_t {
 	ACK,

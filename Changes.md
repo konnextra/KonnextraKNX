@@ -19,3 +19,11 @@ reader is actually scanning for.
 ## Changes
 
 <!-- - Breaking: `begin()` no longer opens the port. Call `setPins()` before it. -->
+- Breaking: the library now targets the onsemi **NCN5130** (KONNEXTRA BCU light) by default. On a
+  TP-UART2 — including the STKNX/ATtiny bridge — name the chip as the last constructor argument:
+  `KonnextraKNX knx("1.1.5", KnxTransceiver::TpUart2);`. Without it, `begin()` returns false on a
+  TP-UART2.
+- New: `KnxTransceiver` selects the bus coupler chip, in every `KonnextraKNX` constructor.
+- `begin()` no longer mistakes bus traffic during start-up for the chip's answers, so it also
+  succeeds on a busy bus. With debug mode on, the NCN5130's supply rails and operating mode are
+  logged at start-up.

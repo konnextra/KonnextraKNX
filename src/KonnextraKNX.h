@@ -9,7 +9,8 @@
  *          KnxBlind, KnxTemperature, …) — so a sketch needs just:
  *
  *              #include <KonnextraKNX.h>
- *              KonnextraKNX knx("1.1.5");                   // this device's KNX address
+ *              KonnextraKNX knx("1.1.5");                   // this device's KNX address (NCN5130)
+ *              // KonnextraKNX knx("1.1.5", KnxTransceiver::TpUart2);   // on a TP-UART2
  *              KnxLight kitchen(knx, "0/1/1", "0/3/0");
 */
 
@@ -47,13 +48,17 @@ class KonnextraKNX : public KnxCoordinator {
 		 *          with `-DKNX_DEFAULT_PORT=Serial2`.
 		 * @param physicalAddress This device's KNX physical address as "area.line.device",
 		 *                        e.g. "1.1.5".
+		 * @param chip            The bus coupler chip on that port: KnxTransceiver::Ncn5130
+		 *                        (the default, KONNEXTRA BCU light) or KnxTransceiver::TpUart2.
 		*/
-		explicit KonnextraKNX(const String& physicalAddress)
-			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress) {}
+		explicit KonnextraKNX(const String& physicalAddress,
+		                      KnxTransceiver chip = KnxTransceiver::Ncn5130)
+			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, chip) {}
 #else
 		// This board has no hardware UART free for KNX — its only port is the console.
 		// Name the port instead:  KonnextraKNX knx("1.1.5", Serial);
-		explicit KonnextraKNX(const String& physicalAddress) = delete;
+		explicit KonnextraKNX(const String& physicalAddress,
+		                      KnxTransceiver chip = KnxTransceiver::Ncn5130) = delete;
 #endif
 
 		/**
@@ -62,9 +67,12 @@ class KonnextraKNX : public KnxCoordinator {
 		 *          unless you want to keep your own pin assignment.
 		 * @param physicalAddress This device's KNX physical address, e.g. "1.1.5".
 		 * @param port            The serial port the transceiver is wired to, e.g. `Serial1`.
+		 * @param chip            The bus coupler chip on that port: KnxTransceiver::Ncn5130
+		 *                        (the default, KONNEXTRA BCU light) or KnxTransceiver::TpUart2.
 		*/
-		KonnextraKNX(const String& physicalAddress, HardwareSerial& port)
-			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, port) {}
+		KonnextraKNX(const String& physicalAddress, HardwareSerial& port,
+		             KnxTransceiver chip = KnxTransceiver::Ncn5130)
+			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, port, chip) {}
 
 		/**
 		 * @brief Creates the bus connection on a stream you have already opened yourself.
@@ -73,7 +81,10 @@ class KonnextraKNX : public KnxCoordinator {
 		 *          for ports the library cannot configure, such as a software serial.
 		 * @param physicalAddress This device's KNX physical address, e.g. "1.1.5".
 		 * @param stream          An open stream connected to the transceiver.
+		 * @param chip            The bus coupler chip on that port: KnxTransceiver::Ncn5130
+		 *                        (the default, KONNEXTRA BCU light) or KnxTransceiver::TpUart2.
 		*/
-		KonnextraKNX(const String& physicalAddress, Stream& stream)
-			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, stream) {}
+		KonnextraKNX(const String& physicalAddress, Stream& stream,
+		             KnxTransceiver chip = KnxTransceiver::Ncn5130)
+			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, stream, chip) {}
 };

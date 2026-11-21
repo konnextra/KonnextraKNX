@@ -7,6 +7,7 @@
 #######################################
 
 KonnextraKNX	KEYWORD1
+KnxTransceiver	KEYWORD1
 KnxCoordinator	KEYWORD1
 KnxObject	KEYWORD1
 KnxValue	KEYWORD1
@@ -50,3 +51,10 @@ brighter	KEYWORD2
 darker	KEYWORD2
 stopDimming	KEYWORD2
 setBrightness	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+Ncn5130	LITERAL1
+TpUart2	LITERAL1

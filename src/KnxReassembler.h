@@ -42,7 +42,7 @@ class KnxReassembler {
 		uint8_t index        = 0;
 		uint8_t expectedLen  = 0;
 		uint8_t completedLen = 0;
-		bool    inFrame      = false;
+		bool    receiving    = false;
 
 	public:
 		//---- Constructor ----
@@ -75,4 +75,10 @@ class KnxReassembler {
 		 * @brief Discards any partially accumulated frame and returns to the idle state.
 		*/
 		void reset(void);
+
+		/**
+		 * @brief Whether a frame is currently being accumulated.
+		 * @return true between a frame's control byte and its checksum.
+		*/
+		bool inFrame(void) const { return receiving; }
 };

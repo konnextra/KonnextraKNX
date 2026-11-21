@@ -11,6 +11,8 @@
 #include <KonnextraKNX.h>
 
 KonnextraKNX knx("1.1.5", Serial);         // the transceiver is on the one hardware UART
+// On a TP-UART2 instead of the default NCN5130, name the chip as the last argument:
+// KonnextraKNX knx("1.1.5", Serial, KnxTransceiver::TpUart2);
 KnxLight  lamp(knx, "0/1/1", "0/3/0");
 
 unsigned long lastToggle = 0;
