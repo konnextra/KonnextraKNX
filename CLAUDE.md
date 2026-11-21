@@ -1,5 +1,15 @@
 # Software_uC — KNX Smart Home Controller
 
+## Session start — read this first
+
+This is a multi-session project; the repo carries the state, not chat history. Before any
+work, read **`.agents/START_HERE.md`** (goal, map, key findings, model table) and
+**`.agents/STATUS.md`** — its top section "First in the next session" holds Florian's
+priorities and is worked before anything else. End every session by updating `STATUS.md`
+(done / open / next + handoff). The global multi-session layout lives under `.agents/` here,
+not `docs/` (decision `.agents/decisions/0002_agents-folder-layout.md`): `decisions/`,
+`specs/`, `context/` (background, not decisions), `bench/` (measurements).
+
 ## Project overview
 
 PlatformIO / Arduino project running on a **Seeed XIAO ESP32-C6**. The repository is now
@@ -41,6 +51,7 @@ compile every `.cpp` twice and fail to link on duplicate symbols.
 | `examples/` | standalone `.ino` sketches, one folder each (`DeviceObject`, `StatelessSend`, `CustomKnxObject`, `ExplicitPort`). They mirror the Examples guide in the website repo (`konnextra/Website_`, `docs/content/en/examples.md` and `de/examples.md`) — change one, change the other. `BenchTest` is the exception: it's the hardware bench-test sketch (formerly root `src/main.cpp`), not part of the public showcase, and has no entry there. All of them, `BenchTest` included, are compile-checked by CI's `portability` job (`PLATFORMIO_SRC_DIR=<folder> pio run -e <env>`); check them by hand only for behavior CI can't compile-check (docs staying in sync, runtime correctness). |
 | `docs/` | `ApiReference.md`, the landing page of the generated API reference. The user guides are **not** here: they live in the website repo (`konnextra/Website_`, `docs/content/{en,de}/`), in English and German. |
 | `reference/` | KNX standard specifications + the TP-UART2 datasheet (PDFs, read-only reference). **Local only, gitignored** — third-party copyrighted documents, and the Library Manager would ship them with every install. Older tags (≤ v0.1.8) still contain them. |
+| `.agents/` | session state: `START_HERE.md`, `STATUS.md`, `decisions/`, `context/`, `bench/`, `handoff/` — see "Session start" above |
 | `.agents/specs/` | design docs from the `superpowers:brainstorming` workflow — the *why* behind completed work. **New specs go here**, not to the skill's default `docs/superpowers/specs/`, which would pollute the user-facing `docs/`. |
 | `scripts/` | `bump_version.py` — the release helper |
 
@@ -356,6 +367,12 @@ protection rules". Fixed under Settings → Environments → `github-pages` → 
 and tags → Ref type **Tag**, pattern `v*`.
 
 ## Physical layer: STKNX behind an ATTiny co-processor
+
+> **Superseded as the default (Nov 2026):** the current BCU is the onsemi **NCN5130**
+> (KONNEXTRA BCU light, 3.3 V UART, not galvanically isolated). The driver supports both via
+> `KnxTransceiver` (branch `feature/ncn5130`, decision 0001); see
+> `.agents/context/ncn5130.md`. The section below describes the TP-UART2-protocol path, which
+> stays supported. Rewrite this section once the NCN5130 passes on hardware.
 
 The Siemens TP-UART2 transceiver is replaced by the ST STKNX, a **pure
 physical-layer** chip (GPIO, not UART). Rather than bit-bang the STKNX on the main
