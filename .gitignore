@@ -28,3 +28,4 @@ reference/
 # bench tooling: local venv and captured logs
 extras/bench/.venv/
 extras/bench/logs/
+extras/bench/__pycache__/
