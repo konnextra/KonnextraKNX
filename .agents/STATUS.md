@@ -1,29 +1,39 @@
 # STATUS
 
-Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **22.11.2026 (abends)**.
+Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **22.11.2026, Session-Ende**.
 
 ## First in the next session
 
-Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfernen.
+Von Florian gesetzt (22.11. spät). Vor allem anderen abarbeiten, erledigte Punkte entfernen.
+Arbeitsstand: Branch **`feature/ncn5130`** (gepusht). Senden **und** Empfangen über den NCN5130
+sind auf Hardware bestätigt, auch gegen xknx (57/57) — siehe
+[`bench/2026-11-22-ncn5130-test2-rx.md`](bench/2026-11-22-ncn5130-test2-rx.md).
 
-1. **Test 2b: Callback + xknx-Gegenprobe.** Empfang von Fremdverkehr ist bestanden →
-   [`bench/2026-11-22-ncn5130-test2-rx.md`](bench/2026-11-22-ncn5130-test2-rx.md). Offen:
-   - **Callback auf Hardware zeigen:** Aktor sendet keinen Status auf 1/1/1/0/2/1. Entweder
-     Status-GA des Aktors aus ETS in BenchTest eintragen, oder testweise
-     `KnxLight lamp(knx, "0/1/1", "0/1/1")` → Taster muss `onLampChanged` auslösen.
-   - ~~xknx-Gegenprobe~~ **bestanden** (23:14): 21/21 XIAO-Telegramme im xknx-Mitschnitt,
-     lückenlos. **Beide Logs gleichzeitig (23:18) ebenfalls bestanden: 57/57 identisch**, auch bei
-     Lastspitze 8 Tel./s → Nachträge in `bench/2026-11-22-ncn5130-test2-rx.md`. Abgleich-Werkzeug:
-     `extras/bench/compare_logs.py <serial.log> <capture.jsonl> --window 1.5`.
-   - XIAO-Log mitschreiben: `pio device monitor | tee` geht nicht (braucht TTY) → stattdessen
-     `cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`
-     (`-p` nötig, sonst greift PlatformIO einen Bluetooth-Port; `log2file` legt `logs/` relativ
-     zum aktuellen Verzeichnis an, daher aus `extras/bench` starten).
-2. **Hardwaretest Status-Pins** (decisions/0003, implementiert, ungetestet): BCU-Header 7 RESETb
-   und 8 SAVEb an zwei freie XIAO-Pins, im BenchTest `KNX_RESET_PIN`/`KNX_SAVE_PIN` setzen,
-   Busspannung kurz trennen → erwartet: `save pin low` + `[power]`-Zeile, `chip in reset`, nach
-   Rückkehr `re-running bring-up` und wieder `begin`-artige ok-Zeile; Licht schaltet weiter.
-   Ohne Pins dasselbe einmal probieren: kommt `unexpected Reset.ind`? (prüft Selbstheilung)
+1. **Lasttest mit zwei Boards, Kollisionen erzwingen (Hauptthema).** Zwei Boards am Bus spammen
+   sich gegenseitig zu, damit echte Kollisionen und Wiederholungen entstehen; xknx schneidet
+   parallel mit (ETS-Gruppen-/Busmonitor optional, für Florian umständlicher).
+   - Vorbereitung durch Claude: Lasttest-Sketch (z.B. `extras/bench/BenchPair/`, Spec 5.3):
+     Rolle A/B per `#define`, Adressen 1.1.5 / 1.1.6, einstellbare Senderate bis „so schnell wie
+     möglich“, startet beide Sender zeitgleich (z.B. gemeinsamer Takt oder Tastendruck), zählt
+     gesendet / positiv / negativ / empfangen vom Partner und druckt maschinenlesbare Zeilen.
+     Dazu `compare_logs.py` für **zwei** Serial-Logs + xknx erweitern.
+   - Auswerten: Verluste, negative `L_Data.con`, Wiederholungen (Steuerbyte `9x`), ob jede
+     positiv bestätigte Sendung bei xknx und beim Partner ankommt, Durchsatz in Tel./s.
+   - Florian braucht dafür: zweites XIAO + zweite BCU light am Bus, zweiter USB-Port.
+2. **Callback auf Hardware zeigen:** Aktor sendet keinen Status auf 1/1/1 oder 0/2/1. Status-GA
+   des Aktors aus ETS eintragen, oder testweise `KnxLight lamp(knx, "0/1/1", "0/1/1")` → Taster
+   muss `onLampChanged` auslösen.
+3. **Status-Pins testen** (decisions/0003, implementiert, ungetestet): BCU-Header 7 RESETb und 8
+   SAVEb an zwei freie XIAO-Pins, `KNX_RESET_PIN`/`KNX_SAVE_PIN` im BenchTest setzen, Busspannung
+   kurz trennen → erwartet `save pin low` + `[power]`, `chip in reset`, danach `re-running
+   bring-up`; Licht schaltet weiter. Dasselbe ohne Pins: kommt `unexpected Reset.ind`?
+
+**Werkzeuge (alles fertig):** XIAO-Log
+`cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`;
+xknx `extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway 192.168.0.10`
+(Mac im WLAN `ROWI-Testkoffer-KNX`, Schnittstelle **nicht** Secure);
+Abgleich `python3 extras/bench/compare_logs.py <serial.log> <capture.jsonl> --window 1.5`.
+Details: [`context/test-setup.md`](context/test-setup.md).
 
 ## Stand
 
@@ -90,11 +100,12 @@ für beide Repos anfällt.
   context) angelegt und in CLAUDE.md verlinkt.
 - **In Arbeit:** nichts halb Fertiges im Code.
 - **Unberührt:** `extras/bench/`, Doku, Website.
-- **Blocker:** Busklemme noch nicht angelötet (Florian, 22.11.).
-- **Offene Fragen:** Test-2-Angaben (IP-Adressen, Taster-GA) — siehe oben.
+- **Blocker:** keiner. Für Punkt 1 braucht es das zweite Board am Bus.
+- **Offene Fragen:** Status-GA des Aktors (für den Callback-Test).
 - **Dateien:** `src/KnxTransceiverProtocol.{h,cpp}`, `src/KnxBringUp.{h,cpp}`,
   `src/KnxDriver.{h,cpp}`, `src/KonnextraKNX.h`, `src/KnxEnums.h`, `src/KnxReassembler.{h,cpp}`,
   `test/test_transceiver/`, `test/test_bringup/`, `examples/BenchTest/`, `examples/ExplicitPort/`,
-  `keywords.txt`, `Changes.md`, `.agents/*`, `CLAUDE.md`.
+  `keywords.txt`, `Changes.md`, `.agents/*`, `CLAUDE.md`, `.gitignore`,
+  `extras/bench/knx_listen.py`, `extras/bench/compare_logs.py`.
 - **Budget-Hinweis:** Florian achtet auf das Wochenlimit der Nutzung; er nennt pro Tag eine
   Obergrenze. Sparsam arbeiten (keine unnötigen Subagents/Workflows).
