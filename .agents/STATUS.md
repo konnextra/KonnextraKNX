@@ -11,13 +11,11 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
    - **Callback auf Hardware zeigen:** Aktor sendet keinen Status auf 1/1/1/0/2/1. Entweder
      Status-GA des Aktors aus ETS in BenchTest eintragen, oder testweise
      `KnxLight lamp(knx, "0/1/1", "0/1/1")` → Taster muss `onLampChanged` auslösen.
-   - **xknx-Gegenprobe:** 22.11. 23:10 `--gateway 192.168.0.10` → „Tunnel connection could not
-     be established“. Verdacht KNX Secure (oder alle Tunnel belegt) — `--scan` zeigt
-     `tunnelling requires secure`. Bei Secure: Keyring-Export oder `--user-id/--user-password/
-     --device-auth` aus ETS (FDSK vom Aufkleber hilft nicht). Schnittstelle 192.168.0.10 (`IP Interface Secure N 148/23`, 1.1.4).
-     `--gateway 192.168.0.10` (ohne spitze Klammern!). Lehnt sie ab → Secure: ETS-Keyring
-     exportieren, `--keyring file.knxkeys --keyring-password …`. `--scan` zeigt jetzt
-     `tunnelling requires secure`.
+   - **xknx-Gegenprobe:** Tunnel zu 192.168.0.10 **funktioniert ohne Secure** (Fehlversuch 23:10
+     war falsches WLAN). Mitschnitt 23:12, 15 s, 11 Telegramme nur von Taster 1.1.1 (0/1/1,
+     0/0/1, 1/0/0) → `bench/2026-11-22-xknx-capture.jsonl`. **Offen:** kein Telegramm von 1.1.5
+     (XIAO) im Mitschnitt — lief der XIAO? Wiederholen mit laufendem XIAO, ≥ 30 s, XIAO-Log per
+     `log2file` parallel; dann jedes XIAO-TX im xknx-Log und jedes Taster-Telegramm im XIAO-Log.
    - XIAO-Log mitschreiben: `pio device monitor | tee` geht nicht (braucht TTY) → stattdessen
      `cd extras/bench/logs && ~/.platformio/penv/bin/pio device monitor -b 115200 -f time -f log2file`.
 2. **Hardwaretest Status-Pins** (decisions/0003, implementiert, ungetestet): BCU-Header 7 RESETb
