@@ -61,10 +61,11 @@ Testkoffer-Netz: TP-Link TL-WR802N als Access Point, SSID `ROWI-Testkoffer-KNX`,
 DHCP .100–.199; die KNX-Schnittstelle bezieht **keine** DHCP-Adresse (feste IP).
 Log landet in `extras/bench/logs/knx-<datum>.jsonl` (gitignored), eine Zeile je Telegramm
 (Zeit, Richtung, Quelle, Ziel, Dienst, Rohwert). Parallel den seriellen XIAO-Log in eine Datei (`| tee` geht **nicht**, `pio device monitor`
-verlangt ein TTY; der Filter `log2file` schreibt `platformio-device-monitor-*.log` ins aktuelle
-Verzeichnis, `time` setzt Zeitstempel für den Abgleich mit xknx):
+verlangt ein TTY; `log2file` schreibt `logs/device-monitor-*.log` **relativ zum aktuellen
+Verzeichnis**, `time` setzt Zeitstempel; `-p` angeben, sonst greift PlatformIO z.B. einen
+Bluetooth-Port — der XIAO ist `/dev/cu.usbmodem101`):
 ```bash
-cd extras/bench/logs && ~/.platformio/penv/bin/pio device monitor -b 115200 -f time -f log2file
+cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file
 ```
 Während beides läuft: BenchTest toggelt 0/1/1; Taster mehrmals drücken; Zeitpunkte grob notieren.
 

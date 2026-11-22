@@ -1,0 +1,23 @@
+{"t": 1795385641.861, "event": "start", "gateway": "192.168.0.10"}
+{"t": 1795385673.502, "time": "2026-11-22T23:14:33.502", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385678.559, "time": "2026-11-22T23:14:38.558", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385683.574, "time": "2026-11-22T23:14:43.573", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385688.545, "time": "2026-11-22T23:14:48.544", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385693.502, "time": "2026-11-22T23:14:53.501", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385698.528, "time": "2026-11-22T23:14:58.528", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385703.535, "time": "2026-11-22T23:15:03.534", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385709.032, "time": "2026-11-22T23:15:09.032", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385713.582, "time": "2026-11-22T23:15:13.581", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385718.599, "time": "2026-11-22T23:15:18.598", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385723.509, "time": "2026-11-22T23:15:23.509", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385728.532, "time": "2026-11-22T23:15:28.532", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385733.585, "time": "2026-11-22T23:15:33.585", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385738.566, "time": "2026-11-22T23:15:38.566", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385743.553, "time": "2026-11-22T23:15:43.553", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385748.7, "time": "2026-11-22T23:15:48.700", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385753.515, "time": "2026-11-22T23:15:53.515", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385758.501, "time": "2026-11-22T23:15:58.500", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385763.501, "time": "2026-11-22T23:16:03.500", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385769.444, "time": "2026-11-22T23:16:09.444", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 0}
+{"t": 1795385773.584, "time": "2026-11-22T23:16:13.583", "dir": "Incoming", "src": "1.1.5", "dst": "0/1/1", "service": "GroupValueWrite", "kind": "binary", "raw": 1}
+{"t": 1795385775.23, "event": "stop", "telegrams": 21}

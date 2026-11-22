@@ -11,13 +11,13 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
    - **Callback auf Hardware zeigen:** Aktor sendet keinen Status auf 1/1/1/0/2/1. Entweder
      Status-GA des Aktors aus ETS in BenchTest eintragen, oder testweise
      `KnxLight lamp(knx, "0/1/1", "0/1/1")` → Taster muss `onLampChanged` auslösen.
-   - **xknx-Gegenprobe:** Tunnel zu 192.168.0.10 **funktioniert ohne Secure** (Fehlversuch 23:10
-     war falsches WLAN). Mitschnitt 23:12, 15 s, 11 Telegramme nur von Taster 1.1.1 (0/1/1,
-     0/0/1, 1/0/0) → `bench/2026-11-22-xknx-capture.jsonl`. **Offen:** kein Telegramm von 1.1.5
-     (XIAO) im Mitschnitt — lief der XIAO? Wiederholen mit laufendem XIAO, ≥ 30 s, XIAO-Log per
-     `log2file` parallel; dann jedes XIAO-TX im xknx-Log und jedes Taster-Telegramm im XIAO-Log.
+   - ~~xknx-Gegenprobe~~ **bestanden** (23:14): 21/21 XIAO-Telegramme im xknx-Mitschnitt,
+     lückenlos → Nachtrag in `bench/2026-11-22-ncn5130-test2-rx.md`. Noch offen: ein Lauf mit
+     **beiden Logs gleichzeitig** (Taster-Telegramme im XIAO-Log gegen xknx abgleichen).
    - XIAO-Log mitschreiben: `pio device monitor | tee` geht nicht (braucht TTY) → stattdessen
-     `cd extras/bench/logs && ~/.platformio/penv/bin/pio device monitor -b 115200 -f time -f log2file`.
+     `cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`
+     (`-p` nötig, sonst greift PlatformIO einen Bluetooth-Port; `log2file` legt `logs/` relativ
+     zum aktuellen Verzeichnis an, daher aus `extras/bench` starten).
 2. **Hardwaretest Status-Pins** (decisions/0003, implementiert, ungetestet): BCU-Header 7 RESETb
    und 8 SAVEb an zwei freie XIAO-Pins, im BenchTest `KNX_RESET_PIN`/`KNX_SAVE_PIN` setzen,
    Busspannung kurz trennen → erwartet: `save pin low` + `[power]`-Zeile, `chip in reset`, nach
