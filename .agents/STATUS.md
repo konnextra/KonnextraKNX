@@ -12,8 +12,9 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
      Status-GA des Aktors aus ETS in BenchTest eintragen, oder testweise
      `KnxLight lamp(knx, "0/1/1", "0/1/1")` → Taster muss `onLampChanged` auslösen.
    - ~~xknx-Gegenprobe~~ **bestanden** (23:14): 21/21 XIAO-Telegramme im xknx-Mitschnitt,
-     lückenlos → Nachtrag in `bench/2026-11-22-ncn5130-test2-rx.md`. Noch offen: ein Lauf mit
-     **beiden Logs gleichzeitig** (Taster-Telegramme im XIAO-Log gegen xknx abgleichen).
+     lückenlos. **Beide Logs gleichzeitig (23:18) ebenfalls bestanden: 57/57 identisch**, auch bei
+     Lastspitze 8 Tel./s → Nachträge in `bench/2026-11-22-ncn5130-test2-rx.md`. Abgleich-Werkzeug:
+     `extras/bench/compare_logs.py <serial.log> <capture.jsonl> --window 1.5`.
    - XIAO-Log mitschreiben: `pio device monitor | tee` geht nicht (braucht TTY) → stattdessen
      `cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`
      (`-p` nötig, sonst greift PlatformIO einen Bluetooth-Port; `log2file` legt `logs/` relativ
@@ -71,6 +72,8 @@ für beide Repos anfällt.
 
 ## Handoff der letzten Session (21./22.11.2026)
 
+- **22.11. 23:20:** Empfang und Senden gegen xknx abgeglichen, 57/57, kein Verlust unter Last.
+  `extras/bench/compare_logs.py` neu.
 - **22.11. Nacht (2):** Test 2a bestanden — **Empfangspfad auf Hardware bestätigt** (Taster
   1.1.1: Schalten, Dimmen DPT 3, Jalousie). Keyring-Option + Secure-Anzeige im Listener.
 - **22.11. Nacht:** Status-Pins auf Interrupt-Latches umgestellt (Reaktion weiter in `loop()`),

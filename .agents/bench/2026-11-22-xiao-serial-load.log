@@ -1,0 +1,245 @@
+23:18:38.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:18:38.474 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:18:38.474 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:18:38.500 > [knx] DRV echo 9/9 ok
+23:18:38.500 > [knx] DRV con byte 0x8B -> positive
+23:18:38.500 > [knx] TX  confirmed (L_Data.con)
+23:18:38.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:18:43.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:18:43.474 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:18:43.474 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:18:43.500 > [knx] DRV echo 9/9 ok
+23:18:43.500 > [knx] DRV con byte 0x8B -> positive
+23:18:43.500 > [knx] TX  confirmed (L_Data.con)
+23:18:43.500 > [send] toggle 0/1/1 -> ON (confirmed)
+23:18:48.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:18:48.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:18:48.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:18:48.500 > [knx] DRV echo 9/9 ok
+23:18:48.500 > [knx] DRV con byte 0x8B -> positive
+23:18:48.500 > [knx] TX  confirmed (L_Data.con)
+23:18:48.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:18:53.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:18:53.474 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:18:53.474 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:18:53.500 > [knx] DRV echo 9/9 ok
+23:18:53.500 > [knx] DRV con byte 0x8B -> positive
+23:18:53.500 > [knx] TX  confirmed (L_Data.con)
+23:18:53.500 > [send] toggle 0/1/1 -> ON (confirmed)
+23:18:58.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:18:58.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:18:58.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:18:58.500 > [knx] DRV echo 9/9 ok
+23:18:58.500 > [knx] DRV con byte 0x8B -> positive
+23:18:58.500 > [knx] TX  confirmed (L_Data.con)
+23:18:58.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:19:03.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:03.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:03.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:19:03.500 > [knx] DRV echo 9/9 ok
+23:19:03.500 > [knx] DRV con byte 0x8B -> positive
+23:19:03.500 > [knx] TX  confirmed (L_Data.con)
+23:19:03.500 > [send] toggle 0/1/1 -> ON (confirmed)
+23:19:08.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:08.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:08.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:19:08.500 > [knx] DRV echo 9/9 ok
+23:19:08.500 > [knx] DRV con byte 0x8B -> positive
+23:19:08.500 > [knx] TX  confirmed (L_Data.con)
+23:19:08.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:19:13.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:13.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:13.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:19:13.500 > [knx] DRV echo 9/9 ok
+23:19:13.500 > [knx] DRV con byte 0x8B -> positive
+23:19:13.500 > [knx] TX  confirmed (L_Data.con)
+23:19:13.500 > [send] toggle 0/1/1 -> ON (confirmed)
+23:19:18.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:18.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:18.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:19:18.500 > [knx] DRV echo 9/9 ok
+23:19:18.500 > [knx] DRV con byte 0x8B -> positive
+23:19:18.500 > [knx] TX  confirmed (L_Data.con)
+23:19:18.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:19:23.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:23.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:23.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:19:23.500 > [knx] DRV echo 9/9 ok
+23:19:23.500 > [knx] DRV con byte 0x8B -> positive
+23:19:23.500 > [knx] TX  confirmed (L_Data.con)
+23:19:23.500 > [send] toggle 0/1/1 -> ON (confirmed)
+23:19:28.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:28.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:28.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:19:28.500 > [knx] DRV echo 9/9 ok
+23:19:28.500 > [knx] DRV con byte 0x8B -> positive
+23:19:28.500 > [knx] TX  confirmed (L_Data.con)
+23:19:28.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:19:33.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:33.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:33.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:19:33.499 > [knx] DRV echo 9/9 ok
+23:19:33.500 > [knx] DRV con byte 0x8B -> positive
+23:19:33.500 > [knx] TX  confirmed (L_Data.con)
+23:19:33.500 > [send] toggle 0/1/1 -> ON (confirmed)
+23:19:38.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:38.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:38.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:19:38.499 > [knx] DRV echo 9/9 ok
+23:19:38.500 > [knx] DRV con byte 0x8B -> positive
+23:19:38.500 > [knx] TX  confirmed (L_Data.con)
+23:19:38.500 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:19:43.473 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:43.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:43.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:19:43.499 > [knx] DRV echo 9/9 ok
+23:19:43.499 > [knx] DRV con byte 0x8B -> positive
+23:19:43.499 > [knx] TX  confirmed (L_Data.con)
+23:19:43.499 > [send] toggle 0/1/1 -> ON (confirmed)
+23:19:48.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:48.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:48.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:19:48.499 > [knx] DRV echo 9/9 ok
+23:19:48.499 > [knx] DRV con byte 0x8B -> positive
+23:19:48.499 > [knx] TX  confirmed (L_Data.con)
+23:19:48.499 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:19:53.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:53.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:53.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:19:53.499 > [knx] DRV echo 9/9 ok
+23:19:53.499 > [knx] DRV con byte 0x8B -> positive
+23:19:53.499 > [knx] TX  confirmed (L_Data.con)
+23:19:53.499 > [send] toggle 0/1/1 -> ON (confirmed)
+23:19:58.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:19:58.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:19:58.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:19:58.499 > [knx] DRV echo 9/9 ok
+23:19:58.499 > [knx] DRV con byte 0x8B -> positive
+23:19:58.499 > [knx] TX  confirmed (L_Data.con)
+23:19:58.499 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:20:00.645 > [knx] RX  frame: BC 11 01 01 01 E1 00 81 33
+23:20:00.645 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:01.184 > [knx] RX  frame: BC 11 01 01 01 E1 00 80 32
+23:20:01.185 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:03.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:03.473 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:03.473 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:20:03.499 > [knx] DRV echo 9/9 ok
+23:20:03.499 > [knx] DRV con byte 0x8B -> positive
+23:20:03.499 > [knx] TX  confirmed (L_Data.con)
+23:20:03.499 > [send] toggle 0/1/1 -> ON (confirmed)
+23:20:05.816 > [knx] RX  frame: BC 11 01 00 01 E1 00 89 3A
+23:20:05.816 > [knx] RX  <- 1.1.1 to GA 0/0/1 -> 0 receiver(s)
+23:20:07.171 > [knx] RX  frame: BC 11 01 00 01 E1 00 88 3B
+23:20:07.172 > [knx] RX  <- 1.1.1 to GA 0/0/1 -> 0 receiver(s)
+23:20:08.282 > [knx] RX  frame: BC 11 01 01 01 E1 00 80 32
+23:20:08.282 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:08.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:08.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:08.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:20:08.499 > [knx] DRV echo 9/9 ok
+23:20:08.499 > [knx] DRV con byte 0x8B -> positive
+23:20:08.499 > [knx] TX  confirmed (L_Data.con)
+23:20:08.499 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:20:09.700 > [knx] RX  frame: BC 11 01 00 01 E1 00 89 3A
+23:20:09.700 > [knx] RX  <- 1.1.1 to GA 0/0/1 -> 0 receiver(s)
+23:20:10.038 > [knx] RX  frame: BC 11 01 00 01 E1 00 88 3B
+23:20:10.038 > [knx] RX  <- 1.1.1 to GA 0/0/1 -> 0 receiver(s)
+23:20:10.712 > [knx] RX  frame: BC 11 01 00 01 E1 00 81 32
+23:20:10.712 > [knx] RX  <- 1.1.1 to GA 0/0/1 -> 0 receiver(s)
+23:20:11.403 > [knx] RX  frame: BC 11 01 00 01 E1 00 80 33
+23:20:11.403 > [knx] RX  <- 1.1.1 to GA 0/0/1 -> 0 receiver(s)
+23:20:12.452 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:12.452 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:12.854 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:12.854 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:13.108 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:13.109 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:13.226 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:13.226 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:13.338 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:13.338 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:13.461 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:13.462 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:13.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:13.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:13.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:20:13.499 > [knx] DRV echo 9/9 ok
+23:20:13.499 > [knx] DRV con byte 0x8B -> positive
+23:20:13.499 > [knx] TX  confirmed (L_Data.con)
+23:20:13.499 > [send] toggle 0/1/1 -> ON (confirmed)
+23:20:13.577 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:13.577 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:13.917 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:13.917 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:14.065 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:14.065 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:14.193 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:14.193 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:14.319 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:14.319 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:15.471 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:15.472 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:15.717 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:15.717 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:15.862 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:15.862 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:16.109 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:16.110 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:16.348 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:16.348 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:16.448 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:16.448 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:16.620 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:16.620 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:16.715 > [knx] RX  frame: BC 11 01 09 00 E1 00 81 3A
+23:20:16.715 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:16.881 > [knx] RX  frame: BC 11 01 09 00 E1 00 80 3B
+23:20:16.881 > [knx] RX  <- 1.1.1 to GA 1/1/0 -> 0 receiver(s)
+23:20:17.293 > [knx] RX  frame: BC 11 01 01 01 E1 00 80 32
+23:20:17.293 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:17.586 > [knx] RX  frame: BC 11 01 01 01 E1 00 81 33
+23:20:17.586 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:17.768 > [knx] RX  frame: BC 11 01 01 01 E1 00 80 32
+23:20:17.768 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:18.020 > [knx] RX  frame: BC 11 01 01 01 E1 00 81 33
+23:20:18.020 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:18.216 > [knx] RX  frame: BC 11 01 01 01 E1 00 80 32
+23:20:18.217 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:18.462 > [knx] RX  frame: BC 11 01 01 01 E1 00 81 33
+23:20:18.462 > [knx] RX  <- 1.1.1 to GA 0/1/1 -> 0 receiver(s)
+23:20:18.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:18.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:18.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:20:18.499 > [knx] DRV echo 9/9 ok
+23:20:18.499 > [knx] DRV con byte 0x8B -> positive
+23:20:18.499 > [knx] TX  confirmed (L_Data.con)
+23:20:18.499 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:20:23.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:23.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:23.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:20:23.499 > [knx] DRV echo 9/9 ok
+23:20:23.499 > [knx] DRV con byte 0x8B -> positive
+23:20:23.499 > [knx] TX  confirmed (L_Data.con)
+23:20:23.499 > [send] toggle 0/1/1 -> ON (confirmed)
+23:20:28.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:28.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:28.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:20:28.499 > [knx] DRV echo 9/9 ok
+23:20:28.499 > [knx] DRV con byte 0x8B -> positive
+23:20:28.499 > [knx] TX  confirmed (L_Data.con)
+23:20:28.499 > [send] toggle 0/1/1 -> OFF (confirmed)
+23:20:33.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:33.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:33.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 81 37
+23:20:33.499 > [knx] DRV echo 9/9 ok
+23:20:33.499 > [knx] DRV con byte 0x8B -> positive
+23:20:33.499 > [knx] TX  confirmed (L_Data.con)
+23:20:33.499 > [send] toggle 0/1/1 -> ON (confirmed)
+23:20:38.472 > [knx] TX  -> GA 0/1/1, DPT 1
+23:20:38.472 > [knx] FRM build: inline-6, APDU 2 B, payload 1 B
+23:20:38.472 > [knx] DRV tx frame: BC 11 05 01 01 E1 00 80 36
+23:20:38.499 > [knx] DRV echo 9/9 ok
+23:20:38.499 > [knx] DRV con byte 0x8B -> positive
+23:20:38.499 > [knx] TX  confirmed (L_Data.con)
+23:20:38.499 > [send] toggle 0/1/1 -> OFF (confirmed)
