@@ -11,7 +11,10 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
    - **Callback auf Hardware zeigen:** Aktor sendet keinen Status auf 1/1/1/0/2/1. Entweder
      Status-GA des Aktors aus ETS in BenchTest eintragen, oder testweise
      `KnxLight lamp(knx, "0/1/1", "0/1/1")` → Taster muss `onLampChanged` auslösen.
-   - **xknx-Gegenprobe:** Schnittstelle 192.168.0.10 (`IP Interface Secure N 148/23`, 1.1.4).
+   - **xknx-Gegenprobe:** 22.11. 23:10 `--gateway 192.168.0.10` → „Tunnel connection could not
+     be established“. Verdacht KNX Secure (oder alle Tunnel belegt) — `--scan` zeigt
+     `tunnelling requires secure`. Bei Secure: Keyring-Export oder `--user-id/--user-password/
+     --device-auth` aus ETS (FDSK vom Aufkleber hilft nicht). Schnittstelle 192.168.0.10 (`IP Interface Secure N 148/23`, 1.1.4).
      `--gateway 192.168.0.10` (ohne spitze Klammern!). Lehnt sie ab → Secure: ETS-Keyring
      exportieren, `--keyring file.knxkeys --keyring-password …`. `--scan` zeigt jetzt
      `tunnelling requires secure`.
