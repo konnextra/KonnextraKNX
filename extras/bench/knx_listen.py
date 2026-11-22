@@ -60,6 +60,9 @@ async def main() -> int:
                     help="listen to KNX IP routing multicast (IP router) instead of tunnelling")
     ap.add_argument("--keyring", help="ETS keyring export (.knxkeys) for a KNX Secure interface")
     ap.add_argument("--keyring-password", help="password chosen at the ETS keyring export")
+    ap.add_argument("--user-id", type=int, help="KNX Secure tunnel user id (from ETS, without keyring)")
+    ap.add_argument("--user-password", help="KNX Secure tunnel password (ETS: tunnel properties)")
+    ap.add_argument("--device-auth", help="KNX Secure device authentication code (ETS: interface properties)")
     ap.add_argument("--scan", action="store_true", help="only search for interfaces, print them, exit")
     ap.add_argument("--out", help="log file (default: extras/bench/logs/knx-YYYYmmdd-HHMMSS.jsonl)")
     args = ap.parse_args()
@@ -105,6 +108,11 @@ async def main() -> int:
         secure = SecureConfig(knxkeys_file_path=args.keyring, knxkeys_password=args.keyring_password)
         config = ConnectionConfig(connection_type=ConnectionType.TUNNELING_TCP_SECURE if args.gateway
                                   else ConnectionType.AUTOMATIC,
+                                  gateway_ip=args.gateway, local_ip=args.local_ip, secure_config=secure)
+    elif args.user_password:
+        secure = SecureConfig(user_id=args.user_id, user_password=args.user_password,
+                              device_authentication_password=args.device_auth)
+        config = ConnectionConfig(connection_type=ConnectionType.TUNNELING_TCP_SECURE,
                                   gateway_ip=args.gateway, local_ip=args.local_ip, secure_config=secure)
     elif args.routing:
         config = ConnectionConfig(connection_type=ConnectionType.ROUTING, local_ip=args.local_ip)
