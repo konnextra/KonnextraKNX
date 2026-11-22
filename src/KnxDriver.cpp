@@ -28,6 +28,43 @@ KnxDriver::KnxDriver(String physicalAddress, Stream& stream, KnxTransceiver chip
 	: p_io(&stream), p_uart(nullptr),
 	  physicalAddress(physicalAddressFromString(physicalAddress)), chip(chip) {}
 
+//---- Status-pin interrupts ----
+// The ISRs only latch an edge; the reaction (callback, bring-up) runs from loop(). User code in
+// an ISR is unsafe — on ESP32 a flash write or Serial print from interrupt context crashes —
+// and a bring-up needs UART traffic and timeouts. Latching still guarantees that no edge is
+// missed, however short the pulse or slow the loop. A free ISR cannot carry an object pointer,
+// so the latches are file-wide: interrupts serve one driver with status pins per sketch.
+#ifndef ARDUINO_ISR_ATTR
+	#define ARDUINO_ISR_ATTR   // ESP32 core: places the ISR in IRAM; elsewhere empty
+#endif
+
+static volatile bool saveFellLatch  = false;
+static volatile bool resetRoseLatch = false;
+
+static void ARDUINO_ISR_ATTR onSaveFalling(void)  { saveFellLatch  = true; }
+static void ARDUINO_ISR_ATTR onResetRising(void)  { resetRoseLatch = true; }
+
+// Attaches isr to pin (FALLING or RISING edge) if the pin can interrupt; returns false where
+// it cannot, and the pin is polled instead. The mode constant is written out at each call
+// rather than passed in: ArduinoCore-API cores (Renesas, Mbed, RP2040) type it as PinStatus,
+// the others as int, and only the bare constant converts to both.
+static bool attachIfPossible(int pin, void (*isr)(void), bool rising) {
+	const int irq = (int)digitalPinToInterrupt(pin);
+	if (irq < 0) return false;
+	if (rising) attachInterrupt(irq, isr, RISING);
+	else        attachInterrupt(irq, isr, FALLING);
+	return true;
+}
+
+// Reads and clears a latch with interrupts off, so an edge between read and clear is not lost.
+static bool takeLatch(volatile bool& latch) {
+	noInterrupts();
+	const bool set = latch;
+	latch = false;
+	interrupts();
+	return set;
+}
+
 //---- Private methods ----
 
 void KnxDriver::sendCommand(const uint8_t* cmd, uint16_t len) {
@@ -79,7 +116,8 @@ bool KnxDriver::prepareChip(void) {
 bool KnxDriver::checkStatusPins(void) {
 	if (savePin >= 0) {
 		const bool high = digitalRead(savePin) == HIGH;
-		if (!high && lastSaveHigh) {
+		// Edge from the interrupt latch, or seen by polling where the pin cannot interrupt.
+		if (takeLatch(saveFellLatch) || (!high && lastSaveHigh)) {
 			KnxDebug::log("DRV !! save pin low: bus power failing");
 			if (p_onPowerFail != nullptr) p_onPowerFail();
 		} else if (high && !lastSaveHigh) {
@@ -90,12 +128,14 @@ bool KnxDriver::checkStatusPins(void) {
 
 	if (resetPin < 0) return true;
 	const bool high = digitalRead(resetPin) == HIGH;
+	const bool rose = takeLatch(resetRoseLatch);
 	if (!high) {
 		if (lastResetHigh) KnxDebug::log("DRV !! chip in reset (reset pin low)");
 		lastResetHigh = false;
 		return false;
 	}
-	if (!lastResetHigh) {
+	// A reset pulse shorter than one loop() pass is only visible through the latch.
+	if (!lastResetHigh || rose) {
 		// The chip came back from a reset and has forgotten its address: bring it up again.
 		lastResetHigh = true;
 		KnxDebug::log("DRV reset pin high again: re-running bring-up");
@@ -232,6 +272,7 @@ bool KnxDriver::begin(void) {
 
 bool KnxDriver::reset(void) {
 	if (!prepareChip()) return false;
+	resetRoseLatch = false;   // our own TP-UART2 pulse is not a chip reset to react to
 	return bringUp("reset");
 }
 

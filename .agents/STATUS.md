@@ -6,7 +6,12 @@ Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **22
 
 Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfernen.
 
-1. **Test 2: Empfang + Mitschnitt.** Test 1 (Senden) ist bestanden →
+1. **Test 2: Empfang + Mitschnitt.** Erster Versuch 22.11.: `knx_listen.py` fand **keine**
+   Schnittstelle. Befund aus Florians Router-Screenshots (TP-Link TL-WR802N, AP-Modus, SSID
+   `ROWI-Testkoffer-KNX`, LAN 192.168.0.1/24, DHCP .100–.199): einziger DHCP-Client ist der Mac
+   (.100) → die KNX-IP-Schnittstelle hat eine **feste IP, vermutlich in anderem Subnetz**. Nächster
+   Versuch: IP der Schnittstelle aus ETS ablesen → `--gateway <IP>` (ggf. Mac-IP im selben
+   Subnetz manuell setzen) oder, falls IP-Router, `--routing`; `--scan` listet Gefundenes. Test 1 (Senden) ist bestanden →
    [`bench/2026-11-22-ncn5130-test1.md`](bench/2026-11-22-ncn5130-test1.md). Florian hängt den
    Mac ins WLAN der IP-Schnittstelle (kein Internet, daher ohne Claude) und lässt
    `extras/bench/knx_listen.py` mitschneiden, während der BenchTest läuft und er am Taster
@@ -67,6 +72,9 @@ für beide Repos anfällt.
 
 ## Handoff der letzten Session (21./22.11.2026)
 
+- **22.11. Nacht:** Status-Pins auf Interrupt-Latches umgestellt (Reaktion weiter in `loop()`),
+  Matrix C6/ESP32/S3/Mega/R4/GIGA/Pico/Pico2/F401/L432 + Uno-Fehlfall ok; `knx_listen.py` um
+  `--scan` und `--routing` erweitert.
 - **22.11. spät:** Status-Pins + Selbstheilung umgesetzt (decisions/0003): `setStatusPins`,
   `onBusPowerFail`, `busPowerOk` in `KonnextraKNX`/`KnxDriver`, BenchTest-Defines, Changes.md.
   Builds C6/Mega/R4/Nucleo ok, 84 Host-Tests ok, Doxygen 0 Warnungen. Noch nicht auf Hardware.

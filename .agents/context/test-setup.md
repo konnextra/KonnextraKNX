@@ -52,6 +52,10 @@ mit, Auswertung danach). Venv ist schon angelegt:
 extras/bench/.venv/bin/python extras/bench/knx_listen.py            # Auto-Discovery, Ctrl-C beendet
 extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway <IP> --minutes 20
 ```
+Findet Auto-Discovery nichts: `--scan` (nur suchen), `--gateway <IP>` (feste IP aus ETS) oder
+`--routing` (KNX-IP-Router, Multicast 224.0.23.12, funktioniert auch über Subnetzgrenzen).
+Testkoffer-Netz: TP-Link TL-WR802N als Access Point, SSID `ROWI-Testkoffer-KNX`, 192.168.0.1/24,
+DHCP .100–.199; die KNX-Schnittstelle bezieht **keine** DHCP-Adresse (feste IP).
 Log landet in `extras/bench/logs/knx-<datum>.jsonl` (gitignored), eine Zeile je Telegramm
 (Zeit, Richtung, Quelle, Ziel, Dienst, Rohwert). Parallel den seriellen XIAO-Log in eine Datei:
 ```bash

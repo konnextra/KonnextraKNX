@@ -17,6 +17,11 @@ verliert der Chip die physikalische Adresse → kein Auto-ACK, ohne dass die Lib
     low auf RESn vorher, danach 50 ms warten (Datenblatt).
   - Reset-Pin low → kein Senden, kein Lesen; steigende Flanke → Bring-up „recover“.
   - Fallende SAVE-Flanke → Callback (aus `loop()`).
+  - **Flanken per Interrupt** (Nachtrag 22.11., Florians Wunsch wie in der Diplomarbeit): ISR
+    setzt nur ein Latch (SAVE fallend, RESET steigend); Callback und Bring-up laufen in
+    `loop()`, weil Nutzercode/Flash/Serial im ISR unsicher sind (ESP32 crasht) und der Bring-up
+    UART + Timeouts braucht. Kein Puls geht verloren. Pins ohne Interrupt-Fähigkeit werden
+    gepollt. Latches sind dateiweit → nur ein Treiber mit Status-Pins pro Sketch.
 - Pins nur `INPUT`, nie HIGH getrieben, kein MCU-Pull-up (5-V-Pull-up würde die Leitung über die
   Chip-Versorgung heben). 5-V-Boards brauchen Pegelwandler.
 - **Doku muss den Unterschied klar sagen:** beim TP-UART2 setzt der Pin den Chip zurück, beim

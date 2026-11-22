@@ -13,6 +13,8 @@ Setup (once):
 Run:
     extras/bench/.venv/bin/python extras/bench/knx_listen.py
     extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway 192.168.1.10 --minutes 30
+    extras/bench/.venv/bin/python extras/bench/knx_listen.py --scan       # just find interfaces
+    extras/bench/.venv/bin/python extras/bench/knx_listen.py --routing    # IP router: multicast
 """
 
 import argparse
@@ -25,7 +27,7 @@ from datetime import datetime
 from pathlib import Path
 
 from xknx import XKNX
-from xknx.io import ConnectionConfig, ConnectionType
+from xknx.io import ConnectionConfig, ConnectionType, GatewayScanner
 from xknx.exceptions import CommunicationError
 from xknx.telegram import Telegram
 
@@ -52,8 +54,23 @@ async def main() -> int:
     ap.add_argument("--gateway", help="IP of the KNXnet/IP interface (default: auto-discover)")
     ap.add_argument("--local-ip", help="local IP or interface to use (default: let xknx choose)")
     ap.add_argument("--minutes", type=float, default=0, help="stop after this many minutes (0 = until Ctrl-C)")
+    ap.add_argument("--routing", action="store_true",
+                    help="listen to KNX IP routing multicast (IP router) instead of tunnelling")
+    ap.add_argument("--scan", action="store_true", help="only search for interfaces, print them, exit")
     ap.add_argument("--out", help="log file (default: extras/bench/logs/knx-YYYYmmdd-HHMMSS.jsonl)")
     args = ap.parse_args()
+
+    if args.scan:
+        xknx = XKNX()
+        found = 0
+        print(f"searching for KNXnet/IP interfaces (local ip {args.local_ip or 'auto'}) ...", flush=True)
+        async for gw in GatewayScanner(xknx, local_ip=args.local_ip, timeout_in_seconds=5).async_scan():
+            found += 1
+            print(f"  {gw.name!r}  {gw.ip_addr}:{gw.port}  individual {gw.individual_address}  "
+                  f"tunnelling {gw.supports_tunnelling}  routing {gw.supports_routing}", flush=True)
+        print(f"{found} found" if found else
+              "none found — interface in another subnet? Read its IP from ETS, or try --routing.")
+        return 0 if found else 1
 
     out_path = Path(args.out) if args.out else (
         Path(__file__).parent / "logs" / f"knx-{datetime.now():%Y%m%d-%H%M%S}.jsonl")
@@ -77,7 +94,9 @@ async def main() -> int:
         print(f'{rec["time"]}  {rec["src"]:>9} -> {rec["dst"]:<9} {rec["service"]:<20} '
               f'{rec.get("hex", rec.get("raw", ""))}', flush=True)
 
-    if args.gateway:
+    if args.routing:
+        config = ConnectionConfig(connection_type=ConnectionType.ROUTING, local_ip=args.local_ip)
+    elif args.gateway:
         config = ConnectionConfig(connection_type=ConnectionType.TUNNELING,
                                   gateway_ip=args.gateway, local_ip=args.local_ip)
     else:
@@ -91,8 +110,8 @@ async def main() -> int:
     xknx = XKNX(connection_config=config)
     xknx.telegram_queue.register_telegram_received_cb(on_telegram, match_for_outgoing=True)
     log.write(json.dumps({"t": round(time.time(), 3), "event": "start",
-                          "gateway": args.gateway or "auto"}) + "\n")
-    print(f"connecting ({args.gateway or 'auto-discover'}) ... logging to {out_path}", flush=True)
+                          "gateway": "routing" if args.routing else (args.gateway or "auto")}) + "\n")
+    print(f"connecting ({"routing multicast" if args.routing else (args.gateway or "auto-discover")}) ... logging to {out_path}", flush=True)
     try:
         await xknx.start()
     except CommunicationError as err:

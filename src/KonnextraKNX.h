@@ -107,6 +107,12 @@ class KonnextraKNX : public KnxCoordinator {
 		 *          on a 5 V board use a level shifter. The library never drives either pin high
 		 *          and enables no pull-up of its own. Without reset pin the library still
 		 *          notices when the chip reset itself and brings it up again.
+		 *
+		 *          Where the board pin can raise an interrupt, the library uses one, so even a
+		 *          short pulse is never missed; the reaction itself (your callback, the new
+		 *          bring-up) runs in loop(), not in the interrupt. Pins without interrupt
+		 *          capability are polled in loop(). Only one KonnextraKNX per sketch can use
+		 *          status pins.
 		 * @param resetPin Board pin wired to RESETB (NCN5130) or RESn (TP-UART2); -1 if not wired.
 		 * @param savePin  Board pin wired to SAVEB (NCN5130) or SAVE (TP-UART2); -1 if not wired.
 		*/
@@ -116,7 +122,8 @@ class KonnextraKNX : public KnxCoordinator {
 		 * @brief Calls your function once when the save pin reports that the bus power is failing.
 		 * @details Needs a save pin (setStatusPins()). The warning comes a few milliseconds
 		 *          before the bus coupler stops: enough to store a value, not for long work.
-		 *          It is called from loop().
+		 *          The pin change is caught by interrupt, but your function is called from
+		 *          loop() — so it may use Serial, flash or EEPROM safely. Keep loop() fast.
 		 * @param callback A function without arguments, e.g. `void onPowerFail() { ... }`;
 		 *                 nullptr removes it.
 		*/

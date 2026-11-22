@@ -90,6 +90,8 @@ class KnxDriver : public IKnxDriver {
 		int             savePin       = -1;
 		bool            lastResetHigh = true;
 		bool            lastSaveHigh  = true;
+		bool            resetIrq      = false;   // pin edge caught by interrupt, else polled
+		bool            saveIrq       = false;
 		void (*p_onPowerFail)(void)   = nullptr;
 
 		//---- Private methods ----
@@ -103,8 +105,9 @@ class KnxDriver : public IKnxDriver {
 		// Before a bring-up: hard-resets a TP-UART2 via RESn, then waits for the reset pin to
 		// go high. No-op without a reset pin. Returns false if the chip stays in reset.
 		bool prepareChip(void);
-		// Watches the status pins: power-fail callback on SAVE falling, re-bring-up on the
-		// reset pin rising. Returns false while the chip is held in reset.
+		// Handles status-pin events latched by interrupt (or polled where a pin cannot
+		// interrupt): power-fail callback on SAVE falling, re-bring-up on the reset pin rising.
+		// Returns false while the chip is held in reset.
 		bool checkStatusPins(void);
 		// True if a reset pin is connected and currently low.
 		bool chipInReset(void) const;

@@ -194,6 +194,10 @@ Two traps that the compile matrix caught and that will bite again:
   `vsnprintf` into a buffer the way `KnxDebug::log()` does. The library was always clean here —
   it is sketches and doc snippets that need watching, and `examples/`, `docs/` and `README.md`
   have been checked and use none.
+- **`attachInterrupt()`'s mode is not an `int` everywhere.** ArduinoCore-API cores (Renesas,
+  Mbed/GIGA, RP2040) type it as `PinStatus`; passing a mode through an `int` parameter fails
+  to compile there. Write the bare `RISING`/`FALLING` at the call site (see `attachIfPossible()`
+  in `KnxDriver.cpp`).
 - **AVR has no C++-style C headers and defaults to C++11.** Use `<stdint.h>`/`<string.h>`,
   never `<cstdint>`/`<cstring>`, and never take the address of a `static constexpr` member
   (that ODR-uses it and needs an out-of-line definition before C++17 — copy it to a local
