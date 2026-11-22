@@ -34,6 +34,77 @@ void KnxDriver::sendCommand(const uint8_t* cmd, uint16_t len) {
 	p_io->write(cmd, len);
 }
 
+void KnxDriver::setStatusPins(int resetPin, int savePin) {
+	this->resetPin = resetPin;
+	this->savePin  = savePin;
+}
+
+bool KnxDriver::busPowerOk(void) const {
+	return savePin < 0 || digitalRead(savePin) == HIGH;
+}
+
+bool KnxDriver::chipInReset(void) const {
+	return resetPin >= 0 && digitalRead(resetPin) == LOW;
+}
+
+bool KnxDriver::prepareChip(void) {
+	if (resetPin < 0) return true;
+
+	if (chip == KnxTransceiver::TpUart2) {
+		// RESn is an input as well as an output on the TP-UART2: forcing it low resets the
+		// chip. Emulate open drain — drive low, then release; never drive it high.
+		digitalWrite(resetPin, LOW);
+		pinMode(resetPin, OUTPUT);
+		digitalWrite(resetPin, LOW);
+		delay(RESET_PULSE_MS);
+		pinMode(resetPin, INPUT);
+		KnxDebug::log("DRV tpuart2 hard reset via RESn");
+	}
+	// On the NCN5130 RESETB is an output only: it is low while the bus voltage is too low,
+	// the chip is too hot or its watchdog fired, and no UART traffic is possible then.
+
+	const uint32_t start = millis();
+	while (digitalRead(resetPin) == LOW) {
+		if (millis() - start >= READY_TIMEOUT_MS) {
+			KnxDebug::log("DRV !! reset pin still low after %u ms — bus voltage present?",
+				(unsigned)READY_TIMEOUT_MS);
+			return false;
+		}
+	}
+	if (chip == KnxTransceiver::TpUart2) delay(TPUART2_SETTLE_MS);
+	lastResetHigh = true;
+	return true;
+}
+
+bool KnxDriver::checkStatusPins(void) {
+	if (savePin >= 0) {
+		const bool high = digitalRead(savePin) == HIGH;
+		if (!high && lastSaveHigh) {
+			KnxDebug::log("DRV !! save pin low: bus power failing");
+			if (p_onPowerFail != nullptr) p_onPowerFail();
+		} else if (high && !lastSaveHigh) {
+			KnxDebug::log("DRV save pin high again: bus power ok");
+		}
+		lastSaveHigh = high;
+	}
+
+	if (resetPin < 0) return true;
+	const bool high = digitalRead(resetPin) == HIGH;
+	if (!high) {
+		if (lastResetHigh) KnxDebug::log("DRV !! chip in reset (reset pin low)");
+		lastResetHigh = false;
+		return false;
+	}
+	if (!lastResetHigh) {
+		// The chip came back from a reset and has forgotten its address: bring it up again.
+		lastResetHigh = true;
+		KnxDebug::log("DRV reset pin high again: re-running bring-up");
+		if (chip == KnxTransceiver::TpUart2) delay(TPUART2_SETTLE_MS);
+		bringUp("recover");
+	}
+	return true;
+}
+
 // Readable name of a bring-up step, for the debug log.
 static const char* stepName(KnxBringUp::Step s) {
 	switch (s) {
@@ -148,15 +219,27 @@ bool KnxDriver::begin(void) {
 	} else {
 		KnxDebug::log("DRV using caller-configured stream");
 	}
+	// Plain INPUT, no MCU pull-up: the chip has its own to its 3.3 V (NCN5130) or VIF
+	// (TP-UART2) rail, and a 5 V MCU pull-up would lift the line above the chip's supply.
+	if (resetPin >= 0) pinMode(resetPin, INPUT);
+	if (savePin  >= 0) pinMode(savePin,  INPUT);
+	if (savePin  >= 0) lastSaveHigh = (digitalRead(savePin) == HIGH);
+
+	if (!prepareChip()) return false;
 
 	return bringUp("begin");
 }
 
 bool KnxDriver::reset(void) {
+	if (!prepareChip()) return false;
 	return bringUp("reset");
 }
 
 bool KnxDriver::sendTelegram(const uint8_t* frame, uint8_t length) {
+	if (chipInReset()) {
+		KnxDebug::log("DRV !! not sent: chip in reset (reset pin low)");
+		return false;
+	}
 	KnxDebug::logBytes("DRV tx frame:", frame, length);
 
 	uint8_t pair[2];
@@ -170,8 +253,18 @@ bool KnxDriver::sendTelegram(const uint8_t* frame, uint8_t length) {
 }
 
 bool KnxDriver::poll(uint8_t* out, uint8_t maxLen, uint8_t& outLen) {
+	if (!checkStatusPins()) return false;   // no UART traffic while the chip is in reset
+
 	while (p_io->available()) {
 		uint8_t b = p_io->read();
+		// A Reset.ind outside a frame means the chip reset itself (bus voltage dip, watchdog)
+		// and lost its address, so it would no longer acknowledge telegrams to us. 0x03 can
+		// never start a frame, so the reassembler would only have dropped it.
+		if (!reassembler.inFrame() && KnxTransceiverProtocol::isResetIndication(b)) {
+			KnxDebug::log("DRV !! unexpected Reset.ind: chip reset itself, re-running bring-up");
+			bringUp("recover");
+			return false;
+		}
 		if (reassembler.feed(b)) {
 			uint8_t n = reassembler.length();
 			if (n > maxLen) {          // caller buffer too small — drop, stay in sync

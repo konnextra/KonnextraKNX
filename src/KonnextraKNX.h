@@ -87,4 +87,44 @@ class KonnextraKNX : public KnxCoordinator {
 		KonnextraKNX(const String& physicalAddress, Stream& stream,
 		             KnxTransceiver chip = KnxTransceiver::Ncn5130)
 			: KnxCoordinator(&driverImpl, physicalAddress), driverImpl(physicalAddress, stream, chip) {}
+
+		/**
+		 * @brief Connects the bus coupler's reset and save pins, if you wired them. Call before begin().
+		 * @details Both pins are optional; the library works without them. With them it waits
+		 *          at begin() until the bus coupler is ready, stops sending while it is in reset,
+		 *          brings it up again automatically when it comes back, and can warn you before
+		 *          the bus power goes (see onBusPowerFail()).
+		 *
+		 *          The two chips use the reset pin differently:
+		 *          - **NCN5130** (RESETB): an *output* of the chip. It goes low when the bus
+		 *            voltage is too low, the chip is too hot or its watchdog fired. The library
+		 *            only reads it — it cannot reset the NCN5130 through this pin.
+		 *          - **TP-UART2** (RESn): an input *and* output. The library additionally pulls
+		 *            it low for 2 ms at begin() and reset() to hard-reset the chip, then releases it.
+		 *
+		 *          Both pins are open-drain with a pull-up inside the chip, to the chip's own
+		 *          logic supply (3.3 V on the NCN5130). Connect them directly to a 3.3 V board;
+		 *          on a 5 V board use a level shifter. The library never drives either pin high
+		 *          and enables no pull-up of its own. Without reset pin the library still
+		 *          notices when the chip reset itself and brings it up again.
+		 * @param resetPin Board pin wired to RESETB (NCN5130) or RESn (TP-UART2); -1 if not wired.
+		 * @param savePin  Board pin wired to SAVEB (NCN5130) or SAVE (TP-UART2); -1 if not wired.
+		*/
+		void setStatusPins(int resetPin, int savePin = -1) { driverImpl.setStatusPins(resetPin, savePin); }
+
+		/**
+		 * @brief Calls your function once when the save pin reports that the bus power is failing.
+		 * @details Needs a save pin (setStatusPins()). The warning comes a few milliseconds
+		 *          before the bus coupler stops: enough to store a value, not for long work.
+		 *          It is called from loop().
+		 * @param callback A function without arguments, e.g. `void onPowerFail() { ... }`;
+		 *                 nullptr removes it.
+		*/
+		void onBusPowerFail(void (*callback)(void)) { driverImpl.onBusPowerFail(callback); }
+
+		/**
+		 * @brief Whether the bus power is good, according to the save pin.
+		 * @return false while the save pin is low; always true if no save pin is connected.
+		*/
+		bool busPowerOk(void) const { return driverImpl.busPowerOk(); }
 };

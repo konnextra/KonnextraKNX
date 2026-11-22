@@ -29,6 +29,10 @@
 // STKNX/ATtiny bridge and a stock TP-UART2 both speak the TP-UART2 protocol.
 #define KNX_CHIP            KnxTransceiver::Ncn5130   // or KnxTransceiver::TpUart2
 
+// Optional status pins of the bus coupler (BCU light header: 7 RESETb, 8 SAVEb). -1 = not wired.
+#define KNX_RESET_PIN       -1
+#define KNX_SAVE_PIN        -1
+
 // Flip to true when something misbehaves: traces every telegram sent and received (including
 // foreign ones), frame build/parse, value coding and driver traffic, all prefixed with [knx].
 // Left off by default — the printing itself costs time on the receive path, so a clean run
@@ -74,6 +78,7 @@ static uint32_t ts_lastToggle = 0;
 //---- Callback handlers: declared here, defined below loop() ----
 void onLampChanged(bool on);
 void onBrightnessChanged(uint8_t percent);
+void onBusPowerFail();
 
 void setup() {
 	Serial.begin(BAUDRATE_SERIAL);
@@ -83,6 +88,8 @@ void setup() {
 
 	// Must be set before begin() so the driver's own bring-up is traced too.
 	knx.enableDebugMode(KNX_VERBOSE);
+	knx.setStatusPins(KNX_RESET_PIN, KNX_SAVE_PIN);
+	knx.onBusPowerFail(onBusPowerFail);
 
 	// The XIAO's transceiver is not on UART1's default pins, so move them. setPins() only
 	// touches the GPIO matrix and needs no started UART, and begin() reads the assignment
@@ -169,3 +176,7 @@ void onBrightnessChanged(uint8_t percent) {
  *   brightness always 0 / 100 → DPT5 decode or the 0..255 -> 0..100 rescale is suspect.
  *   [bus] but light unchanged → the telegram is fine; the actuator is not acting on 0/1/1.
  */
+
+void onBusPowerFail() {
+	Serial.println("[power] bus power failing (save pin low)");
+}

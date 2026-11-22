@@ -14,7 +14,11 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
    jedes TX des XIAO muss im xknx-Log erscheinen, jedes Taster-Telegramm im XIAO-Log
    (`RX`/`0 receiver(s)` bei fremden GAs). Ablauf: [`context/test-setup.md`](context/test-setup.md#test-2-empfang--mitschnitt).
    Danach zweites Board (1.1.6), Testmatrix H1–H14 (Spec 5.6).
-2. **Entscheidung RESETB/SAVEB** (Vorschlag unten unter „Vorschläge“) mit Florian klären.
+2. **Hardwaretest Status-Pins** (decisions/0003, implementiert, ungetestet): BCU-Header 7 RESETb
+   und 8 SAVEb an zwei freie XIAO-Pins, im BenchTest `KNX_RESET_PIN`/`KNX_SAVE_PIN` setzen,
+   Busspannung kurz trennen → erwartet: `save pin low` + `[power]`-Zeile, `chip in reset`, nach
+   Rückkehr `re-running bring-up` und wieder `begin`-artige ok-Zeile; Licht schaltet weiter.
+   Ohne Pins dasselbe einmal probieren: kommt `unexpected Reset.ind`? (prüft Selbstheilung)
 
 ## Stand
 
@@ -44,7 +48,8 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
   `KnxBringUp` anhand echter Messungen bestätigen oder anpassen.
 - Testwerkzeuge `extras/bench/` (BenchPair-Sketch, BusMonitor-Sketch, `knx_listen.py`,
   `run_pair.py`) — Spec 5.3–5.5. Noch nicht geschrieben.
-- Doku nach bestandenem Hardwaretest: README, `library.properties`-Absatz, CLAUDE.md
+- Doku nach bestandenem Hardwaretest (inkl. Status-Pins: **TP-UART2-RESn setzt zurück, NCN5130-
+  RESETB nur lesen**, 3,3 V Open-Drain, Pegelwandler bei 5 V): README, `library.properties`-Absatz, CLAUDE.md
   (Abschnitt Physical layer, Pin-Map-Header), Website en+de (Getting Started, Examples →
   ExplicitPort-Zeile, Supported Boards/Hardware), Forum-Update.
 - `PLAN.md` ist teilweise veraltet (nennt `v0.1.7`); bei Gelegenheit auf den Stand bringen.
@@ -55,24 +60,6 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
 2. Fixes aus den Tests, dann `extras/bench/`.
 3. Doku, Merge nach `main`, Release 0.2.0 (Ablauf in CLAUDE.md).
 
-### Vorschläge (keine Entscheidungen)
-**RESETB / SAVEB nutzen (22.11.).** Beim NCN5130 sind beide **Ausgänge des Chips**
-(Open-Drain, interner Pull-up auf VDDD 3,3 V, Header-Pins 7/8) — der Host kann damit den Chip
-nicht zurücksetzen, nur seinen Zustand lesen. RESETB low = Busspannung zu niedrig / DC-DC
-nicht gestartet / Thermal Shutdown / Watchdog; **keine UART-Kommunikation möglich**. SAVEB low =
-Warnung (VFILT < 14 V sofort, VBUS < 20 V nach 2 ms, Übertemperatur). Wichtige Folge:
-Nach einem Spannungseinbruch macht der NCN5130 einen Reset und **verliert die Adresse →
-kein Auto-ACK mehr**, ohne dass die Library es merkt.
-- A) Optionale Pins: `knx.setStatusPins(resetPin, savePin)` (vor `begin()`); `begin()` wartet,
-  bis RESETB high ist; `loop()` erkennt die steigende RESETB-Flanke und ruft `reset()` (neuer
-  Bring-up) automatisch; `knx.onBusPowerFail(cb)` bei SAVEB low. Funktioniert auch beim
-  TP-UART2 (hat RESET- und SAVE-Ausgänge mit gleicher Bedeutung, gegen Datenblatt prüfen).
-- B) Ohne Pins: einen spontanen `U_Reset.ind` (0x03 außerhalb eines Frames) in `poll()`
-  erkennen und automatisch neu hochfahren. Kostet keine Pins, erkennt aber keinen Power-Fail
-  vorab.
-- Empfehlung: **B als Default + A optional** — B schützt jeden Nutzer, A ist für Geräte, die
-  bei Busausfall Daten sichern wollen.
-
 ### Idee, noch nicht dran
 Florian möchte die Website-Session und diese Library-Session später bündeln, damit immer im
 Gesamtkontext gearbeitet wird. Jetzt nicht umsetzen; nur im Hinterkopf behalten, wenn Doku
@@ -80,6 +67,10 @@ für beide Repos anfällt.
 
 ## Handoff der letzten Session (21./22.11.2026)
 
+- **22.11. spät:** Status-Pins + Selbstheilung umgesetzt (decisions/0003): `setStatusPins`,
+  `onBusPowerFail`, `busPowerOk` in `KonnextraKNX`/`KnxDriver`, BenchTest-Defines, Changes.md.
+  Builds C6/Mega/R4/Nucleo ok, 84 Host-Tests ok, Doxygen 0 Warnungen. Noch nicht auf Hardware.
+  Florians Frage: `pio device monitor` flasht nicht, liest nur mit.
 - **22.11. abends:** Test 1 bestanden (Senden, Bring-up). `extras/bench/knx_listen.py`
   geschrieben (xknx 4, JSONL-Log, Auto-Discovery), Venv `extras/bench/.venv` angelegt (gitignored).
   RESETB/SAVEB-Vorschlag notiert.

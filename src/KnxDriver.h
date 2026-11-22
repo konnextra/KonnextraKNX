@@ -62,6 +62,9 @@ class KnxDriver : public IKnxDriver {
 	private:
 		//---- Timing ----
 		static constexpr uint16_t CON_TIMEOUT_MS   = 100;  // L_Data.con window after TX
+		static constexpr uint16_t READY_TIMEOUT_MS = 1000; // wait for the reset pin to go high
+		static constexpr uint8_t  RESET_PULSE_MS   = 2;    // TP-UART2 hard-reset pulse on RESn
+		static constexpr uint8_t  TPUART2_SETTLE_MS = 50;  // datasheet: wait 50 ms after RESn high
 
 		//---- Link settings ----
 		// The line format both chips use (the NCN5130 board is strapped for 9-bit UART, which
@@ -81,6 +84,14 @@ class KnxDriver : public IKnxDriver {
 		KnxTransceiver  chip;        // fixed at construction
 		KnxBringUp      bringUpSm;
 
+		// Optional status pins, -1 = not connected. Both are open-drain lines with a pull-up
+		// inside the chip; the driver never drives them high.
+		int             resetPin      = -1;
+		int             savePin       = -1;
+		bool            lastResetHigh = true;
+		bool            lastSaveHigh  = true;
+		void (*p_onPowerFail)(void)   = nullptr;
+
 		//---- Private methods ----
 		// Writes a raw command byte sequence to the transceiver.
 		void sendCommand(const uint8_t* cmd, uint16_t len);
@@ -89,6 +100,14 @@ class KnxDriver : public IKnxDriver {
 		bool bringUp(const char* phase);
 		// Consumes the transmit echo, then reads the L_Data.con within CON_TIMEOUT_MS.
 		bool awaitConfirmation(const uint8_t* frame, uint8_t length);
+		// Before a bring-up: hard-resets a TP-UART2 via RESn, then waits for the reset pin to
+		// go high. No-op without a reset pin. Returns false if the chip stays in reset.
+		bool prepareChip(void);
+		// Watches the status pins: power-fail callback on SAVE falling, re-bring-up on the
+		// reset pin rising. Returns false while the chip is held in reset.
+		bool checkStatusPins(void);
+		// True if a reset pin is connected and currently low.
+		bool chipInReset(void) const;
 
 	public:
 		//---- Constructors ----
@@ -135,6 +154,28 @@ class KnxDriver : public IKnxDriver {
 		 * @return KnxTransceiver::Ncn5130 or KnxTransceiver::TpUart2.
 		*/
 		KnxTransceiver transceiver(void) const { return chip; }
+
+		/**
+		 * @brief Connects the chip's optional reset and save status pins. Call before begin().
+		 * @details Both are open-drain lines with a pull-up inside the chip; the driver
+		 *          only reads them, except that on a TP-UART2 it pulls RESn low for a hard
+		 *          reset. See KonnextraKNX::setStatusPins() for the user-facing description.
+		 * @param resetPin MCU pin wired to RESETB (NCN5130) or RESn (TP-UART2); -1 if unused.
+		 * @param savePin  MCU pin wired to SAVEB (NCN5130) or SAVE (TP-UART2); -1 if unused.
+		*/
+		void setStatusPins(int resetPin, int savePin = -1);
+
+		/**
+		 * @brief Registers a function called once when the save pin reports a bus power failure.
+		 * @param callback Called from loop(); keep it short. nullptr removes it.
+		*/
+		void onBusPowerFail(void (*callback)(void)) { p_onPowerFail = callback; }
+
+		/**
+		 * @brief Whether the bus power is good according to the save pin.
+		 * @return false while the save pin is low; always true without a save pin.
+		*/
+		bool busPowerOk(void) const;
 
 		//---- IKnxDriver ----
 		/**

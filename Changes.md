@@ -27,3 +27,11 @@ reader is actually scanning for.
 - `begin()` no longer mistakes bus traffic during start-up for the chip's answers, so it also
   succeeds on a busy bus. With debug mode on, the NCN5130's supply rails and operating mode are
   logged at start-up.
+- New: `knx.setStatusPins(resetPin, savePin)` connects the bus coupler's optional reset and save
+  pins. With them, `begin()` waits until the chip is ready, sending stops while it is in reset,
+  and `knx.onBusPowerFail(callback)` / `knx.busPowerOk()` warn before the bus power goes. On a
+  TP-UART2 the reset pin (RESn) also hard-resets the chip at `begin()`; on the NCN5130 the reset
+  pin (RESETB) is only read — it cannot reset the chip. Both pins are 3.3 V open-drain on the
+  NCN5130: use a level shifter on 5 V boards.
+- The library now notices when the bus coupler resets itself (e.g. after a bus voltage dip) and
+  brings it up again, so it keeps acknowledging telegrams to its own address.
