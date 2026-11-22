@@ -45,6 +45,20 @@ Erwartet im Log (Debug an):
 Bei Fehler nennt das Log den Schritt (`FAILED at reset / system status / address
 confirmation / state`) — gegen die Liste „Ungeprüft“ in `ncn5130.md` halten.
 
+## Test 2: Empfang + Mitschnitt
+Ohne Ethernet-Kabel: Mac ins WLAN des Testkoffers (kein Internet → Claude-Session läuft nicht
+mit, Auswertung danach). Venv ist schon angelegt:
+```bash
+extras/bench/.venv/bin/python extras/bench/knx_listen.py            # Auto-Discovery, Ctrl-C beendet
+extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway <IP> --minutes 20
+```
+Log landet in `extras/bench/logs/knx-<datum>.jsonl` (gitignored), eine Zeile je Telegramm
+(Zeit, Richtung, Quelle, Ziel, Dienst, Rohwert). Parallel den seriellen XIAO-Log in eine Datei:
+```bash
+~/.platformio/penv/bin/pio device monitor | tee extras/bench/logs/xiao-$(date +%Y%m%d-%H%M%S).log
+```
+Während beides läuft: BenchTest toggelt 0/1/1; Taster mehrmals drücken; Zeitpunkte grob notieren.
+
 ## Test 2 und weiter
 Zweites Board (1.1.6) an den Bus, normale Schalttelegramme vom Taster ansehen, parallel xknx
 über die IP-Schnittstelle und ETS-Diagnose. Benötigt von Florian: IP der Schnittstelle,

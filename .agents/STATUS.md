@@ -1,21 +1,20 @@
 # STATUS
 
-Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **22.11.2026**.
+Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **22.11.2026 (abends)**.
 
 ## First in the next session
 
 Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfernen.
 
-1. **Hardwaretest NCN5130, Test 1: Licht schalten.** Florian lötet am 22.11. die Busklemme an,
-   danach ist der Testkoffer bereit. Ablauf und erwartete Log-Zeilen:
-   [`context/test-setup.md` → Test 1](context/test-setup.md#test-1-licht-schalten).
-   Code liegt auf Branch **`feature/ncn5130`** (Commit `6fb24da`), lokal, **nicht gepusht**.
-   Schlägt etwas fehl: Rule 0 — Log lesen, erklären, erst dann ändern. Die ungeprüften Annahmen
-   aus dem Datenblatt stehen in [`context/ncn5130.md`](context/ncn5130.md#ungeprüft).
-2. **Test 2: zweites Board + Taster + xknx/ETS-Diagnose.** Dafür von Florian einholen: IP der
-   IP-Schnittstelle im Testkoffer, statische IP für den Ethernet-Adapter am Mac, GA und
-   physikalische Adresse des Tasters. Dann xknx-Mithörer aufsetzen (Homebrew-Python 3.12).
-   Testmatrix H1–H14 in der Spec, Abschnitt 5.6.
+1. **Test 2: Empfang + Mitschnitt.** Test 1 (Senden) ist bestanden →
+   [`bench/2026-11-22-ncn5130-test1.md`](bench/2026-11-22-ncn5130-test1.md). Florian hängt den
+   Mac ins WLAN der IP-Schnittstelle (kein Internet, daher ohne Claude) und lässt
+   `extras/bench/knx_listen.py` mitschneiden, während der BenchTest läuft und er am Taster
+   schaltet; parallel den seriellen Log des XIAO speichern. Danach beide Dateien auswerten:
+   jedes TX des XIAO muss im xknx-Log erscheinen, jedes Taster-Telegramm im XIAO-Log
+   (`RX`/`0 receiver(s)` bei fremden GAs). Ablauf: [`context/test-setup.md`](context/test-setup.md#test-2-empfang--mitschnitt).
+   Danach zweites Board (1.1.6), Testmatrix H1–H14 (Spec 5.6).
+2. **Entscheidung RESETB/SAVEB** (Vorschlag unten unter „Vorschläge“) mit Florian klären.
 
 ## Stand
 
@@ -56,6 +55,24 @@ Von Florian gesetzt. Vor allem anderen abarbeiten, erledigte Punkte hier entfern
 2. Fixes aus den Tests, dann `extras/bench/`.
 3. Doku, Merge nach `main`, Release 0.2.0 (Ablauf in CLAUDE.md).
 
+### Vorschläge (keine Entscheidungen)
+**RESETB / SAVEB nutzen (22.11.).** Beim NCN5130 sind beide **Ausgänge des Chips**
+(Open-Drain, interner Pull-up auf VDDD 3,3 V, Header-Pins 7/8) — der Host kann damit den Chip
+nicht zurücksetzen, nur seinen Zustand lesen. RESETB low = Busspannung zu niedrig / DC-DC
+nicht gestartet / Thermal Shutdown / Watchdog; **keine UART-Kommunikation möglich**. SAVEB low =
+Warnung (VFILT < 14 V sofort, VBUS < 20 V nach 2 ms, Übertemperatur). Wichtige Folge:
+Nach einem Spannungseinbruch macht der NCN5130 einen Reset und **verliert die Adresse →
+kein Auto-ACK mehr**, ohne dass die Library es merkt.
+- A) Optionale Pins: `knx.setStatusPins(resetPin, savePin)` (vor `begin()`); `begin()` wartet,
+  bis RESETB high ist; `loop()` erkennt die steigende RESETB-Flanke und ruft `reset()` (neuer
+  Bring-up) automatisch; `knx.onBusPowerFail(cb)` bei SAVEB low. Funktioniert auch beim
+  TP-UART2 (hat RESET- und SAVE-Ausgänge mit gleicher Bedeutung, gegen Datenblatt prüfen).
+- B) Ohne Pins: einen spontanen `U_Reset.ind` (0x03 außerhalb eines Frames) in `poll()`
+  erkennen und automatisch neu hochfahren. Kostet keine Pins, erkennt aber keinen Power-Fail
+  vorab.
+- Empfehlung: **B als Default + A optional** — B schützt jeden Nutzer, A ist für Geräte, die
+  bei Busausfall Daten sichern wollen.
+
 ### Idee, noch nicht dran
 Florian möchte die Website-Session und diese Library-Session später bündeln, damit immer im
 Gesamtkontext gearbeitet wird. Jetzt nicht umsetzen; nur im Hinterkopf behalten, wenn Doku
@@ -63,7 +80,10 @@ für beide Repos anfällt.
 
 ## Handoff der letzten Session (21./22.11.2026)
 
-- **Erledigt:** Implementierung wie oben; `.agents/`-Struktur (START_HERE, STATUS, decisions,
+- **22.11. abends:** Test 1 bestanden (Senden, Bring-up). `extras/bench/knx_listen.py`
+  geschrieben (xknx 4, JSONL-Log, Auto-Discovery), Venv `extras/bench/.venv` angelegt (gitignored).
+  RESETB/SAVEB-Vorschlag notiert.
+- **Erledigt (21./22.11.):** Implementierung wie oben; `.agents/`-Struktur (START_HERE, STATUS, decisions,
   context) angelegt und in CLAUDE.md verlinkt.
 - **In Arbeit:** nichts halb Fertiges im Code.
 - **Unberührt:** `extras/bench/`, Doku, Website.

@@ -24,3 +24,7 @@ doxygen/
 
 # KNX specs + TP-UART2 datasheet: third-party copyrighted PDFs, kept local only
 reference/
+
+# bench tooling: local venv and captured logs
+extras/bench/.venv/
+extras/bench/logs/
