@@ -15,6 +15,8 @@ Run:
     extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway 192.168.1.10 --minutes 30
     extras/bench/.venv/bin/python extras/bench/knx_listen.py --scan       # just find interfaces
     extras/bench/.venv/bin/python extras/bench/knx_listen.py --routing    # IP router: multicast
+    extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway 192.168.0.10 \
+        --keyring ~/Downloads/project.knxkeys --keyring-password '...'     # KNX Secure interface
 """
 
 import argparse
@@ -27,7 +29,7 @@ from datetime import datetime
 from pathlib import Path
 
 from xknx import XKNX
-from xknx.io import ConnectionConfig, ConnectionType, GatewayScanner
+from xknx.io import ConnectionConfig, ConnectionType, GatewayScanner, SecureConfig
 from xknx.exceptions import CommunicationError
 from xknx.telegram import Telegram
 
@@ -56,6 +58,8 @@ async def main() -> int:
     ap.add_argument("--minutes", type=float, default=0, help="stop after this many minutes (0 = until Ctrl-C)")
     ap.add_argument("--routing", action="store_true",
                     help="listen to KNX IP routing multicast (IP router) instead of tunnelling")
+    ap.add_argument("--keyring", help="ETS keyring export (.knxkeys) for a KNX Secure interface")
+    ap.add_argument("--keyring-password", help="password chosen at the ETS keyring export")
     ap.add_argument("--scan", action="store_true", help="only search for interfaces, print them, exit")
     ap.add_argument("--out", help="log file (default: extras/bench/logs/knx-YYYYmmdd-HHMMSS.jsonl)")
     args = ap.parse_args()
@@ -67,7 +71,9 @@ async def main() -> int:
         async for gw in GatewayScanner(xknx, local_ip=args.local_ip, timeout_in_seconds=5).async_scan():
             found += 1
             print(f"  {gw.name!r}  {gw.ip_addr}:{gw.port}  individual {gw.individual_address}  "
-                  f"tunnelling {gw.supports_tunnelling}  routing {gw.supports_routing}", flush=True)
+                  f"tunnelling {gw.supports_tunnelling} (tcp {gw.supports_tunnelling_tcp})  "
+                  f"routing {gw.supports_routing}  secure {gw.supports_secure}  "
+                  f"tunnelling requires secure {gw.tunnelling_requires_secure}", flush=True)
         print(f"{found} found" if found else
               "none found — interface in another subnet? Read its IP from ETS, or try --routing.")
         return 0 if found else 1
@@ -94,7 +100,13 @@ async def main() -> int:
         print(f'{rec["time"]}  {rec["src"]:>9} -> {rec["dst"]:<9} {rec["service"]:<20} '
               f'{rec.get("hex", rec.get("raw", ""))}', flush=True)
 
-    if args.routing:
+    if args.keyring:
+        # KNX Secure: let xknx pick a tunnel from the keyring; the gateway narrows the choice.
+        secure = SecureConfig(knxkeys_file_path=args.keyring, knxkeys_password=args.keyring_password)
+        config = ConnectionConfig(connection_type=ConnectionType.TUNNELING_TCP_SECURE if args.gateway
+                                  else ConnectionType.AUTOMATIC,
+                                  gateway_ip=args.gateway, local_ip=args.local_ip, secure_config=secure)
+    elif args.routing:
         config = ConnectionConfig(connection_type=ConnectionType.ROUTING, local_ip=args.local_ip)
     elif args.gateway:
         config = ConnectionConfig(connection_type=ConnectionType.TUNNELING,
@@ -115,7 +127,8 @@ async def main() -> int:
     try:
         await xknx.start()
     except CommunicationError as err:
-        print(f"!! {err} — is this Mac in the interface's network? Try --gateway <IP>.", flush=True)
+        print(f"!! {err} — is this Mac in the interface's network? Try --gateway IP; "
+              f"a KNX Secure interface needs --keyring.", flush=True)
         log.close()
         return 1
     print("connected — Ctrl-C to stop", flush=True)

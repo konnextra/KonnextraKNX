@@ -54,12 +54,17 @@ extras/bench/.venv/bin/python extras/bench/knx_listen.py --gateway <IP> --minute
 ```
 Findet Auto-Discovery nichts: `--scan` (nur suchen), `--gateway <IP>` (feste IP aus ETS) oder
 `--routing` (KNX-IP-Router, Multicast 224.0.23.12, funktioniert auch über Subnetzgrenzen).
+KNX-Schnittstelle im Koffer: `IP Interface Secure N 148/23`, **192.168.0.10:3671**, physikalisch
+1.1.4, Tunnelling ja, Routing nein. Taster 1.1.1 sendet auf 0/1/1 (Licht), 0/0/1 (Dimmen DPT 3),
+1/1/0 (Jalousie). Platzhalter wie `<IP>` in Befehlen ohne spitze Klammern eingeben (zsh).
 Testkoffer-Netz: TP-Link TL-WR802N als Access Point, SSID `ROWI-Testkoffer-KNX`, 192.168.0.1/24,
 DHCP .100–.199; die KNX-Schnittstelle bezieht **keine** DHCP-Adresse (feste IP).
 Log landet in `extras/bench/logs/knx-<datum>.jsonl` (gitignored), eine Zeile je Telegramm
-(Zeit, Richtung, Quelle, Ziel, Dienst, Rohwert). Parallel den seriellen XIAO-Log in eine Datei:
+(Zeit, Richtung, Quelle, Ziel, Dienst, Rohwert). Parallel den seriellen XIAO-Log in eine Datei (`| tee` geht **nicht**, `pio device monitor`
+verlangt ein TTY; der Filter `log2file` schreibt `platformio-device-monitor-*.log` ins aktuelle
+Verzeichnis, `time` setzt Zeitstempel für den Abgleich mit xknx):
 ```bash
-~/.platformio/penv/bin/pio device monitor | tee extras/bench/logs/xiao-$(date +%Y%m%d-%H%M%S).log
+cd extras/bench/logs && ~/.platformio/penv/bin/pio device monitor -b 115200 -f time -f log2file
 ```
 Während beides läuft: BenchTest toggelt 0/1/1; Taster mehrmals drücken; Zeitpunkte grob notieren.
 
