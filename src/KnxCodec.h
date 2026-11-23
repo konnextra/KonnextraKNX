@@ -12,6 +12,7 @@
 //---- Libraries ----
 #include <stdint.h>
 #include "KnxValue.h"
+#include "KnxTelegramTypes.h"   // ParsedTelegram, for decodeTelegram()
 
 namespace KnxCodec {
 
@@ -42,6 +43,16 @@ namespace KnxCodec {
 	 * @return Decoded value; dpt == KnxDpt::UNKNOWN if decoding failed.
 	*/
 	KnxValue decode(KnxDpt dpt, const uint8_t* in, uint8_t len);
+
+	/**
+	 * @brief Decodes the value carried by a parsed group telegram for the given DPT: takes the
+	 *        6-bit APDU data for the inline datapoints (DPT1/2/3), the payload octets otherwise.
+	 *        Does not look at the telegram type — a Read decodes like any other telegram.
+	 * @param dpt      DPT that determines the interpretation.
+	 * @param telegram The parsed telegram.
+	 * @return Decoded value; dpt == KnxDpt::UNKNOWN if decoding failed.
+	*/
+	KnxValue decodeTelegram(KnxDpt dpt, const ParsedTelegram& telegram);
 
 	//---- DPT9 2-octet float helpers (exposed for targeted testing) ----
 	uint16_t encodeFloat16(float value);

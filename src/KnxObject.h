@@ -78,12 +78,7 @@ class KnxObject : public IKnxReceiver {
 		/** @brief Called by the bus connection to deliver a matching telegram to this object.
 		 *  You do not call this yourself. */
 		void receive(const ParsedTelegram& telegram) override {
-			const uint8_t* in;
-			uint8_t inLen;
-			if (KnxCodec::isInline6(objectDpt)) { in = &telegram.inline6Data; inLen = 1; }
-			else                                { in = telegram.payload;      inLen = telegram.payloadLength; }
-
-			KnxValue decoded = KnxCodec::decode(objectDpt, in, inLen);
+			KnxValue decoded = KnxCodec::decodeTelegram(objectDpt, telegram);
 			if (!decoded.isValid()) {
 				// The object matched the GA but could not decode it — usually the object's DPT
 				// disagrees with what the actuator actually publishes on that address.

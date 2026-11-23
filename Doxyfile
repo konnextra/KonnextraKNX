@@ -20,6 +20,7 @@ INPUT                  = docs/ApiReference.md \
                          src/KnxScalars.h \
                          src/KnxValue.h \
                          src/KnxCoordinator.h \
+                         src/KnxTelegram.h \
                          src/KnxEnums.h
 FILE_PATTERNS          = *.h *.md
 RECURSIVE              = NO

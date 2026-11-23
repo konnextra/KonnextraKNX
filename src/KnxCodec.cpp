@@ -173,6 +173,11 @@ uint8_t encode(const KnxValue& v, uint8_t* out, uint8_t maxLen) {
 	}
 }
 
+KnxValue decodeTelegram(KnxDpt dpt, const ParsedTelegram& telegram) {
+	if (isInline6(dpt)) return decode(dpt, &telegram.inline6Data, 1);
+	return decode(dpt, telegram.payload, telegram.payloadLength);
+}
+
 KnxValue decode(KnxDpt dpt, const uint8_t* in, uint8_t len) {
 	switch (dpt) {
 		case KnxDpt::DPT1:
