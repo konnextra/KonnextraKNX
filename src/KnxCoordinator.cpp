@@ -94,6 +94,13 @@ void KnxCoordinator::dispatch(const ParsedTelegram& telegram) {
 
 	uint16_t ga = packGroupAddress(telegram.target);
 
+	// Catch-all hook first: it sees every group telegram, reads and foreign traffic included.
+	if (telegramHook.plain != nullptr) {
+		KnxTelegram event(telegram);
+		if (_hookHasContext) telegramHook.withContext(event, p_hookContext);
+		else                 telegramHook.plain(event);
+	}
+
 	uint8_t delivered = 0;
 	for (IKnxReceiver* r = receiverHead; r != nullptr; r = r->nextReceiver) {
 		if (r->matches(ga)) {

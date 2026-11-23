@@ -13,6 +13,7 @@
 #include "KnxCoordinator.h"
 #include "KnxFrame.h"
 #include "KnxCodec.h"
+#include "KnxTelegram.h"
 
 //---- Test doubles ----
 
@@ -263,6 +264,116 @@ void test_control_pdu_reaches_handler(void) {
 	TEST_ASSERT_EQUAL_INT((int)KnxTpci::Connect, (int)handler.lastTpci);
 }
 
+//==== Stateless receive: onTelegram / subscribe ====
+
+static const PhysicalAddress OTHER = { 1, 1, 1 };
+static const int CMD_WRITE    = -1;
+static const int CMD_READ     = 0x00;
+static const int CMD_RESPONSE = 0x40;
+
+// Queues a group telegram from 1.1.1, optionally re-typed from Write to Read/Response.
+static void queueGroup(MockDriver& mock, GroupAddress ga, const KnxValue& value,
+                       int cmdBits = CMD_WRITE) {
+	uint8_t f[KnxFrame::MAX_FRAME];
+	uint8_t n = KnxFrame::build(OTHER, packGroupAddress(ga), value, f, sizeof(f));
+	TEST_ASSERT_TRUE(n > 0);
+	if (cmdBits == CMD_READ)  f[7] = 0x00;
+	else if (cmdBits >= 0)    f[7] = (uint8_t)((f[7] & 0x3F) | cmdBits);
+	f[n - 1] = KnxFrame::checksum(f, n - 1);
+	mock.queueFrame(f, n);
+}
+
+// Shared recorder for the callbacks below.
+static int      hookCalls = 0;
+static int      hookCallsB = 0;
+static uint16_t hookLastGa = 0;
+static bool     hookLastIsRead = false;
+static bool     hookLastDecodeValid = true;
+static int      sequence = 0;
+static int      hookSeq = 0, subSeq = 0;
+
+static void resetRecorder(void) {
+	hookCalls = hookCallsB = 0; hookLastGa = 0; hookLastIsRead = false;
+	hookLastDecodeValid = true; sequence = hookSeq = subSeq = 0;
+}
+
+static void hookA(const KnxTelegram& t) {
+	hookCalls++;
+	hookLastGa = t.groupAddress();
+	hookLastIsRead = t.isRead();
+	hookLastDecodeValid = t.decode(KnxDpt::DPT1).isValid();
+	hookSeq = ++sequence;
+}
+static void hookB(const KnxTelegram&) { hookCallsB++; }
+static void hookCtx(const KnxTelegram&, void* ctx) { (*(int*)ctx)++; }
+
+class SeqReceiver : public IKnxReceiver {
+	public:
+		uint16_t ga; int seq = 0;
+		explicit SeqReceiver(uint16_t g) : ga(g) {}
+		bool matches(uint16_t g) const override { return g == ga; }
+		void receive(const ParsedTelegram&) override { seq = ++sequence; }
+};
+
+void test_on_telegram_sees_foreign_ga(void) {
+	resetRecorder();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.onTelegram(hookA);
+	queueGroup(mock, GroupAddress{ 0, 7, 7 }, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, hookCalls);
+	TEST_ASSERT_EQUAL_UINT16(packGroupAddress(GroupAddress{ 0, 7, 7 }), hookLastGa);
+}
+
+void test_on_telegram_sees_read(void) {
+	resetRecorder();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.onTelegram(hookA);
+	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true), CMD_READ);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, hookCalls);
+	TEST_ASSERT_TRUE(hookLastIsRead);
+	TEST_ASSERT_FALSE(hookLastDecodeValid);
+}
+
+void test_on_telegram_context(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	int counter = 0;
+	knx.onTelegram(hookCtx, &counter);
+	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, counter);
+}
+
+void test_on_telegram_replace_and_remove(void) {
+	resetRecorder();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.onTelegram(hookA);
+	knx.onTelegram(hookB);
+	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(0, hookCalls);
+	TEST_ASSERT_EQUAL_INT(1, hookCallsB);
+
+	knx.onTelegram(nullptr);
+	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, hookCallsB);
+}
+
+void test_on_telegram_and_registry_both_fire(void) {
+	resetRecorder();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	uint16_t ga = packGroupAddress(GroupAddress{ 0, 3, 0 });
+	TestReceiver rx(ga);
+	knx.registerReceiver(&rx);
+	knx.onTelegram(hookA);
+	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, hookCalls);
+	TEST_ASSERT_EQUAL_INT(1, rx.receiveCount);
+}
+
 int main(int, char**) {
 	UNITY_BEGIN();
 	RUN_TEST(test_send_con_true);
@@ -276,5 +387,10 @@ int main(int, char**) {
 	RUN_TEST(test_individual_to_other_device_ignored);
 	RUN_TEST(test_individual_never_reaches_group_registry);
 	RUN_TEST(test_control_pdu_reaches_handler);
+	RUN_TEST(test_on_telegram_sees_foreign_ga);
+	RUN_TEST(test_on_telegram_sees_read);
+	RUN_TEST(test_on_telegram_context);
+	RUN_TEST(test_on_telegram_replace_and_remove);
+	RUN_TEST(test_on_telegram_and_registry_both_fire);
 	return UNITY_END();
 }

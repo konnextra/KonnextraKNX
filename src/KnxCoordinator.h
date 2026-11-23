@@ -26,6 +26,7 @@
 #include "KnxDebug.h"        // library-wide verbose logging switch
 #include "KnxValue.h"
 #include "KnxFrame.h"        // framing (pulls in KnxCodec)
+#include "KnxTelegram.h"     // event type + callback typedefs for subscribe/onTelegram
 
 class KnxCoordinator {
 	private:
@@ -39,6 +40,15 @@ class KnxCoordinator {
 		IKnxReceiver*  receiverHead = nullptr;   // intrusive registry head
 		IKnxDeviceHandler* p_deviceHandler = nullptr;   // optional point-to-point handler
 		uint8_t        rxFrame[RX_BUFFER_SIZE];
+
+		// One receive callback in either accepted shape; hasContext says which member is live.
+		union TelegramHandler {
+			KnxTelegramCallback        plain;
+			KnxTelegramContextCallback withContext;
+		};
+		TelegramHandler telegramHook = { nullptr };   // onTelegram() slot
+		bool  _hookHasContext = false;
+		void* p_hookContext   = nullptr;
 
 		//---- Methods ----
 		// Walks the receiver registry and delivers a parsed telegram to every match.
@@ -104,6 +114,32 @@ class KnxCoordinator {
 		 *                outlive this object.
 		*/
 		void setDeviceHandler(IKnxDeviceHandler* handler) { p_deviceHandler = handler; }
+
+		/**
+		 * @brief Calls a function for every group telegram on the bus — including telegrams for
+		 *        other devices and read requests — before any subscription or device object sees
+		 *        it. Meant for bus monitors and for integrations that keep their own list of
+		 *        addresses. There is one such function: a new call replaces the previous one.
+		 * @param callback Called with each telegram; decode its value with KnxTelegram::decode().
+		 *                 Pass nullptr to remove it.
+		*/
+		void onTelegram(KnxTelegramCallback callback) {
+			telegramHook.plain = callback;
+			_hookHasContext = false;
+			p_hookContext = nullptr;
+		}
+
+		/**
+		 * @brief Like onTelegram(callback), but also hands your own pointer back to the callback,
+		 *        for code that needs to know which of its objects a telegram belongs to.
+		 * @param callback Called with each telegram and the context pointer.
+		 * @param context  Any pointer of yours; passed through unchanged.
+		*/
+		void onTelegram(KnxTelegramContextCallback callback, void* context) {
+			telegramHook.withContext = callback;
+			_hookHasContext = (callback != nullptr);
+			p_hookContext = context;
+		}
 
 		//---- Point-to-point sending (advanced) ----
 		/**
