@@ -1,6 +1,6 @@
 # STATUS
 
-Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **22.11.2026, Session-Ende**.
+Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **23.11.2026**.
 
 ## First in the next session
 
@@ -27,6 +27,24 @@ sind auf Hardware bestätigt, auch gegen xknx (57/57) — siehe
    SAVEb an zwei freie XIAO-Pins, `KNX_RESET_PIN`/`KNX_SAVE_PIN` im BenchTest setzen, Busspannung
    kurz trennen → erwartet `save pin low` + `[power]`, `chip in reset`, danach `re-running
    bring-up`; Licht schaltet weiter. Dasselbe ohne Pins: kommt `unexpected Reset.ind`?
+
+**Neue Testplatine (23.11., noch nicht fertig gelötet):** Protoboard im Schalterrahmen mit BCU
+light (links), XIAO ESP32-C6, 2 grüne LEDs (Status der zwei Testkoffer-Lampen) und 2 Mikrotastern.
+Mit Florian festgelegte Belegung — Sketch und Test 3 darauf aufbauen:
+
+| Pin | GPIO | Funktion |
+|---|---|---|
+| D0 | 0 | RESETB (BCU RS) → `KNX_RESET_PIN` |
+| D1 | 1 | SAVEB (BCU SV) → `KNX_SAVE_PIN` |
+| D2 | 2 | LED 1 (Lampe 1), 220 Ω gegen GND (47 Ω falls InGaN-Grün ~3 V) |
+| D3 | 21 | Taster 1 gegen GND, `INPUT_PULLUP` |
+| D4 / D5 | 22 / 23 | I2C SDA / SCL — **frei halten** |
+| D6 / D7 | 16 / 17 | KNX TX / RX (`setPins(D7, D6)`) |
+| D8 | 19 | Taster 2 gegen GND, `INPUT_PULLUP` |
+| D9 | 20 | LED 2 (Lampe 2), 220 Ω gegen GND |
+| D10 | 18 | frei (Reserve) |
+
+Erst Status fragen: fertig gelötet? LEDs tatsächlich mit welchem Widerstand bestückt?
 
 **Werkzeuge (alles fertig):** XIAO-Log
 `cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`;
