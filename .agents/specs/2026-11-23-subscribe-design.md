@@ -58,8 +58,10 @@ over `ParsedTelegram` (the name is free; only a stale comment in `KnxDebug.h` me
 - `value()` — the value decoded with the subscription's DPT; invalid in `onTelegram` (no DPT known).
 - `decode(KnxDpt)` → `KnxValue`, invalid on a Read or a decode failure.
 - `payload()` / `payloadLength()` raw, for DPTs the codec lacks.
-- The inline-6 vs. payload selection now in `KnxObject::receive()` moves into `decode()`;
-  `KnxObject` calls it (pure refactor, same behaviour).
+- The inline-6 vs. payload selection now in `KnxObject::receive()` moves into
+  `KnxCodec::decodeTelegram(dpt, parsed)`; `KnxObject` and `KnxTelegram::decode()` both call it.
+  `KnxObject` keeps its current behaviour (it still decodes Reads — the known PLAN.md defect is
+  not fixed here); only `KnxTelegram::decode()` adds the Read check.
 
 Each callback has two accepted shapes, so beginners never see the context pointer:
 `void cb(const KnxTelegram& t)` and `void cb(const KnxTelegram& t, void* ctx)`.
@@ -67,7 +69,7 @@ Each callback has two accepted shapes, so beginners never see the context pointe
 ### B — `onTelegram`
 ```cpp
 void onBusTelegram(const KnxTelegram& t) {
-	if (t.type() == GroupValueType::Write && t.groupAddress() == ga("0/3/0")) {
+	if (t.type() == GroupValueType::Write && t.groupAddress() == packedGroupAddressFromString("0/3/0")) {
 		bool on = t.decode(KnxDpt::DPT1).asBool();
 	}
 }
@@ -84,11 +86,12 @@ knx.subscribe("0/3/0", KnxDpt::DPT1, onStatus);
 knx.subscribe("0/4/2", KnxDpt::DPT9, onTempCtx, &ctx);   // void onTempCtx(const KnxTelegram&, void*)
 knx.unsubscribe("0/3/0");                                // removes every entry on that GA
 ```
-- Returns `bool`: `false` when the table is full (logged in debug mode) or the GA string is
-  invalid.
+- Returns `bool`: `false` when the table is full (logged in debug mode) or the callback is
+  `nullptr`. A malformed GA string behaves exactly as in `send()` (logged, clamped).
 - Fires on **Write and Response only**, after a successful decode; a decode failure is logged
   (debug) and skipped — same as `KnxObject`.
-- Several entries may share a GA (each fires). Entries fire in insertion order.
+- Several entries may share a GA (each fires), in slot order. `unsubscribe` frees slots
+  without compacting, so it is safe from inside a callback; `subscribe` takes the first free slot.
 - Table size `KNX_MAX_SUBSCRIPTIONS`, `#define`, overridable per project (`-D...`); default
   **64**, **16 on AVR**. One entry is GA (2) + DPT (1) + shape flag (1) + callback pointer + ctx:
   12 bytes on 32-bit (64 slots = 768 B, under 0.2 % of the C6's 512 KB), 8 bytes on AVR (16 slots
