@@ -14,13 +14,16 @@ DPT leakt“ und der zustandslose Weg per Definition nicht empfängt.
 - Diese Streichung wird zurückgenommen: Der DPT steht auch beim Senden da (`Dpt1(true)`) und ist
   beim Empfang nicht aus dem Bus ableitbar; der Ersatz `KnxObject` verlangt ein globales Objekt.
 - `knx.onTelegram(cb[, ctx])`: ein Platz, jedes Gruppentelegramm inkl. Read und Fremdverkehr.
-- `knx.subscribe(ga, dpt, cb[, ctx])` / `knx.unsubscribe(ga)`: feste Tabelle
-  `KNX_MAX_SUBSCRIPTIONS` (Standard 64, AVR 16), nur Write/Response, `false` wenn voll.
+- `knx.subscribe(ga, dpt, cb[, ctx])` / `knx.unsubscribe(ga)`: nur Write/Response, `false` wenn voll.
+- Größe per `knx.setSubscriptionSlotLimit(n)` (Gesamtzahl, Standard 64), nur vor dem ersten
+  `subscribe()` wirksam. **Ausnahme von „keine dynamische Allokation“:** die Tabelle wird beim
+  ersten `subscribe()` genau einmal per `malloc` angelegt und nie freigegeben oder vergrößert
+  (kein Fragmentieren). Florian 24.11.: Array selbst anlegen und übergeben ist zu mühsam.
 - Beide Callbacks bekommen ein `KnxTelegram` (Adresse, Absender, Typ, Wert), wahlweise mit `void* ctx`.
 - Details: [`specs/2026-11-23-subscribe-design.md`](../specs/2026-11-23-subscribe-design.md).
 
 ## Konsequenzen
 - Neuer öffentlicher Typ und neue Coordinator-API → `Changes.md`, Doxygen, neues Beispiel,
   Website-Examples en+de.
-- Feste Tabelle kostet RAM auch ungenutzt (768 B auf 32-Bit, 128 B auf AVR), per `-D` änderbar.
+- Ohne `subscribe` 0 Byte; mit Standard 768 B (32-Bit) bzw. 512 B (AVR) Heap. `malloc`-Fehler → `subscribe` liefert `false`.
 - Read-Anfragen lösen `subscribe` nie aus; das Beantworten von Reads bleibt ein eigenes Thema.

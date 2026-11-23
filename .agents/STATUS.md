@@ -94,6 +94,12 @@ Details: [`context/test-setup.md`](context/test-setup.md).
 3. Doku, Merge nach `main`, Release 0.2.0 (Ablauf in CLAUDE.md).
 
 ### Idee, noch nicht dran
+**Echter Busmonitor-Modus (`U_Busmon`, 24.11. von Florian geparkt):** `knx.beginBusMonitor()`
+statt `begin()`, Chip schickt jedes Busbyte roh inkl. ACK/NAK, Gerät passiv (sendet/quittiert
+nicht), Telegrammende über Pausen. Ausgabe im selben Format wie die Log-Stufen plus ACK-Zeilen.
+Vorher NCN5130- und TP-UART2-Datenblatt zum Busmon-Byte-Strom lesen, eigene Spec. Wird auch für
+den Lasttest (ACKs/Wiederholungen sehen) gebraucht. Reihenfolge: subscribe → Log-Stufen → Busmonitor.
+
 Florian möchte die Website-Session und diese Library-Session später bündeln, damit immer im
 Gesamtkontext gearbeitet wird. Jetzt nicht umsetzen; nur im Hinterkopf behalten, wenn Doku
 für beide Repos anfällt.

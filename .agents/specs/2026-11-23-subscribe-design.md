@@ -92,10 +92,14 @@ knx.unsubscribe("0/3/0");                                // removes every entry 
   (debug) and skipped — same as `KnxObject`.
 - Several entries may share a GA (each fires), in slot order. `unsubscribe` frees slots
   without compacting, so it is safe from inside a callback; `subscribe` takes the first free slot.
-- Table size `KNX_MAX_SUBSCRIPTIONS`, `#define`, overridable per project (`-D...`); default
-  **64**, **16 on AVR**. One entry is GA (2) + DPT (1) + shape flag (1) + callback pointer + ctx:
-  12 bytes on 32-bit (64 slots = 768 B, under 0.2 % of the C6's 512 KB), 8 bytes on AVR (16 slots
-  = 128 B; the Mega bench build already uses 2195 of 8192 B). The thesis `bind()` had 32.
+- Table size: `knx.setSubscriptionSlotLimit(uint16_t total)`, default **64** on every board
+  (Florian, 24.11.). Sets the total, not an increment. The table is allocated **once**, with
+  `malloc`, on the first `subscribe()`, and never freed or resized — the one sanctioned
+  exception to "no dynamic allocation" (see decision 0004). `setSubscriptionSlotLimit()`
+  returns `false` once the table exists, so in practice it belongs in `setup()`. A sketch that
+  never subscribes uses 0 bytes. If `malloc` fails, `subscribe()` returns `false` (logged).
+  One slot: 12 bytes on 32-bit (64 = 768 B), 8 on AVR (64 = 512 B of the Mega's 8 KB).
+  The thesis `bind()` had a fixed 32.
 - Both overloads exist for `uint16_t` GAs and Arduino `String` GAs, mirroring `send()`.
 
 ### Dispatch order in `KnxCoordinator::dispatch()`

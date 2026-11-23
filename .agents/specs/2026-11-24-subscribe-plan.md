@@ -12,9 +12,9 @@
 
 ## Global Constraints
 
-- No `new`/`delete`, no STL containers; fixed array only.
+- No `new`/`delete`, no STL containers. Single exception: the subscription table, one `malloc` (`<stdlib.h>`) on the first `subscribe()`, never freed or resized.
 - `<stdint.h>`/`<string.h>`, never `<cstdint>`/`<cstring>` in `src/`; no address of a `static constexpr` member.
-- Methods camelCase; size as `#define KNX_MAX_SUBSCRIPTIONS`, overridable with `-D`; default **64**, **16** when `__AVR__`.
+- Methods camelCase; default slot count `#define KNX_DEFAULT_SUBSCRIPTION_SLOTS 64` (all boards), changed at run time only via `setSubscriptionSlotLimit()`.
 - `KnxTelegram.h` and the coordinator stay Arduino-free; `String` overloads only inside `#ifdef ARDUINO`.
 - Every public method gets a user-facing `@brief` (plain words, no PLAN/§ references, no `@code`).
 - Doxygen: new public header added to `Doxyfile` `INPUT`; `doxygen/warnings.txt` stays empty.
@@ -101,19 +101,23 @@ Tests:
 **Interfaces:**
 - Consumes: Task 1 types, Task 2 dispatch ordering.
 - Produces:
-  - `#ifndef KNX_MAX_SUBSCRIPTIONS` → 16 if `__AVR__`, else 64 (top of `KnxCoordinator.h`, with a one-line comment on RAM per slot)
+  - `#define KNX_DEFAULT_SUBSCRIPTION_SLOTS 64` (top of `KnxCoordinator.h`)
+  - `bool setSubscriptionSlotLimit(uint16_t total)` — `true` and stores `total` while no table exists; `false` once the first `subscribe()` allocated it
   - `bool subscribe(uint16_t groupAddress, KnxDpt dpt, KnxTelegramCallback callback)`
   - `bool subscribe(uint16_t groupAddress, KnxDpt dpt, KnxTelegramContextCallback callback, void* context)`
   - `void unsubscribe(uint16_t groupAddress)` — frees every slot on that GA, no compaction
-  - private slot: GA (`uint16_t`), `KnxDpt`, `uint8_t` flags (used, has-context), callback union, `void*` context — 12 bytes on 32-bit, 8 on AVR; add `static_assert(sizeof(...) <= 12)` only if it holds on the host build (64-bit host pointers make it 24 — skip the assert rather than special-case it).
+  - private: `Subscription* p_subscriptions = nullptr`, `uint16_t subscriptionLimit = KNX_DEFAULT_SUBSCRIPTION_SLOTS`; slot = GA (`uint16_t`), `KnxDpt`, `uint8_t` flags (used, has-context), callback union, `void*` context. Allocated with `calloc(limit, sizeof(Subscription))` on the first `subscribe()` (zeroed = all slots free); `nullptr` result → `subscribe` returns `false` and logs. Limit 0 → nothing allocated, `subscribe` returns `false`.
 
 - [ ] **Step 1: Write failing tests**
   - `test_subscribe_fires_on_write`: DPT1 on 0/3/0, Write true → called once, `t.value().asBool()`, `t.groupAddress()` correct.
   - `test_subscribe_fires_on_response`: Response → called once.
   - `test_subscribe_ignores_read`: Read → not called (Review Focus 2).
   - `test_subscribe_other_ga_ignored`: Write to 0/3/1 → not called.
-  - `test_subscribe_full_returns_false`: `KNX_MAX_SUBSCRIPTIONS` subscribes return true, the next returns false.
-  - `test_subscribe_nullptr_rejected`: returns false; then `KNX_MAX_SUBSCRIPTIONS` further subscribes still succeed (nothing stored).
+  - `test_subscribe_full_returns_false`: 64 subscribes return true, the 65th returns false.
+  - `test_slot_limit_before_first_subscribe`: `setSubscriptionSlotLimit(100)` → true; 100 subscribes true, 101st false.
+  - `test_slot_limit_after_subscribe_rejected`: one `subscribe`, then `setSubscriptionSlotLimit(100)` → false; table stays at 64.
+  - `test_slot_limit_zero`: limit 0 → `subscribe` returns false.
+  - `test_subscribe_nullptr_rejected`: returns false; then 64 further subscribes still succeed (nothing stored).
   - `test_subscribe_shared_ga_both_fire`: two callbacks on one GA → each once.
   - `test_unsubscribe_frees_slot`: fill table, `unsubscribe` one GA, `subscribe` again → true; unsubscribed callback no longer fires.
   - `test_unsubscribe_inside_callback`: entries X, Y on the same GA; X calls `unsubscribe` on that GA → Y still fires once for that telegram, neither fires on the next (Review Focus 1). Coordinator pointer via a file-static.
@@ -136,7 +140,7 @@ Tests:
 
 - [ ] **Step 1:** Add the overloads. Update the `send(String…)` `@brief` ("This only sends; to receive, use a device object") to point to `subscribe()`.
 - [ ] **Step 2:** Write `examples/Subscribe/Subscribe.ino` in the style of `StatelessSend.ino` (header comment, 4-space indent, named free functions prototyped above `setup()`, no `Serial.printf`): `subscribe("0/3/0", KnxDpt::DPT1, onLightStatus)` printing on/off, and `subscribe("0/4/2", KnxDpt::DPT9, onTemperature)` printing the float with `Serial.print`.
-- [ ] **Step 3:** `keywords.txt`: `KnxTelegram` KEYWORD1; `subscribe`, `unsubscribe`, `onTelegram` KEYWORD2 (tab-separated, match the file). `Changes.md`: one user-facing line for `subscribe`/`unsubscribe`, one for `onTelegram`/`KnxTelegram`, under the existing 0.2.0 section format.
+- [ ] **Step 3:** `keywords.txt`: `KnxTelegram` KEYWORD1; `subscribe`, `unsubscribe`, `onTelegram` KEYWORD2 (tab-separated, match the file). `Changes.md`: one user-facing line for `subscribe`/`unsubscribe`/`setSubscriptionSlotLimit` (KEYWORD2 too), one for `onTelegram`/`KnxTelegram`, under the existing 0.2.0 section format.
 - [ ] **Step 4: Verify**
   - `~/.platformio/penv/bin/pio test -e native` → all PASS
   - `PLATFORMIO_SRC_DIR=examples/Subscribe ~/.platformio/penv/bin/pio run -e seeed_xiao_esp32c6` and the Mega env from `platformio.ini` → SUCCESS
