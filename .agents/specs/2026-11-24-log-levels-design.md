@@ -53,7 +53,11 @@ The decoded value in parentheses appears only when a listener supplies the DPT.
 - `KnxTelegram` becomes Arduino `Printable` (`Serial.println(t)` gives the Basic line) — the
   one formatter shared by Basic, Deep and user code. Host build: a plain `format(char*, len)`.
 - `enableDebugMode(bool)` stays as a shorthand (`true` → `Deep`) so 0.1.9 sketches compile.
-- Optional output target `setLogOutput(Print&)` — proposed, not yet agreed.
+- Output target: `knx.setDebugOutputPort(Print* port)` (Florian 24.11.: named like the debug
+  switch, takes `&Serial2`, a BluetoothSerial, anything stream-like). Parameter type `Print*`
+  rather than `Stream*`: every `Stream` is a `Print`, and output needs nothing more. Default
+  `&Serial`; `nullptr` restores the default. Arduino-only (`#ifdef ARDUINO`); library-wide like
+  the level itself.
 - Read through the current 57 call sites against a real bench log before fixing the format.
 
 ## Parked: real bus monitor (`U_Busmon`)
