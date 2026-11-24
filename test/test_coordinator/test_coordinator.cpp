@@ -86,7 +86,7 @@ class TestDeviceHandler : public IKnxDeviceHandler {
 static const PhysicalAddress SELF = { 1, 1, 5 };
 
 void setUp(void) {}
-void tearDown(void) {}
+void tearDown(void) { KnxDebug::setLineSink(nullptr); KnxDebug::setLevel(KnxLog::Off); }
 
 //---- send() returns the driver's real L_Data.con result (PLAN §9) ----
 void test_send_con_true(void) {
@@ -566,6 +566,100 @@ void test_loop_reentry_from_callback_ignored(void) {
 	p_knxUnderTest = nullptr;
 }
 
+//==== Log output: order and shape ====
+
+static char logLines[16][128];
+static int  logCount = 0;
+static void logCapture(const char* line) {
+	if (logCount < 16) { strncpy(logLines[logCount], line, 127); logLines[logCount][127] = '\0'; }
+	logCount++;
+}
+static void subMarksCallback(const KnxTelegram&) { logCapture("CALLBACK"); }
+static void startCapture(KnxLog level) { logCount = 0; KnxDebug::setLineSink(logCapture); KnxDebug::setLevel(level); }
+static bool startsWith(const char* s, const char* prefix) { return strncmp(s, prefix, strlen(prefix)) == 0; }
+
+void test_log_basic_rx_line_before_callback(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subMarksCallback);
+	queueGroup(mock, GA_A, Dpt1(true));
+	startCapture(KnxLog::Basic);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(2, logCount);
+	TEST_ASSERT_EQUAL_STRING("[knx] RX  1.1.1 -> 0/3/0  Write     01  (DPT1: on)  1 listener", logLines[0]);
+	TEST_ASSERT_EQUAL_STRING("CALLBACK", logLines[1]);
+}
+
+void test_log_basic_foreign_and_read(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subMarksCallback);
+	queueGroup(mock, GA_B, Dpt1(true));
+	queueGroup(mock, GA_A, Dpt1(true), CMD_READ);
+	startCapture(KnxLog::Basic);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(2, logCount);
+	TEST_ASSERT_EQUAL_STRING("[knx] RX  1.1.1 -> 0/3/1  Write     01  no listener", logLines[0]);
+	TEST_ASSERT_EQUAL_STRING("[knx] RX  1.1.1 -> 0/3/0  Read  no listener", logLines[1]);   // no value on a read
+}
+
+void test_log_deep_rx_block_order(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subMarksCallback);
+	queueGroup(mock, GA_A, Dpt1(true));   // building the frame must not land in the capture
+	startCapture(KnxLog::Deep);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(7, logCount);
+	TEST_ASSERT_TRUE(startsWith(logLines[0], "[knx] ----- RX 1.1.1 -> 0/3/0  Write     01  (DPT1: on) ---"));
+	TEST_ASSERT_TRUE(startsWith(logLines[1], "[knx]   RX  frame: BC 11 01 03 00 E1 00 81"));
+	TEST_ASSERT_TRUE(startsWith(logLines[2], "[knx]   ctrl BC  priority low  repeat no"));
+	TEST_ASSERT_TRUE(startsWith(logLines[3], "[knx]   hops 6  length 1  checksum "));
+	TEST_ASSERT_EQUAL_STRING("[knx]   subscription -> DPT1: on", logLines[4]);
+	TEST_ASSERT_EQUAL_STRING("CALLBACK", logLines[5]);
+	TEST_ASSERT_EQUAL_STRING("[knx]   -> delivered to 1 listener(s)", logLines[6]);
+}
+
+void test_log_basic_tx_lines(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	startCapture(KnxLog::Basic);
+	knx.send(packGroupAddress(GroupAddress{ 0, 1, 1 }), Dpt1(true));
+	mock.sendResult = false;
+	knx.send(packGroupAddress(GroupAddress{ 0, 1, 1 }), Dpt1(false));
+	TEST_ASSERT_EQUAL_INT(2, logCount);
+	TEST_ASSERT_EQUAL_STRING("[knx] TX  1.1.5 -> 0/1/1  Write     01  (DPT1: on)  confirmed", logLines[0]);
+	TEST_ASSERT_EQUAL_STRING("[knx] ! TX  1.1.5 -> 0/1/1  Write     00  not confirmed by the bus  (more: setDebugMode(KnxLog::Deep))", logLines[1]);
+}
+
+void test_log_deep_tx_block(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	startCapture(KnxLog::Deep);
+	knx.send(packGroupAddress(GroupAddress{ 0, 1, 1 }), Dpt1(true));
+	TEST_ASSERT_TRUE(logCount >= 3);
+	TEST_ASSERT_TRUE(startsWith(logLines[0], "[knx] ----- TX 1.1.5 -> 0/1/1  Write  (DPT1: on) ---"));
+	TEST_ASSERT_TRUE(startsWith(logLines[1], "[knx]   FRM build:"));
+	TEST_ASSERT_EQUAL_STRING("[knx]   result: confirmed by the bus", logLines[logCount - 1]);
+}
+
+void test_log_dropped_frame(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	uint8_t f[KnxFrame::MAX_FRAME];
+	uint8_t n = KnxFrame::build(OTHER, packGroupAddress(GA_A), Dpt1(true), f, sizeof(f));
+	f[n - 1] ^= 0xFF;   // break the checksum
+	mock.queueFrame(f, n);
+	startCapture(KnxLog::Basic);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, logCount);
+	TEST_ASSERT_EQUAL_STRING("[knx] ! RX  frame dropped: checksum mismatch (9 bytes)  (more: setDebugMode(KnxLog::Deep))", logLines[0]);
+}
+
+void test_log_off_is_silent(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subB);
+	queueGroup(mock, GA_A, Dpt1(true));
+	startCapture(KnxLog::Off);
+	knx.loop();
+	knx.send(packGroupAddress(GA_A), Dpt1(true));
+	TEST_ASSERT_EQUAL_INT(0, logCount);
+}
+
 int main(int, char**) {
 	UNITY_BEGIN();
 	RUN_TEST(test_send_con_true);
@@ -600,5 +694,12 @@ int main(int, char**) {
 	RUN_TEST(test_subscribe_context);
 	RUN_TEST(test_hook_subscribe_object_order);
 	RUN_TEST(test_loop_reentry_from_callback_ignored);
+	RUN_TEST(test_log_basic_rx_line_before_callback);
+	RUN_TEST(test_log_basic_foreign_and_read);
+	RUN_TEST(test_log_deep_rx_block_order);
+	RUN_TEST(test_log_basic_tx_lines);
+	RUN_TEST(test_log_deep_tx_block);
+	RUN_TEST(test_log_dropped_frame);
+	RUN_TEST(test_log_off_is_silent);
 	return UNITY_END();
 }

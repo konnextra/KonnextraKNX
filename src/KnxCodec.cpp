@@ -275,9 +275,9 @@ KnxValue decode(KnxDpt dpt, const uint8_t* in, uint8_t len) {
 			break;
 	}
 
-	// Reached only on an unsupported DPT or a payload too short for it — the two decode
-	// failures worth seeing, since both surface as "nothing happened" to the user.
-	KnxDebug::log("COD !! decode failed: DPT %u, %u byte(s)", (unsigned)dpt, (unsigned)len);
+	// Reached only on an unsupported DPT or a payload too short for it. Silent on purpose: the
+	// caller (object, subscription) reports it with the group address, where it is useful,
+	// and the log's display decode must not repeat it.
 	return KnxValue{}; // dpt == UNKNOWN on failure
 }
 

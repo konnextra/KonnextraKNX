@@ -76,6 +76,10 @@ class IKnxReceiver {
 		// cached value, and fire the user callback.
 		virtual void receive(const ParsedTelegram& telegram) = 0;
 
+		// The datapoint type this receiver decodes with, used only to show the value in the
+		// log; UNKNOWN (the default) shows the raw bytes alone.
+		virtual KnxDpt receiverDpt(void) const { return KnxDpt::UNKNOWN; }
+
 		// Intrusive singly-linked-list link; owned by the coordinator's registry.
 		IKnxReceiver* nextReceiver = nullptr;
 };

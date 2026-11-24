@@ -28,6 +28,7 @@
 #include "KnxValue.h"
 #include "KnxFrame.h"        // framing (pulls in KnxCodec)
 #include "KnxTelegram.h"     // event type + callback typedefs for subscribe/onAnyTelegram
+#include "KnxFormat.h"       // log line rendering
 
 // Subscription slots allocated on the first subscribe() unless setSubscriptionSlotLimit() says
 // otherwise. One slot is 12 bytes on 32-bit boards (64 = 768 B) and 8 bytes on AVR.
@@ -82,8 +83,17 @@ class KnxCoordinator {
 		bool addSubscription(uint16_t groupAddress, KnxDpt dpt, TelegramHandler handler,
 		                     uint8_t flags, void* context);
 
+		// Sends a built frame and logs the verdict (Basic line or Deep block close).
+		bool transmit(const uint8_t* frame, uint8_t len, const KnxValue* value);
+
+		// Writes the Basic line or opens the Deep block for a received telegram, before dispatch.
+		void logReceived(const ParsedTelegram& telegram, uint8_t len);
+
+		// Listeners a group telegram will reach, and the first known DPT for showing its value.
+		uint16_t countListeners(const ParsedTelegram& telegram, KnxDpt& displayDpt) const;
+
 		// Delivers a Write/Response to every matching subscription; returns how many fired.
-		uint8_t dispatchSubscriptions(const ParsedTelegram& telegram, uint16_t groupAddress);
+		uint16_t dispatchSubscriptions(const ParsedTelegram& telegram, uint16_t groupAddress);
 
 	public:
 		//---- Constructor ----

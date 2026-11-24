@@ -75,6 +75,10 @@ class KnxObject : public IKnxReceiver {
 			return packedGroupAddress == statusGa;
 		}
 
+		/** @brief Called by the bus connection to learn this object's datapoint type for its log.
+		 *  You do not call this yourself. */
+		KnxDpt receiverDpt(void) const override { return objectDpt; }
+
 		/** @brief Called by the bus connection to deliver a matching telegram to this object.
 		 *  You do not call this yourself. */
 		void receive(const ParsedTelegram& telegram) override {
@@ -82,13 +86,14 @@ class KnxObject : public IKnxReceiver {
 			if (!decoded.isValid()) {
 				// The object matched the GA but could not decode it — usually the object's DPT
 				// disagrees with what the actuator actually publishes on that address.
-				KnxDebug::log("OBJ !! matched GA but decode failed (object DPT %u)",
-					(unsigned)objectDpt);
+				GroupAddress g = unpackGroupAddress(statusGa);
+				KnxDebug::problem("object on %u/%u/%u: value does not decode as DPT %u",
+					(unsigned)g.main, (unsigned)g.middle, (unsigned)g.sub, (unsigned)objectDpt);
 				return;
 			}
 
 			cachedValue = decoded;
-			KnxDebug::log("OBJ update: DPT %u cached, firing callback", (unsigned)objectDpt);
+			KnxDebug::log("object (DPT %u) -> value cached, callback fired", (unsigned)objectDpt);
 			onValueUpdated();
 		}
 

@@ -86,6 +86,9 @@ namespace KnxFrame {
 	*/
 	bool parse(const uint8_t* buf, uint8_t len, ParsedTelegram& out);
 
+	// Why the most recent parse() returned false, e.g. "checksum mismatch"; "" after a success.
+	const char* lastParseError(void);
+
 	// XOR checksum seeded with 0xFF over the first len bytes (KNX L_Data checksum).
 	uint8_t checksum(const uint8_t* buf, uint8_t len);
 

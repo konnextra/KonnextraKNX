@@ -42,7 +42,7 @@ uint8_t build(PhysicalAddress source, uint16_t targetGa, const KnxValue& value,
 	uint8_t payload[KnxCodec::MAX_PAYLOAD];
 	uint8_t plen = KnxCodec::encode(value, payload, sizeof(payload));
 	if (plen == 0) {
-		KnxDebug::log("FRM !! encode failed for DPT %u", (unsigned)value.dpt);
+		KnxDebug::problem("cannot encode the value as DPT %u", (unsigned)value.dpt);
 		return 0;
 	}
 
@@ -50,7 +50,7 @@ uint8_t build(PhysicalAddress source, uint16_t targetGa, const KnxValue& value,
 	uint8_t apduLen  = inline6 ? 2 : (uint8_t)(2 + plen);
 	uint8_t frameLen = inline6 ? 8 : (uint8_t)(8 + plen);   // bytes before the checksum
 	if ((uint8_t)(frameLen + 1) > maxLen) {
-		KnxDebug::log("FRM !! frame %u B exceeds buffer %u B", (unsigned)(frameLen + 1), (unsigned)maxLen);
+		KnxDebug::problem("frame of %u bytes does not fit the buffer (%u)", (unsigned)(frameLen + 1), (unsigned)maxLen);
 		return 0;
 	}
 
@@ -82,7 +82,7 @@ uint8_t buildIndividual(PhysicalAddress source, PhysicalAddress target, uint16_t
 	uint8_t apduLen  = (uint8_t)(2 + payloadLength);   // APCI occupies octets 6..7
 	uint8_t frameLen = (uint8_t)(6 + apduLen);         // bytes before the checksum
 	if (apduLen > 16 || (uint8_t)(frameLen + 1) > maxLen) {
-		KnxDebug::log("FRM !! individual frame %u B exceeds buffer %u B",
+		KnxDebug::problem("frame of %u bytes does not fit the buffer (%u)",
 			(unsigned)(frameLen + 1), (unsigned)maxLen);
 		return 0;
 	}
@@ -114,7 +114,7 @@ uint8_t buildControl(PhysicalAddress source, PhysicalAddress target, KnxTpci tpc
 		case KnxTpci::Ack:        tpciByte = (uint8_t)(0xC2 | ((sequenceNumber & 0x0F) << 2)); break;
 		case KnxTpci::Nak:        tpciByte = (uint8_t)(0xC3 | ((sequenceNumber & 0x0F) << 2)); break;
 		default:
-			KnxDebug::log("FRM !! buildControl called with a non-control TPCI");
+			KnxDebug::problem("not a control message (TPCI)");
 			return 0;
 	}
 
@@ -156,18 +156,24 @@ static KnxTpci decodeTpci(uint8_t b, KnxAddressType addressType, uint8_t& seqNo)
 	return KnxTpci::Unknown;
 }
 
+// Why the last parse() failed; parse itself stays silent so the caller can report it in the
+// right place in the log.
+static const char* p_lastParseError = "";
+
+const char* lastParseError(void) { return p_lastParseError; }
+
 bool parse(const uint8_t* buf, uint8_t len, ParsedTelegram& out) {
 	out = ParsedTelegram{};
+	p_lastParseError = "";
 
 	// Smallest valid frame is a TPCI-only control PDU (T_Connect/T_Disconnect/T_ACK):
 	// 6 header + 1 TPCI + 1 checksum = 8 bytes (TP1 §2.2.4.5, length 0).
 	if (len < 8) {
-		KnxDebug::log("FRM !! runt frame, %u B (min 8)", (unsigned)len);
+		p_lastParseError = "too short";
 		return false;
 	}
 	if (buf[len - 1] != checksum(buf, (uint8_t)(len - 1))) {
-		KnxDebug::log("FRM !! checksum: got 0x%02X, want 0x%02X",
-			(unsigned)buf[len - 1], (unsigned)checksum(buf, (uint8_t)(len - 1)));
+		p_lastParseError = "checksum mismatch";
 		return false;
 	}
 
@@ -191,8 +197,7 @@ bool parse(const uint8_t* buf, uint8_t len, ParsedTelegram& out) {
 	uint8_t apduLen  = (uint8_t)((buf[5] & 0x0F) + 1);
 	uint8_t expected = (uint8_t)(6 + apduLen + 1);   // header + APDU + checksum
 	if (expected != len) {
-		KnxDebug::log("FRM !! length mismatch: LG implies %u B, got %u B",
-			(unsigned)expected, (unsigned)len);
+		p_lastParseError = "length field does not match";
 		return false;
 	}
 
