@@ -43,3 +43,5 @@ reader is actually scanning for.
 - New: `knx.onTelegram(callback)` sees every group telegram on the bus — other devices' traffic
   and read requests included — for bus monitors and integrations such as Tasmota. Both callbacks
   also come in a form with your own `void* context` pointer.
+- `knx.loop()` called from inside a receive callback (also `onUpdate()`) now does nothing instead
+  of overwriting the telegram that is still being delivered.

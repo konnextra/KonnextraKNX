@@ -81,7 +81,9 @@ Details: [`context/test-setup.md`](context/test-setup.md).
   `feature/ncn5130`, nicht gepusht.** Spec `specs/2026-11-23-subscribe-design.md`, Plan
   `specs/2026-11-24-subscribe-plan.md`, decisions/0004. Offen dazu: Abschnitt „Subscribe“ im
   Examples-Guide der Website (en + de); Hardwaretest (Taster 1.1.1 → 0/1/1 abonnieren);
-  Forum-Antwort an LostWolf nach dem Release.
+  Forum-Antwort an LostWolf nach dem Release. Zurückgestellte Kleinigkeiten aus dem Review:
+  Null-Check liest inaktives Union-Member; `subscribe()` im Callback sieht das laufende Telegramm
+  je nach Slot; Debug-Zähler kann über 255 laufen; `KnxTelegram::payload()` liefert bei Read 1 Byte.
 - **Log-Stufen `Off/Basic/Deep` + `setDebugOutputPort(Print*)`** — Spec
   `specs/2026-11-24-log-levels-design.md`, nächster Schritt nach subscribe: Plan schreiben,
   vorher heutige Log-Aufrufe gegen einen echten Bench-Log durchgehen.
