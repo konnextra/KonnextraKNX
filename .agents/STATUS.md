@@ -9,6 +9,16 @@ Arbeitsstand: Branch **`feature/ncn5130`** (gepusht). Senden **und** Empfangen �
 sind auf Hardware bestätigt, auch gegen xknx (57/57) — siehe
 [`bench/2026-11-22-ncn5130-test2-rx.md`](bench/2026-11-22-ncn5130-test2-rx.md).
 
+**Zuerst (Florian, 24.11. abends):**
+- **Testplatine ohne USB prüfen** (nur vom Bus versorgt, BCU 5 V → XIAO 5V/VBUS): Florian kam das
+  Verhalten „komisch“ vor. Erst fragen, was genau zu sehen war; dann messen, nicht raten.
+  Vermutungen, ungeprüft: 5-V-Budget/Einbruch beim Anlauf; `Serial`-Ausgabe ohne USB-Host
+  (`setTxTimeoutMs(0)` ist gesetzt); `begin()` scheitert beim gemeinsamen Hochlaufen (Sketch
+  versucht es alle 5 s neu); XIAO bootet durch den Bus neu. Ohne USB gibt es kein Log →
+  LEDs als Anzeige nutzen oder `setDebugOutputPort()` auf einen freien UART (D10) legen.
+- **Status-GA:** Florian trägt „Status Schalten“ → 0/3/0 in der ETS wieder ein; danach muss das
+  Log `[led] … (status 0/3/0)` zeigen (damit ist auch Punkt 2 erledigt).
+
 1. **Lasttest mit zwei Boards, Kollisionen erzwingen (Hauptthema).** Zwei Boards am Bus spammen
    sich gegenseitig zu, damit echte Kollisionen und Wiederholungen entstehen; xknx schneidet
    parallel mit (ETS-Gruppen-/Busmonitor optional, für Florian umständlicher).
@@ -127,6 +137,11 @@ Gesamtkontext gearbeitet wird. Jetzt nicht umsetzen; nur im Hinterkopf behalten,
 für beide Repos anfällt.
 
 ## Handoff der Session 23./24.11.2026
+
+- **Stand 24.11. abends:** Testplatine gelötet, `extras/bench/TestBoard/` hochgeladen; Senden,
+  Empfang, `subscribe` und Log `Basic` auf Hardware bestätigt. Nicht bestätigt: `onUpdate`,
+  RESET/SAVE-Pins, Log `Deep`, Betrieb ohne USB. Lokal committet, aber nicht gepusht:
+  `72c055d` und folgende. Blocker: keiner.
 
 - **Nachtrag 24.11.:** Log-Stufen gebaut (Commits `a86edc5`..HEAD), `onAnyTelegram`-Umbenennung,
   Review-Fixes (Read auf Objekt ohne `!`, „RX continued“ nach Senden aus Callback, Hinweis nie
