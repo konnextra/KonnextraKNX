@@ -374,6 +374,175 @@ void test_on_telegram_and_registry_both_fire(void) {
 	TEST_ASSERT_EQUAL_INT(1, rx.receiveCount);
 }
 
+static int  subCalls = 0, subCallsB = 0, subCallsDpt9 = 0;
+static bool subLastBool = false;
+static uint16_t subLastGa = 0;
+static KnxCoordinator* p_knxUnderTest = nullptr;
+
+static void resetSubs(void) { subCalls = subCallsB = subCallsDpt9 = 0; subLastBool = false; subLastGa = 0; }
+static void subA(const KnxTelegram& t) {
+	subCalls++; subLastBool = t.value().asBool(); subLastGa = t.groupAddress(); subSeq = ++sequence;
+}
+static void subB(const KnxTelegram&) { subCallsB++; }
+static void subDpt9(const KnxTelegram&) { subCallsDpt9++; }
+static void subSelfRemove(const KnxTelegram& t) { subCalls++; p_knxUnderTest->unsubscribe(t.groupAddress()); }
+
+static const GroupAddress GA_A = { 0, 3, 0 };
+static const GroupAddress GA_B = { 0, 3, 1 };
+
+void test_subscribe_fires_on_write(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	TEST_ASSERT_TRUE(knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subA));
+	queueGroup(mock, GA_A, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, subCalls);
+	TEST_ASSERT_TRUE(subLastBool);
+	TEST_ASSERT_EQUAL_UINT16(packGroupAddress(GA_A), subLastGa);
+}
+
+void test_subscribe_fires_on_response(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subA);
+	queueGroup(mock, GA_A, Dpt1(true), CMD_RESPONSE);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, subCalls);
+}
+
+void test_subscribe_ignores_read(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subA);
+	queueGroup(mock, GA_A, Dpt1(true), CMD_READ);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(0, subCalls);
+}
+
+void test_subscribe_other_ga_ignored(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subA);
+	queueGroup(mock, GA_B, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(0, subCalls);
+}
+
+void test_subscribe_full_returns_false(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	for (int i = 0; i < 64; i++) TEST_ASSERT_TRUE(knx.subscribe((uint16_t)(i + 1), KnxDpt::DPT1, subA));
+	TEST_ASSERT_FALSE(knx.subscribe(100, KnxDpt::DPT1, subA));
+}
+
+void test_slot_limit_before_first_subscribe(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	TEST_ASSERT_TRUE(knx.setSubscriptionSlotLimit(100));
+	for (int i = 0; i < 100; i++) TEST_ASSERT_TRUE(knx.subscribe((uint16_t)(i + 1), KnxDpt::DPT1, subA));
+	TEST_ASSERT_FALSE(knx.subscribe(200, KnxDpt::DPT1, subA));
+}
+
+void test_slot_limit_after_subscribe_rejected(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	TEST_ASSERT_TRUE(knx.subscribe(1, KnxDpt::DPT1, subA));
+	TEST_ASSERT_FALSE(knx.setSubscriptionSlotLimit(100));
+	for (int i = 1; i < 64; i++) TEST_ASSERT_TRUE(knx.subscribe((uint16_t)(i + 1), KnxDpt::DPT1, subA));
+	TEST_ASSERT_FALSE(knx.subscribe(200, KnxDpt::DPT1, subA));
+}
+
+void test_slot_limit_zero(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	TEST_ASSERT_TRUE(knx.setSubscriptionSlotLimit(0));
+	TEST_ASSERT_FALSE(knx.subscribe(1, KnxDpt::DPT1, subA));
+}
+
+void test_subscribe_nullptr_rejected(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	TEST_ASSERT_FALSE(knx.subscribe(1, KnxDpt::DPT1, (KnxTelegramCallback)nullptr));
+	for (int i = 0; i < 64; i++) TEST_ASSERT_TRUE(knx.subscribe((uint16_t)(i + 1), KnxDpt::DPT1, subA));
+}
+
+void test_subscribe_shared_ga_both_fire(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subA);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subB);
+	queueGroup(mock, GA_A, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, subCalls);
+	TEST_ASSERT_EQUAL_INT(1, subCallsB);
+}
+
+void test_unsubscribe_frees_slot(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subA);
+	for (int i = 1; i < 64; i++) knx.subscribe((uint16_t)(1000 + i), KnxDpt::DPT1, subB);
+	TEST_ASSERT_FALSE(knx.subscribe(2000, KnxDpt::DPT1, subB));
+	knx.unsubscribe(packGroupAddress(GA_A));
+	TEST_ASSERT_TRUE(knx.subscribe(2000, KnxDpt::DPT1, subB));
+	queueGroup(mock, GA_A, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(0, subCalls);
+}
+
+void test_unsubscribe_inside_callback(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	p_knxUnderTest = &knx;
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subSelfRemove);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subB);    // removed by the call above
+	knx.subscribe(packGroupAddress(GA_B), KnxDpt::DPT1, subDpt9); // other GA, untouched
+	queueGroup(mock, GA_A, Dpt1(true));
+	queueGroup(mock, GA_A, Dpt1(true));
+	queueGroup(mock, GA_B, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, subCalls);       // fired once, then gone
+	TEST_ASSERT_EQUAL_INT(0, subCallsB);      // removal takes effect immediately
+	TEST_ASSERT_EQUAL_INT(1, subCallsDpt9);
+	p_knxUnderTest = nullptr;
+}
+
+void test_subscribe_decode_mismatch_skipped(void) {
+	resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	uint16_t ga = packGroupAddress(GA_A);
+	TestReceiver rx(ga);
+	knx.registerReceiver(&rx);
+	knx.subscribe(ga, KnxDpt::DPT9, subDpt9);   // a 1-bit telegram cannot decode as DPT9
+	knx.subscribe(ga, KnxDpt::DPT1, subA);
+	queueGroup(mock, GA_A, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(0, subCallsDpt9);
+	TEST_ASSERT_EQUAL_INT(1, subCalls);
+	TEST_ASSERT_EQUAL_INT(1, rx.receiveCount);
+}
+
+static void subCtx(const KnxTelegram&, void* ctx) { (*(int*)ctx) += 10; }
+
+void test_subscribe_context(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	int counter = 0;
+	TEST_ASSERT_TRUE(knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subCtx, &counter));
+	queueGroup(mock, GA_A, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(10, counter);
+}
+
+void test_hook_subscribe_object_order(void) {
+	resetRecorder(); resetSubs();
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	uint16_t ga = packGroupAddress(GA_A);
+	SeqReceiver rx(ga);
+	knx.registerReceiver(&rx);
+	knx.subscribe(ga, KnxDpt::DPT1, subA);
+	knx.onTelegram(hookA);
+	queueGroup(mock, GA_A, Dpt1(true));
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, hookSeq);
+	TEST_ASSERT_EQUAL_INT(2, subSeq);
+	TEST_ASSERT_EQUAL_INT(3, rx.seq);
+}
+
 int main(int, char**) {
 	UNITY_BEGIN();
 	RUN_TEST(test_send_con_true);
@@ -392,5 +561,20 @@ int main(int, char**) {
 	RUN_TEST(test_on_telegram_context);
 	RUN_TEST(test_on_telegram_replace_and_remove);
 	RUN_TEST(test_on_telegram_and_registry_both_fire);
+	RUN_TEST(test_subscribe_fires_on_write);
+	RUN_TEST(test_subscribe_fires_on_response);
+	RUN_TEST(test_subscribe_ignores_read);
+	RUN_TEST(test_subscribe_other_ga_ignored);
+	RUN_TEST(test_subscribe_full_returns_false);
+	RUN_TEST(test_slot_limit_before_first_subscribe);
+	RUN_TEST(test_slot_limit_after_subscribe_rejected);
+	RUN_TEST(test_slot_limit_zero);
+	RUN_TEST(test_subscribe_nullptr_rejected);
+	RUN_TEST(test_subscribe_shared_ga_both_fire);
+	RUN_TEST(test_unsubscribe_frees_slot);
+	RUN_TEST(test_unsubscribe_inside_callback);
+	RUN_TEST(test_subscribe_decode_mismatch_skipped);
+	RUN_TEST(test_subscribe_context);
+	RUN_TEST(test_hook_subscribe_object_order);
 	return UNITY_END();
 }

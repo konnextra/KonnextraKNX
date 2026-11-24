@@ -101,7 +101,7 @@ void KnxCoordinator::dispatch(const ParsedTelegram& telegram) {
 		else                 telegramHook.plain(event);
 	}
 
-	uint8_t delivered = 0;
+	uint8_t delivered = dispatchSubscriptions(telegram, ga);
 	for (IKnxReceiver* r = receiverHead; r != nullptr; r = r->nextReceiver) {
 		if (r->matches(ga)) {
 			r->receive(telegram);
@@ -116,6 +116,74 @@ void KnxCoordinator::dispatch(const ParsedTelegram& telegram) {
 		(unsigned)telegram.source.device,
 		(unsigned)telegram.target.main, (unsigned)telegram.target.middle,
 		(unsigned)telegram.target.sub, (unsigned)delivered);
+}
+
+//---- Subscriptions ----
+
+bool KnxCoordinator::setSubscriptionSlotLimit(uint16_t total) {
+	if (p_subscriptions != nullptr) return false;   // table already reserved
+	subscriptionLimit = total;
+	return true;
+}
+
+bool KnxCoordinator::addSubscription(uint16_t groupAddress, KnxDpt dpt, TelegramHandler handler,
+                                     uint8_t flags, void* context) {
+	if (handler.plain == nullptr || subscriptionLimit == 0) return false;
+
+	// Reserved exactly once and never freed or resized, so the heap cannot fragment.
+	if (p_subscriptions == nullptr) {
+		p_subscriptions = (Subscription*)calloc(subscriptionLimit, sizeof(Subscription));
+		if (p_subscriptions == nullptr) {
+			KnxDebug::log("SUB !! no memory for %u subscription slots", (unsigned)subscriptionLimit);
+			return false;
+		}
+	}
+
+	for (uint16_t i = 0; i < subscriptionLimit; i++) {
+		Subscription& slot = p_subscriptions[i];
+		if (slot.flags & SLOT_USED) continue;
+		slot.groupAddress = groupAddress;
+		slot.dpt          = dpt;
+		slot.handler      = handler;
+		slot.context      = context;
+		slot.flags        = (uint8_t)(SLOT_USED | flags);
+		return true;
+	}
+	KnxDebug::log("SUB !! all %u subscription slots in use", (unsigned)subscriptionLimit);
+	return false;
+}
+
+void KnxCoordinator::unsubscribe(uint16_t groupAddress) {
+	if (p_subscriptions == nullptr) return;
+	// Slots are only marked free, never moved, so a dispatch in progress stays consistent.
+	for (uint16_t i = 0; i < subscriptionLimit; i++) {
+		Subscription& slot = p_subscriptions[i];
+		if ((slot.flags & SLOT_USED) && slot.groupAddress == groupAddress) slot.flags = 0;
+	}
+}
+
+uint8_t KnxCoordinator::dispatchSubscriptions(const ParsedTelegram& telegram, uint16_t groupAddress) {
+	if (p_subscriptions == nullptr) return 0;
+	// A read request carries no value; subscribers only hear values.
+	if (telegram.type != GroupValueType::Write && telegram.type != GroupValueType::Response) return 0;
+
+	uint8_t fired = 0;
+	for (uint16_t i = 0; i < subscriptionLimit; i++) {
+		Subscription& slot = p_subscriptions[i];
+		if (!(slot.flags & SLOT_USED) || slot.groupAddress != groupAddress) continue;
+
+		KnxValue value = KnxCodec::decodeTelegram(slot.dpt, telegram);
+		if (!value.isValid()) {
+			KnxDebug::log("SUB !! value on subscribed GA does not decode as DPT %u", (unsigned)slot.dpt);
+			continue;
+		}
+
+		KnxTelegram event(telegram, value);
+		if (slot.flags & SLOT_HAS_CONTEXT) slot.handler.withContext(event, slot.context);
+		else                               slot.handler.plain(event);
+		if (fired < 255) fired++;
+	}
+	return fired;
 }
 
 void KnxCoordinator::dispatchIndividual(const ParsedTelegram& telegram) {

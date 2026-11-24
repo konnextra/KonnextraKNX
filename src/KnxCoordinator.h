@@ -16,6 +16,7 @@
 
 //---- Standard / platform libraries ----
 #include <stdint.h>
+#include <stdlib.h>   // calloc for the one-time subscription table
 #ifdef ARDUINO
 #include <Arduino.h>
 #endif
@@ -27,6 +28,10 @@
 #include "KnxValue.h"
 #include "KnxFrame.h"        // framing (pulls in KnxCodec)
 #include "KnxTelegram.h"     // event type + callback typedefs for subscribe/onTelegram
+
+// Subscription slots allocated on the first subscribe() unless setSubscriptionSlotLimit() says
+// otherwise. One slot is 12 bytes on 32-bit boards (64 = 768 B) and 8 bytes on AVR.
+#define KNX_DEFAULT_SUBSCRIPTION_SLOTS 64
 
 class KnxCoordinator {
 	private:
@@ -50,6 +55,20 @@ class KnxCoordinator {
 		bool  _hookHasContext = false;
 		void* p_hookContext   = nullptr;
 
+		// One subscribe() entry. flags: SLOT_USED, SLOT_HAS_CONTEXT.
+		struct Subscription {
+			uint16_t        groupAddress;
+			KnxDpt          dpt;
+			uint8_t         flags;
+			TelegramHandler handler;
+			void*           context;
+		};
+		static constexpr uint8_t SLOT_USED        = 0x01;
+		static constexpr uint8_t SLOT_HAS_CONTEXT = 0x02;
+
+		Subscription* p_subscriptions = nullptr;   // allocated once, on the first subscribe()
+		uint16_t subscriptionLimit = KNX_DEFAULT_SUBSCRIPTION_SLOTS;
+
 		//---- Methods ----
 		// Walks the receiver registry and delivers a parsed telegram to every match.
 		void dispatch(const ParsedTelegram& telegram);
@@ -57,6 +76,13 @@ class KnxCoordinator {
 		// Routes a telegram addressed to an individual address: ours goes to the device
 		// handler, anyone else's is foreign traffic.
 		void dispatchIndividual(const ParsedTelegram& telegram);
+
+		// Stores a subscription in the first free slot, allocating the table on first use.
+		bool addSubscription(uint16_t groupAddress, KnxDpt dpt, TelegramHandler handler,
+		                     uint8_t flags, void* context);
+
+		// Delivers a Write/Response to every matching subscription; returns how many fired.
+		uint8_t dispatchSubscriptions(const ParsedTelegram& telegram, uint16_t groupAddress);
 
 	public:
 		//---- Constructor ----
@@ -114,6 +140,55 @@ class KnxCoordinator {
 		 *                outlive this object.
 		*/
 		void setDeviceHandler(IKnxDeviceHandler* handler) { p_deviceHandler = handler; }
+
+		/**
+		 * @brief Calls a function whenever a value arrives on a group address — the receiving
+		 *        counterpart to send(), with no device object needed. It fires for values written
+		 *        to the address and for responses to read requests, never for the read requests
+		 *        themselves. Several functions may listen on the same address.
+		 * @param groupAddress Group address to listen on.
+		 * @param dpt          Datapoint type to decode the value as.
+		 * @param callback     Called with each telegram; its value() is already decoded.
+		 * @return true if the subscription was stored; false if callback is nullptr, all slots
+		 *         are in use, or there was no memory for the slot table.
+		*/
+		bool subscribe(uint16_t groupAddress, KnxDpt dpt, KnxTelegramCallback callback) {
+			TelegramHandler handler;
+			handler.plain = callback;
+			return addSubscription(groupAddress, dpt, handler, 0, nullptr);
+		}
+
+		/**
+		 * @brief Like subscribe(groupAddress, dpt, callback), but also hands your own pointer back
+		 *        to the callback, for code that needs to know which of its objects a value is for.
+		 * @param groupAddress Group address to listen on.
+		 * @param dpt          Datapoint type to decode the value as.
+		 * @param callback     Called with each telegram and the context pointer.
+		 * @param context      Any pointer of yours; passed through unchanged.
+		 * @return true if the subscription was stored.
+		*/
+		bool subscribe(uint16_t groupAddress, KnxDpt dpt, KnxTelegramContextCallback callback,
+		               void* context) {
+			TelegramHandler handler;
+			handler.withContext = callback;
+			return addSubscription(groupAddress, dpt, handler, SLOT_HAS_CONTEXT, context);
+		}
+
+		/**
+		 * @brief Stops every subscription on a group address and frees their slots. Safe to call
+		 *        from inside a callback; it takes effect immediately.
+		 * @param groupAddress Group address to stop listening on.
+		*/
+		void unsubscribe(uint16_t groupAddress);
+
+		/**
+		 * @brief Sets how many subscriptions this connection can hold in total (default 64).
+		 *        Call it in setup() before the first subscribe(): the slots are reserved once, at
+		 *        the first subscribe(), and cannot be resized afterwards.
+		 * @param total Number of subscription slots.
+		 * @return true if the limit was set; false if subscribe() has already been called.
+		*/
+		bool setSubscriptionSlotLimit(uint16_t total);
 
 		/**
 		 * @brief Calls a function for every group telegram on the bus — including telegrams for
