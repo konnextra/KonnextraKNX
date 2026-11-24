@@ -258,19 +258,32 @@ class KnxCoordinator {
 
 		//---- Diagnostics ----
 		/**
-		 * @brief Turns verbose tracing on or off. When on, every telegram sent and received
-		 *        (including traffic for other devices), and the library's internal steps, are
-		 *        printed over Serial with a [knx] prefix. Useful for diagnosing a problem; leave
-		 *        it off in normal operation, as the printing is chatty and slows the receive path.
-		 * @param on true to enable tracing, false to turn it off.
-		 * @note  This affects the whole library, not just this one: turning it on
-		 *        anywhere turns it on everywhere.
+		 * @brief Sets how much the library prints about its work. Off (the default) prints
+		 *        nothing. Basic prints one line per telegram sent or received, the start-up
+		 *        result, and problems marked with "!". Deep prints each telegram as its own block
+		 *        with all its details, plus every start-up step — useful to diagnose a problem,
+		 *        but chatty enough to slow the receive path. Call it before begin() to see start-up.
+		 * @param level KnxLog::Off, KnxLog::Basic or KnxLog::Deep.
+		 * @note  This affects the whole library, not just this connection.
+		*/
+		void setDebugMode(KnxLog level) { KnxDebug::setLevel(level); }
+
+		/**
+		 * @brief Shorthand for setDebugMode(): true is KnxLog::Deep, false is KnxLog::Off.
+		 * @param on true to print everything, false to print nothing.
 		*/
 		void enableDebugMode(bool on) { KnxDebug::setEnabled(on); }
 
 // ================= Arduino String conveniences =================
 #ifdef ARDUINO
 	public:
+		/**
+		 * @brief Sends the debug output to another port instead of Serial — a second UART,
+		 *        a Bluetooth serial, or anything else that can print.
+		 * @param port The port to print to, e.g. &Serial2. nullptr goes back to Serial.
+		*/
+		void setDebugOutputPort(Print* port) { KnxDebug::setOutput(port); }
+
 		/**
 		 * @brief Advanced: creates a bus connection from a driver you provide and an address string.
 		 * @param driver          The bus driver to use; not owned, and must outlive this object.

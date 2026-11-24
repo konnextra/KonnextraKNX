@@ -45,6 +45,16 @@ enum class KnxTransceiver : uint8_t {
 	TpUart2		///< Siemens TP-UART2 and compatibles, incl. the STKNX/ATtiny bridge
 };
 
+/**
+ * @brief How much the library prints about its work, set with setDebugMode(). Output goes to
+ *        Serial unless setDebugOutputPort() names another port.
+*/
+enum class KnxLog : uint8_t {
+	Off,	///< nothing at all — the default
+	Basic,	///< one line per telegram sent or received, the start-up result, and problems marked with "!"
+	Deep	///< every telegram as its own block with all its details, plus each start-up step
+};
+
 //---- Link-layer acknowledge codes ----
 enum class AcknowledgeInfo : uint8_t {
 	ACK,
