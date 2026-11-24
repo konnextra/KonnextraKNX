@@ -46,9 +46,10 @@ Mit Florian festgelegte Belegung — Sketch und Test 3 darauf aufbauen:
 
 RESET/SAVE gegenüber dem 23.11. getauscht (Florian, 24.11.). Versorgung vom Bus geplant: BCU-Pin 1
 (5 V) → XIAO 5V/VBUS; bei Test 3 muss der XIAO an USB hängen, sonst geht er mit aus.
-Sketch: `extras/bench/TestBoard/TestBoard.ino` (baut auf dem C6, **noch nicht hochgeladen/getestet**).
+Sketch: `extras/bench/TestBoard/TestBoard.ino` (hochgeladen 24.11., läuft: Start ok, alle Sendungen quittiert, `subscribe` auf 0/1/1 löst auch beim Wandtaster 1.1.1 aus; im Monitor von Florian).
 Status-GA 0/3/0 stammt aus der Diplomarbeit (`0738a5f`); in den Mitschnitten vom 22.11. kam dort
-nichts. Offen: kommt der Status? Links/rechts richtig? LED-Widerstände?
+nichts. 24.11.: auch jetzt kein Status, weder 0/3/0 noch sonst wo; Florian vermutet, die Status-GA in der
+ETS entfernt zu haben. Offen: Status-GA wieder eintragen, dann `onUpdate` zeigen.
 
 **Werkzeuge (alles fertig):** XIAO-Log
 `cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`;
