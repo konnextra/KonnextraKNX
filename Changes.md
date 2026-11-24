@@ -45,3 +45,13 @@ reader is actually scanning for.
   also come in a form with your own `void* context` pointer.
 - `knx.loop()` called from inside a receive callback (also `onUpdate()`) now does nothing instead
   of overwriting the telegram that is still being delivered.
+- New: log levels. `knx.setDebugMode(KnxLog::Basic)` prints one readable line per telegram sent or
+  received (sender, group address, type, data, decoded value, how many listeners), the start-up
+  result, bus power and chip events, and every problem marked with `!`. `KnxLog::Deep` prints each
+  telegram as its own block with all details (raw bytes, control field, hop count, checksum,
+  driver traffic) and every start-up step. Default is `KnxLog::Off`: nothing is printed.
+  `enableDebugMode(true)` still works and means `KnxLog::Deep`.
+- New: `knx.setDebugOutputPort(&Serial2)` sends the log to another port (any `Print`, e.g. a
+  Bluetooth serial).
+- The debug output's wording and layout changed completely; anything that parsed the old
+  `[knx]` lines needs updating.

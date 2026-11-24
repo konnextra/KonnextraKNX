@@ -259,37 +259,47 @@ compiler requires it.
 
 ## Debug mode
 
-Verbose tracing is a **runtime** switch — no recompile, no `#define`:
+Logging is a **runtime** setting with three levels — no recompile, no `#define`:
 
 ```cpp
-knx.enableDebugMode(true);   // call before begin() to trace driver bring-up too
+knx.setDebugMode(KnxLog::Basic);      // Off (default) / Basic / Deep; before begin() to see start-up
+knx.setDebugOutputPort(&Serial2);     // optional, any Print; nullptr = Serial
+knx.enableDebugMode(true);            // legacy shorthand: true = Deep, false = Off
 ```
 
-It prints, all prefixed `[knx]`: driver bring-up and UART traffic, TX frame hexdumps, the raw
-`L_Data.con` byte behind each verdict, RX frame hexdumps, frame build/parse (including checksum
-mismatches), codec decode failures, per-object decode/cache updates, and **every telegram
-dispatched — including telegrams addressed to other devices** (logged as "0 receiver(s)", which
-is normal foreign traffic, not an error). Address-validation warnings ride the same switch.
+- **Off** prints nothing — not even a failed start.
+- **Basic** prints one line per telegram sent or received (`TX  1.1.5 -> 0/1/1  Write     01
+  (DPT1: on)  confirmed`, `RX  1.1.1 -> 0/3/0  Write     01  (DPT1: on)  2 listeners`), the start
+  result, chip/bus-power events, and every problem as `! …` with a hint to switch to Deep. Foreign
+  traffic shows as `no listener`. The value in parentheses appears only when a subscription or
+  object supplies the DPT, and never for a Read.
+- **Deep** prints each telegram as its own block: a `----- TX/RX … -----` separator carrying the
+  summary, then indented details (frame hex dump, control field, hop count, length, checksum,
+  driver echo and `con byte`, per-listener results). Start-up opens a `===== START … =====` block;
+  chip events outside a telegram open their own `----- ! … -----` block.
 
-Implementation is `src/KnxDebug.h`: a single library-wide `bool` in an inline
-function-local static, plus `log()` / `logBytes()`. Both the `#ifdef ARDUINO` guard and the
-runtime check live **inside** those functions, so call sites elsewhere carry no preprocessor
-noise and the Arduino-free layers stay Arduino-free — on a host build the bodies compile away
-and the native suite is unaffected.
+Ordering is load-bearing: the RX line/block is written **before** dispatch, so a callback's own
+`Serial.print` appears under its telegram; `KnxFrame::parse()` and `KnxCodec::decode()` are
+silent (parse reports through `KnxFrame::lastParseError()`), so nothing lands in the previous
+block. `extras/bench/compare_logs.py` reads the Deep lines `DRV tx frame:` / `RX  frame:` /
+`con byte` and the Basic `TX`/`RX` lines — keep those texts or update the script with them.
 
-Three properties to know:
-- **Library-wide, not per-instance.** The flag is shared; enabling it on any node enables it
-  everywhere. This is the agreed, documented exception to the no-globals rule — it is a log
-  level, not a service locator, and it is what lets the stateless `KnxFrame`/`KnxCodec`
-  namespaces log without an object to hang a flag on.
-- **Costs ~2.4 KB flash, 0 RAM** when compiled in and disabled (measured on ESP32-C6); a
-  disabled call is one bool test. There is deliberately no compile-time master switch yet — add
-  one only if an AVR target ever needs the code stripped entirely.
-- **Arguments are still evaluated when disabled.** Guard an expensive call site with
-  `if (KnxDebug::isEnabled())`.
+Implementation: `src/KnxDebug.h` (level in a function-local static, line kinds `info`/`problem`/
+`event`/`section`/`banner`/`log`/`logBytes`) and `src/KnxFormat.{h,cpp}` (printf-free text for
+values, telegram lines and frame details — AVR's printf has no `%f`). Host builds format the
+lines too and hand them to an optional sink (`KnxDebug::setLineSink`), which is how
+`test_debug` and the log tests in `test_coordinator` check exact output.
 
-Logging is chatty and the printing itself costs time on the receive path, so it can perturb
-what it is diagnosing. Establish a clean run first, then switch it on to explain a broken one.
+Properties to know:
+- **Library-wide, not per-instance** — the agreed exception to the no-globals rule (a log level,
+  not a service locator); it lets the stateless `KnxFrame`/`KnxCodec` namespaces log.
+- **Cost** (BenchTest, 24.11.2026, before → after the levels): ESP32-C6 flash +4.9 KB, RAM +8 B;
+  Mega flash +7.0 KB, RAM +412 B (AVR keeps string literals in RAM). Off costs one compare per call.
+- **Arguments are still evaluated when filtered out.** Guard expensive call sites with
+  `KnxDebug::isEnabled()` / `isDeep()`.
+
+Printing costs time on the receive path and can perturb what it diagnoses. Establish a clean run
+first, then use Deep to explain a broken one.
 
 ## Documentation and releases
 

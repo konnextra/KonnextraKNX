@@ -15,7 +15,7 @@ namespace KnxFormat {
 //---- Writer ----
 
 void Writer::put(char c) {
-	if (count + 1 >= max) return;   // keep room for the terminator
+	if (count + 1 >= maxLen) return;   // keep room for the terminator
 	p_out[count++] = c;
 	p_out[count] = '\0';
 }
@@ -62,7 +62,7 @@ void Writer::putFloat(float number) {
 }
 
 void Writer::padTo(uint8_t column) {
-	while (count < column && count + 1 < max) put(' ');
+	while (count < column && count + 1 < maxLen) put(' ');
 }
 
 //---- Helpers ----
@@ -100,8 +100,8 @@ static void putDate(Writer& w, uint16_t y, uint8_t mo, uint8_t d) {
 
 //---- Public functions ----
 
-uint8_t value(const KnxValue& v, char* out, uint8_t max) {
-	Writer w(out, max);
+uint8_t value(const KnxValue& v, char* out, uint8_t maxLen) {
+	Writer w(out, maxLen);
 	if (!v.isValid()) return 0;
 
 	w.put("DPT"); w.putUnsigned((uint8_t)v.dpt); w.put(": ");
@@ -146,8 +146,8 @@ uint8_t value(const KnxValue& v, char* out, uint8_t max) {
 	return w.length();
 }
 
-uint8_t telegram(const ParsedTelegram& t, char* out, uint8_t max) {
-	Writer w(out, max);
+uint8_t telegram(const ParsedTelegram& t, char* out, uint8_t maxLen) {
+	Writer w(out, maxLen);
 	putPhysical(w, t.source);
 	w.put(" -> ");
 
@@ -182,8 +182,8 @@ uint8_t telegram(const ParsedTelegram& t, char* out, uint8_t max) {
 	return w.length();
 }
 
-uint8_t frameControl(const uint8_t* raw, uint8_t len, char* out, uint8_t max) {
-	Writer w(out, max);
+uint8_t frameControl(const uint8_t* raw, uint8_t len, char* out, uint8_t maxLen) {
+	Writer w(out, maxLen);
 	if (len < 1) return 0;
 	static const char* PRIORITY[] = { "system", "normal", "urgent", "low" };
 	w.put("ctrl "); w.putHex2(raw[0]);
@@ -192,8 +192,8 @@ uint8_t frameControl(const uint8_t* raw, uint8_t len, char* out, uint8_t max) {
 	return w.length();
 }
 
-uint8_t frameRouting(const uint8_t* raw, uint8_t len, char* out, uint8_t max) {
-	Writer w(out, max);
+uint8_t frameRouting(const uint8_t* raw, uint8_t len, char* out, uint8_t maxLen) {
+	Writer w(out, maxLen);
 	if (len < 7) return 0;
 	w.put("hops "); w.putUnsigned((raw[5] >> 4) & 0x07);
 	w.put("  length "); w.putUnsigned(raw[5] & 0x0F);

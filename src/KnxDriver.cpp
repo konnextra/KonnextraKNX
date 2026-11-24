@@ -11,6 +11,7 @@
 
 //----Libraries----
 #include "KnxDriver.h"
+#include <string.h>
 
 #ifdef KNX_DEFAULT_PORT
 KnxDriver::KnxDriver(String physicalAddress, KnxTransceiver chip)
@@ -103,7 +104,7 @@ bool KnxDriver::prepareChip(void) {
 	const uint32_t start = millis();
 	while (digitalRead(resetPin) == LOW) {
 		if (millis() - start >= READY_TIMEOUT_MS) {
-			KnxDebug::log("DRV !! reset pin still low after %u ms — bus voltage present?",
+			KnxDebug::problem("chip not ready: reset pin still low after %u ms (bus voltage present?)",
 				(unsigned)READY_TIMEOUT_MS);
 			return false;
 		}
@@ -118,10 +119,10 @@ bool KnxDriver::checkStatusPins(void) {
 		const bool high = digitalRead(savePin) == HIGH;
 		// Edge from the interrupt latch, or seen by polling where the pin cannot interrupt.
 		if (takeLatch(saveFellLatch) || (!high && lastSaveHigh)) {
-			KnxDebug::log("DRV !! save pin low: bus power failing");
+			KnxDebug::event(true, "bus power failing (save pin low)");
 			if (p_onPowerFail != nullptr) p_onPowerFail();
 		} else if (high && !lastSaveHigh) {
-			KnxDebug::log("DRV save pin high again: bus power ok");
+			KnxDebug::event(false, "bus power back (save pin high)");
 		}
 		lastSaveHigh = high;
 	}
@@ -130,7 +131,7 @@ bool KnxDriver::checkStatusPins(void) {
 	const bool high = digitalRead(resetPin) == HIGH;
 	const bool rose = takeLatch(resetRoseLatch);
 	if (!high) {
-		if (lastResetHigh) KnxDebug::log("DRV !! chip in reset (reset pin low)");
+		if (lastResetHigh) KnxDebug::event(true, "chip in reset (reset pin low): not sending or receiving");
 		lastResetHigh = false;
 		return false;
 	}
@@ -138,7 +139,7 @@ bool KnxDriver::checkStatusPins(void) {
 	if (!lastResetHigh || rose) {
 		// The chip came back from a reset and has forgotten its address: bring it up again.
 		lastResetHigh = true;
-		KnxDebug::log("DRV reset pin high again: re-running bring-up");
+		KnxDebug::event(false, "chip back from reset (reset pin high): restarting it");
 		if (chip == KnxTransceiver::TpUart2) delay(TPUART2_SETTLE_MS);
 		bringUp("recover");
 	}
@@ -188,21 +189,29 @@ bool KnxDriver::bringUp(const char* phase) {
 			KnxTransceiverProtocol::autoAcknowledgeActive(bringUpSm.configureByte()) ? "on" : "OFF");
 	}
 
+	// "begin" -> "start", "recover" -> "restart"; the result line names chip and address.
+	const char* what = strcmp(phase, "begin") == 0 ? "start"
+	                 : strcmp(phase, "recover") == 0 ? "restart" : "reset";
+	const char* chipLabel = ncn ? "NCN5130" : "TP-UART2";
 	if (bringUpSm.succeeded()) {
 		KnxDebug::log("DRV %s %s: ok, state 0x%02X", chipName, phase,
 			(unsigned)bringUpSm.stateByte());
+		KnxDebug::info("%s ok: %s, %u.%u.%u", what, chipLabel, (unsigned)physicalAddress.area,
+			(unsigned)physicalAddress.line, (unsigned)physicalAddress.device);
 		return true;
 	}
 
 	const KnxBringUp::Step at = bringUpSm.failedAt();
-	KnxDebug::log("DRV !! %s %s FAILED at %s (state 0x%02X)", chipName, phase, stepName(at),
+	KnxDebug::log("DRV %s %s failed at %s (state 0x%02X)", chipName, phase, stepName(at),
 		(unsigned)bringUpSm.stateByte());
+	const char* hint = "";
 	if (ncn && (at == KnxBringUp::Step::SystemStatus || at == KnxBringUp::Step::AwaitConfigure)) {
-		KnxDebug::log("DRV    is this really an NCN5130? For a TP-UART2 pass KnxTransceiver::TpUart2");
+		hint = ": is this really an NCN5130? For a TP-UART2 pass KnxTransceiver::TpUart2";
 	}
-	if (at == KnxBringUp::Step::Reset) {
-		KnxDebug::log("DRV    no reset answer: check wiring (RX/TX), bus voltage and the chip choice");
+	else if (at == KnxBringUp::Step::Reset) {
+		hint = ": no answer, check wiring (RX/TX), bus voltage and the chip choice";
 	}
+	KnxDebug::problem("%s failed at %s (%s)%s", what, stepName(at), chipLabel, hint);
 	return false;
 }
 
@@ -229,7 +238,7 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 			if (echoed != 0 && echoed != length) {
 				// Partial echo: the transceiver confirmed mid-echo, so the frame on the
 				// bus may differ from what was handed to sendTelegram().
-				KnxDebug::log("DRV !! echo %u/%u before con", (unsigned)echoed, (unsigned)length);
+				KnxDebug::log("DRV echo incomplete: %u/%u before con", (unsigned)echoed, (unsigned)length);
 			} else if (echoed == length) {
 				KnxDebug::log("DRV echo %u/%u ok", (unsigned)echoed, (unsigned)length);
 			}
@@ -242,7 +251,7 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 		KnxDebug::log("DRV unexpected byte 0x%02X while awaiting con (echo %u/%u)",
 			(unsigned)b, (unsigned)echoed, (unsigned)length);
 	}
-	KnxDebug::log("DRV !! no con within %u ms (echo %u/%u)",
+	KnxDebug::log("DRV no con within %u ms (echo %u/%u)",
 		(unsigned)CON_TIMEOUT_MS, (unsigned)echoed, (unsigned)length);
 	return false;   // no confirmation -> report failure, never a blind success
 }
@@ -250,6 +259,8 @@ bool KnxDriver::awaitConfirmation(const uint8_t* frame, uint8_t length) {
 //---- IKnxDriver ----
 
 bool KnxDriver::begin(void) {
+	KnxDebug::banner("START %s, %u.%u.%u", chip == KnxTransceiver::Ncn5130 ? "NCN5130" : "TP-UART2",
+		(unsigned)physicalAddress.area, (unsigned)physicalAddress.line, (unsigned)physicalAddress.device);
 	// Only when the driver was handed a HardwareSerial does it own the line settings. The
 	// two-argument form is the one every core provides; on ESP32 it keeps whatever pins the
 	// UART already has, so a caller who assigned their own pins beforehand keeps them.
@@ -271,6 +282,8 @@ bool KnxDriver::begin(void) {
 }
 
 bool KnxDriver::reset(void) {
+	KnxDebug::banner("RESET %s, %u.%u.%u", chip == KnxTransceiver::Ncn5130 ? "NCN5130" : "TP-UART2",
+		(unsigned)physicalAddress.area, (unsigned)physicalAddress.line, (unsigned)physicalAddress.device);
 	if (!prepareChip()) return false;
 	resetRoseLatch = false;   // our own TP-UART2 pulse is not a chip reset to react to
 	return bringUp("reset");
@@ -278,7 +291,7 @@ bool KnxDriver::reset(void) {
 
 bool KnxDriver::sendTelegram(const uint8_t* frame, uint8_t length) {
 	if (chipInReset()) {
-		KnxDebug::log("DRV !! not sent: chip in reset (reset pin low)");
+		KnxDebug::problem("not sent: chip in reset (reset pin low)");
 		return false;
 	}
 	KnxDebug::logBytes("DRV tx frame:", frame, length);
@@ -302,7 +315,7 @@ bool KnxDriver::poll(uint8_t* out, uint8_t maxLen, uint8_t& outLen) {
 		// and lost its address, so it would no longer acknowledge telegrams to us. 0x03 can
 		// never start a frame, so the reassembler would only have dropped it.
 		if (!reassembler.inFrame() && KnxTransceiverProtocol::isResetIndication(b)) {
-			KnxDebug::log("DRV !! unexpected Reset.ind: chip reset itself, re-running bring-up");
+			KnxDebug::event(true, "chip reset itself (bus voltage dip?): restarting it");
 			bringUp("recover");
 			return false;
 		}

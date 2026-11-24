@@ -7,6 +7,8 @@ fraction of a second in each. Every xknx telegram from the XIAO's own address mu
 the serial log; every other one must match an RX. Anything left over on either side is a
 telegram one listener saw and the other did not.
 
+Reads both KnxLog::Deep output (frame hex dumps + con byte) and KnxLog::Basic summary lines.
+
 Usage:
     python3 extras/bench/compare_logs.py <device-monitor-*.log> <knx-*.jsonl> [--own 1.1.5] [--window 1.0]
 """
@@ -19,6 +21,8 @@ from datetime import datetime
 
 LINE = re.compile(r"^(\d\d:\d\d:\d\d\.\d{3}) > (.*)$")
 FRAME = re.compile(r"(?:DRV tx frame|RX  frame): ((?:[0-9A-F]{2} ?)+)")
+# KnxLog::Basic summary lines, e.g. "[knx] TX  1.1.5 -> 0/1/1  Write     01  (DPT1: on)  confirmed"
+BASIC = re.compile(r"\[knx\] (?:! )?(TX|RX)  (\d+\.\d+\.\d+) -> (\d+/\d+/\d+)  (?:Write|Response)\s+((?:[0-9A-F]{2} ?)+)")
 
 
 def ga(hi: int, lo: int) -> str:
@@ -37,6 +41,11 @@ def frame_value(b: list[int]):
     return b[8:8 + length - 1]
 
 
+def as_list(val):
+    """Basic lines print inline data as one byte, so compare 6-bit values and byte lists alike."""
+    return val if isinstance(val, list) else [val]
+
+
 def parse_serial(path: str, day: str) -> list[dict]:
     events, pending_tx = [], None
     for raw in open(path, errors="replace"):
@@ -45,6 +54,14 @@ def parse_serial(path: str, day: str) -> list[dict]:
             continue
         t = datetime.fromisoformat(f"{day}T{m.group(1)}").timestamp()
         text = m.group(2)
+        bm = BASIC.search(text)
+        if bm:
+            ev = {"t": t, "kind": bm.group(1), "src": bm.group(2), "dst": bm.group(3),
+                  "val": [int(x, 16) for x in bm.group(4).split()], "con": None}
+            if ev["kind"] == "TX":
+                ev["con"] = "not confirmed" not in text
+            events.append(ev)
+            continue
         fm = FRAME.search(text)
         if fm:
             b = [int(x, 16) for x in fm.group(1).split()]
@@ -91,7 +108,8 @@ def main() -> None:
         want = "TX" if c["src"] == args.own else "RX"
         best = None
         for i, s in enumerate(ser):
-            if i in used or s["kind"] != want or s["src"] != c["src"] or s["dst"] != c["dst"] or s["val"] != c["val"]:
+            if i in used or s["kind"] != want or s["src"] != c["src"] or s["dst"] != c["dst"] \
+                    or as_list(s["val"]) != as_list(c["val"]):
                 continue
             d = c["t"] - s["t"]
             if abs(d) <= args.window and (best is None or abs(d) < abs(best[1])):

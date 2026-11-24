@@ -75,7 +75,7 @@ inline PhysicalAddress physicalAddressFromString(String address) {
 	uint8_t firstDot = address.indexOf('.');
 	uint8_t lastDot  = address.lastIndexOf('.');
 	if (firstDot == -1 || lastDot == -1 || firstDot == lastDot) {
-		KnxDebug::log("ADR !! bad physical address format, expected area.line.device");
+		KnxDebug::problem("bad physical address format, expected area.line.device");
 	}
 	physAddr.area   = address.substring(0, firstDot).toInt();
 	physAddr.line   = address.substring(firstDot + 1, lastDot).toInt();
@@ -83,15 +83,15 @@ inline PhysicalAddress physicalAddressFromString(String address) {
 
 	if (physAddr.area <= 0 || physAddr.area > 15) {
 		physAddr.area = 15;
-		KnxDebug::log("ADR !! area out of range (1-15), clamped to 15");
+		KnxDebug::problem("area out of range (1-15), clamped to 15");
 	}
 	if (physAddr.line <= 0 || physAddr.line > 15) {
 		physAddr.line = 15;
-		KnxDebug::log("ADR !! line out of range (1-15), clamped to 15");
+		KnxDebug::problem("line out of range (1-15), clamped to 15");
 	}
 	if (physAddr.device <= 0 || physAddr.device > 255) {
 		physAddr.device = 255;
-		KnxDebug::log("ADR !! device out of range (1-255), clamped to 255");
+		KnxDebug::problem("device out of range (1-255), clamped to 255");
 	}
 
 	return physAddr;
@@ -104,7 +104,7 @@ inline GroupAddress groupAddressFromString(String address) {
 	uint8_t firstSlash = address.indexOf('/');
 	uint8_t lastSlash  = address.lastIndexOf('/');
 	if (firstSlash == -1 || lastSlash == -1 || firstSlash == lastSlash) {
-		KnxDebug::log("ADR !! bad group address format, expected main/middle/sub");
+		KnxDebug::problem("bad group address format, expected main/middle/sub");
 	}
 	groupAddress.main   = address.substring(0, firstSlash).toInt();
 	groupAddress.middle = address.substring(firstSlash + 1, lastSlash).toInt();
@@ -112,19 +112,19 @@ inline GroupAddress groupAddressFromString(String address) {
 
 	if (groupAddress.main > 31) {
 		groupAddress.main = 31;
-		KnxDebug::log("ADR !! main group out of range (0-31), clamped to 31");
+		KnxDebug::problem("main group out of range (0-31), clamped to 31");
 	}
 	if (groupAddress.middle > 7) {
 		groupAddress.middle = 7;
-		KnxDebug::log("ADR !! middle group out of range (0-7), clamped to 7");
+		KnxDebug::problem("middle group out of range (0-7), clamped to 7");
 	}
 	if (groupAddress.sub > 255) {
 		groupAddress.sub = 255;
-		KnxDebug::log("ADR !! sub group out of range (0-255), clamped to 255");
+		KnxDebug::problem("sub group out of range (0-255), clamped to 255");
 	}
 	if (groupAddress.main == 0 && groupAddress.middle == 0 && groupAddress.sub == 0) {
 		groupAddress.sub = 1; // 0/0/0 is invalid
-		KnxDebug::log("ADR !! 0/0/0 is not a valid group address, using 0/0/1");
+		KnxDebug::problem("0/0/0 is not a valid group address, using 0/0/1");
 	}
 
 	return groupAddress;

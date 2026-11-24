@@ -177,10 +177,11 @@ To pin a release, give a version: `konnextra/KonnextraKNX@^0.1.9`.
 - **[konnextra.at](https://konnextra.at)** — the boards, including the aux-power supply and
   the multi-sensor extension.
 
-Something not behaving? Turn on tracing and watch every telegram go by:
+Something not behaving? Turn on the log and watch every telegram go by:
 
 ```cpp
-knx.enableDebugMode(true);   // call before begin() to trace start-up too
+knx.setDebugMode(KnxLog::Basic);   // one line per telegram; KnxLog::Deep shows every detail
+                                   // call before begin() to see start-up too
 ```
 
 ## Licence

@@ -36,7 +36,10 @@ PLATFORMIO_SRC_DIR=examples/BenchTest ~/.platformio/penv/bin/pio run --target up
 ```
 
 ## Test 1: Licht schalten
-Erwartet im Log (Debug an):
+Erwartet im Log (Stand 22.11., damals noch `enableDebugMode(true)`; seit 24.11. ist das
+`KnxLog::Deep`, die Detailzeilen stehen eingerückt unter `===== START … =====` bzw. je Telegramm
+unter `----- TX … -----`; mit `KnxLog::Basic` kommen stattdessen `start ok: NCN5130, 1.1.5` und je
+Sendung `TX  1.1.5 -> 0/1/1  Write     01  (DPT1: on)  confirmed`):
 - `DRV ncn5130 sysstat 0xFB: v20v ok vdd2 ok vbus ok vfilt ok xtal ok, mode normal`
 - `DRV ncn5130 address 1.1.5 confirmed, configure 0x21 (auto-ack on)`
 - `DRV ncn5130 begin: ok, state 0x07`

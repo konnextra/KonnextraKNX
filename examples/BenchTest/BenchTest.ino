@@ -33,11 +33,14 @@
 #define KNX_RESET_PIN       -1
 #define KNX_SAVE_PIN        -1
 
-// Flip to true when something misbehaves: traces every telegram sent and received (including
-// foreign ones), frame build/parse, value coding and driver traffic, all prefixed with [knx].
-// Left off by default — the printing itself costs time on the receive path, so a clean run
-// should be established first and the verbose trace used to explain a broken one.
-#define KNX_VERBOSE         true
+// How much the library prints, all prefixed with [knx]:
+//   KnxLog::Off   nothing
+//   KnxLog::Basic one line per telegram sent or received, the start-up result, "!" problems
+//   KnxLog::Deep  each telegram as its own block with raw bytes, control field, hop count,
+//                 checksum and driver traffic, plus every start-up step
+// The printing itself costs time on the receive path, so establish a clean run first and use
+// Deep to explain a broken one.
+#define KNX_LOG             KnxLog::Deep
 
 //---- Bench wiring: the port the transceiver hangs off ----
 // The driver no longer owns a UART, so the port is named here — and how you name one is not
@@ -87,7 +90,7 @@ void setup() {
 	Serial.println("\n[boot] KNX bench test — toggling 0/1/1 every 5 s");
 
 	// Must be set before begin() so the driver's own bring-up is traced too.
-	knx.enableDebugMode(KNX_VERBOSE);
+	knx.setDebugMode(KNX_LOG);
 	knx.setStatusPins(KNX_RESET_PIN, KNX_SAVE_PIN);
 	knx.onBusPowerFail(onBusPowerFail);
 
@@ -164,7 +167,9 @@ void onBrightnessChanged(uint8_t percent) {
  * Reading a bad run:
  *
  *   no output at all          → serial/board problem, not KNX.
- *   "driver FAILED"           → ATTiny not answering the U_ reset handshake (wiring, baud, power).
+ *   "driver FAILED"           → the chip is not answering the start-up handshake (wiring, baud, power).
+ *   "! start failed at …"     → the chip did not finish start-up; the line names the step and a
+ *                               likely cause (wiring, baud, bus power, chip choice).
  *   "no ACK" every cycle      → send path reaches the transceiver but no positive L_Data.con.
  *                               CON_MASK / CON_PATTERN / CON_POSITIVE in KnxDriver.h match the
  *                               TP-UART2 datasheet and a 0x8B bench reading, so look past them
