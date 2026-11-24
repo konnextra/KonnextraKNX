@@ -9,6 +9,7 @@
 KonnextraKNX	KEYWORD1
 KnxTransceiver	KEYWORD1
 KnxCoordinator	KEYWORD1
+KnxTelegram	KEYWORD1
 KnxObject	KEYWORD1
 KnxValue	KEYWORD1
 KnxLight	KEYWORD1
@@ -35,6 +36,10 @@ begin	KEYWORD2
 loop	KEYWORD2
 reset	KEYWORD2
 send	KEYWORD2
+subscribe	KEYWORD2
+unsubscribe	KEYWORD2
+setSubscriptionSlotLimit	KEYWORD2
+onTelegram	KEYWORD2
 sendIndividual	KEYWORD2
 sendControl	KEYWORD2
 registerReceiver	KEYWORD2

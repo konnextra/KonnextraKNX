@@ -35,3 +35,11 @@ reader is actually scanning for.
   NCN5130: use a level shifter on 5 V boards.
 - The library now notices when the bus coupler resets itself (e.g. after a bus voltage dip) and
   brings it up again, so it keeps acknowledging telegrams to its own address.
+- New: receive without a device object. `knx.subscribe("0/3/0", KnxDpt::DPT1, onStatus)` calls
+  `onStatus(const KnxTelegram& t)` whenever a value is written to that group address (or a read
+  is answered); `t.value()` is already decoded, and `t.source()` / `t.groupAddress()` tell you
+  who sent it where. `knx.unsubscribe(ga)` stops it. Up to 64 subscriptions by default; call
+  `knx.setSubscriptionSlotLimit(n)` in `setup()` before the first `subscribe()` for more or fewer.
+- New: `knx.onTelegram(callback)` sees every group telegram on the bus — other devices' traffic
+  and read requests included — for bus monitors and integrations such as Tasmota. Both callbacks
+  also come in a form with your own `void* context` pointer.

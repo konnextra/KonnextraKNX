@@ -278,11 +278,42 @@ class KnxCoordinator {
 
 		/**
 		 * @brief Sends a value to a group address given as a string, without needing a device
-		 *        object. This only sends; to receive, use a device object.
+		 *        object. To receive the same way, use subscribe().
 		 * @param ga    Destination group address as "main/middle/sub", e.g. "0/4/2".
 		 * @param value The value to send.
 		 * @return true if the bus confirmed the send.
 		*/
 		bool send(String ga, const KnxValue& value) { return send(packedGroupAddressFromString(ga), value); }
+
+		/**
+		 * @brief Calls a function whenever a value arrives on a group address given as a string —
+		 *        the receiving counterpart to send(), with no device object needed.
+		 * @param ga       Group address as "main/middle/sub", e.g. "0/3/0".
+		 * @param dpt      Datapoint type to decode the value as.
+		 * @param callback Called with each telegram; its value() is already decoded.
+		 * @return true if the subscription was stored.
+		*/
+		bool subscribe(String ga, KnxDpt dpt, KnxTelegramCallback callback) {
+			return subscribe(packedGroupAddressFromString(ga), dpt, callback);
+		}
+
+		/**
+		 * @brief Like subscribe(ga, dpt, callback), but also hands your own pointer back to the
+		 *        callback.
+		 * @param ga       Group address as "main/middle/sub".
+		 * @param dpt      Datapoint type to decode the value as.
+		 * @param callback Called with each telegram and the context pointer.
+		 * @param context  Any pointer of yours; passed through unchanged.
+		 * @return true if the subscription was stored.
+		*/
+		bool subscribe(String ga, KnxDpt dpt, KnxTelegramContextCallback callback, void* context) {
+			return subscribe(packedGroupAddressFromString(ga), dpt, callback, context);
+		}
+
+		/**
+		 * @brief Stops every subscription on a group address given as a string.
+		 * @param ga Group address as "main/middle/sub".
+		*/
+		void unsubscribe(String ga) { unsubscribe(packedGroupAddressFromString(ga)); }
 #endif // ARDUINO
 };

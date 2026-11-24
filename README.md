@@ -121,6 +121,16 @@ knx.send("0/1/1", Dpt1(true));      // an on/off value
 knx.send("0/4/2", Dpt9(21.5f));     // a temperature
 ```
 
+**A one-off receive** — the counterpart to `send()`, no object either:
+
+```cpp
+knx.subscribe("0/3/0", KnxDpt::DPT1, onLightStatus);
+
+void onLightStatus(const KnxTelegram& t) {
+    bool on = t.value().asBool();   // already decoded; t.source() says who sent it
+}
+```
+
 **Any other datapoint** — the generic object takes the type once, then sends and receives it:
 
 ```cpp
@@ -134,7 +144,7 @@ Device types available out of the box: `KnxLight`, `KnxDimmLight`, `KnxRGB`, `Kn
 `KnxTemperature`, `KnxHumidity`, `KnxPercent`, `KnxTime`, `KnxDate`, `KnxDateTime`, `KnxChar`,
 `KnxFloat`, plus `KnxObject` for anything else.
 
-Full versions of these three sketches ship with the library — in the Arduino IDE under
+Full versions of these sketches ship with the library — in the Arduino IDE under
 *File → Examples → KonnextraKNX* — and are walked through on the [Examples
 page](https://konnextra.at/docs/?page=examples&lang=en).
 
