@@ -1,4 +1,4 @@
-# Design: stateless receive (`subscribe` + `onTelegram`) — DRAFT
+# Design: stateless receive (`subscribe` + `onAnyTelegram`) — DRAFT
 
 Date: 23.11.2026. Status: **approved by Florian 24.11.2026** (name `subscribe`, table size raised).
 
@@ -24,7 +24,7 @@ runtime from Berry and needs per-subscription context (the Berry closure).
 
 - **A — fixed subscription table** in the coordinator: `knx.subscribe(ga, dpt, cb)`. Beginner
   friendly; costs RAM for unused slots; capped.
-- **B — one catch-all hook** `knx.onTelegram(cb, ctx)`: every group telegram (Write, Response,
+- **B — one catch-all hook** `knx.onAnyTelegram(cb, ctx)`: every group telegram (Write, Response,
   Read, foreign traffic), user decodes. Zero storage, no cap, ideal for integrations.
 - C — a slim `KnxListener` object: rejected, it is `KnxObject` without send and does not remove
   the object.
@@ -55,7 +55,7 @@ source, group address and type, not just the value.
 One public event type, **`KnxTelegram`**, is handed to both callbacks: a small read-only view
 over `ParsedTelegram` (the name is free; only a stale comment in `KnxDebug.h` mentions it).
 - `groupAddress()` (packed), `source()`, `type()` (Read/Response/Write), `isRead()`.
-- `value()` — the value decoded with the subscription's DPT; invalid in `onTelegram` (no DPT known).
+- `value()` — the value decoded with the subscription's DPT; invalid in `onAnyTelegram` (no DPT known).
 - `decode(KnxDpt)` → `KnxValue`, invalid on a Read or a decode failure.
 - `payload()` / `payloadLength()` raw, for DPTs the codec lacks.
 - The inline-6 vs. payload selection now in `KnxObject::receive()` moves into
@@ -66,15 +66,15 @@ over `ParsedTelegram` (the name is free; only a stale comment in `KnxDebug.h` me
 Each callback has two accepted shapes, so beginners never see the context pointer:
 `void cb(const KnxTelegram& t)` and `void cb(const KnxTelegram& t, void* ctx)`.
 
-### B — `onTelegram`
+### B — `onAnyTelegram`
 ```cpp
 void onBusTelegram(const KnxTelegram& t) {
 	if (t.type() == GroupValueType::Write && t.groupAddress() == packedGroupAddressFromString("0/3/0")) {
 		bool on = t.decode(KnxDpt::DPT1).asBool();
 	}
 }
-knx.onTelegram(onBusTelegram);
-knx.onTelegram(onBusTelegramCtx, &myState);   // integration layers
+knx.onAnyTelegram(onBusTelegram);
+knx.onAnyTelegram(onBusTelegramCtx, &myState);   // integration layers
 ```
 - One slot (function pointer + `void*`); a second call replaces it, `nullptr` removes it.
 - Fires for **every** group telegram with an APCI, before the receiver registry, including Read.
@@ -103,7 +103,7 @@ knx.unsubscribe("0/3/0");                                // removes every entry 
 - Both overloads exist for `uint16_t` GAs and Arduino `String` GAs, mirroring `send()`.
 
 ### Dispatch order in `KnxCoordinator::dispatch()`
-1. `onTelegram` hook (if set). 2. subscription table. 3. receiver registry (unchanged).
+1. `onAnyTelegram` hook (if set). 2. subscription table. 3. receiver registry (unchanged).
 The debug line "N receiver(s)" counts subscription hits plus registry hits.
 
 ## Constraints
@@ -116,7 +116,7 @@ public header added to the `Doxyfile` `INPUT`.
 
 Host tests in `test_coordinator` (mock driver): subscribe fires on Write and Response, not on
 Read; full table returns `false`; shared GA fires both; unsubscribe; ctx passed through;
-`onTelegram` sees Read and foreign GAs; replacing/removing the hook; subscribe + object + hook
+`onAnyTelegram` sees Read and foreign GAs; replacing/removing the hook; subscribe + object + hook
 on the same GA all fire. `test_object` stays green after the decode refactor. Portability
 matrix builds. On hardware (later): subscribe to the button's 0/1/1 on the test case.
 

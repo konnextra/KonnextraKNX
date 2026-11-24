@@ -77,7 +77,7 @@ Details: [`context/test-setup.md`](context/test-setup.md).
   - `Changes.md`: Breaking-Eintrag (Standard-Chip geändert) → Release wird **0.2.0**.
 
 ### Offen
-- **Zustandsloses Empfangen (`subscribe`/`onTelegram`, 24.11.) — Code fertig, auf
+- **Zustandsloses Empfangen (`subscribe`/`onAnyTelegram`, 24.11.) — Code fertig, auf
   `feature/ncn5130`, nicht gepusht.** Spec `specs/2026-11-23-subscribe-design.md`, Plan
   `specs/2026-11-24-subscribe-plan.md`, decisions/0004. Offen dazu: Abschnitt „Subscribe“ im
   Examples-Guide der Website (en + de); Hardwaretest (Taster 1.1.1 → 0/1/1 abonnieren);
@@ -117,7 +117,7 @@ für beide Repos anfällt.
 ## Handoff der Session 23./24.11.2026
 
 - **Erledigt:** subscribe-Feature nach Plan umgesetzt (Commits `1841937`..`006c853`):
-  `KnxTelegram` (neu, `src/KnxTelegram.h`), `KnxCodec::decodeTelegram`, `onTelegram`,
+  `KnxTelegram` (neu, `src/KnxTelegram.h`), `KnxCodec::decodeTelegram`, `onAnyTelegram`,
   `subscribe`/`unsubscribe`/`setSubscriptionSlotLimit` (einmal `calloc`, Ausnahme laut 0004),
   String-Überladungen, `examples/Subscribe`, README, keywords, Changes.md, Doxyfile. 111
   Host-Tests grün; Subscribe baut auf C6, Mega, R4; BenchTest baut; Doxygen 0 Warnungen.

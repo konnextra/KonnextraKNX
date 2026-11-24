@@ -39,7 +39,7 @@ send	KEYWORD2
 subscribe	KEYWORD2
 unsubscribe	KEYWORD2
 setSubscriptionSlotLimit	KEYWORD2
-onTelegram	KEYWORD2
+onAnyTelegram	KEYWORD2
 sendIndividual	KEYWORD2
 sendControl	KEYWORD2
 registerReceiver	KEYWORD2

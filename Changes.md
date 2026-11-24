@@ -40,7 +40,7 @@ reader is actually scanning for.
   is answered); `t.value()` is already decoded, and `t.source()` / `t.groupAddress()` tell you
   who sent it where. `knx.unsubscribe(ga)` stops it. Up to 64 subscriptions by default; call
   `knx.setSubscriptionSlotLimit(n)` in `setup()` before the first `subscribe()` for more or fewer.
-- New: `knx.onTelegram(callback)` sees every group telegram on the bus — other devices' traffic
+- New: `knx.onAnyTelegram(callback)` sees every group telegram on the bus — other devices' traffic
   and read requests included — for bus monitors and integrations such as Tasmota. Both callbacks
   also come in a form with your own `void* context` pointer.
 - `knx.loop()` called from inside a receive callback (also `onUpdate()`) now does nothing instead

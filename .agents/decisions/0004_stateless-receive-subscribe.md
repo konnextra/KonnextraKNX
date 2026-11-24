@@ -1,4 +1,4 @@
-# 0004 — Zustandsloses Empfangen: `subscribe` + `onTelegram`
+# 0004 — Zustandsloses Empfangen: `subscribe` + `onAnyTelegram`
 
 Datum: 24.11.2026 (Entscheidung Florian: Variante „B + A darauf“, Event-Callback wie `bind()`,
 Name `subscribe`, mehr als 16 Plätze).
@@ -13,7 +13,7 @@ DPT leakt“ und der zustandslose Weg per Definition nicht empfängt.
 ## Entscheidung
 - Diese Streichung wird zurückgenommen: Der DPT steht auch beim Senden da (`Dpt1(true)`) und ist
   beim Empfang nicht aus dem Bus ableitbar; der Ersatz `KnxObject` verlangt ein globales Objekt.
-- `knx.onTelegram(cb[, ctx])`: ein Platz, jedes Gruppentelegramm inkl. Read und Fremdverkehr.
+- `knx.onAnyTelegram(cb[, ctx])`: ein Platz, jedes Gruppentelegramm inkl. Read und Fremdverkehr.
 - `knx.subscribe(ga, dpt, cb[, ctx])` / `knx.unsubscribe(ga)`: nur Write/Response, `false` wenn voll.
 - Größe per `knx.setSubscriptionSlotLimit(n)` (Gesamtzahl, Standard 64), nur vor dem ersten
   `subscribe()` wirksam. **Ausnahme von „keine dynamische Allokation“:** die Tabelle wird beim

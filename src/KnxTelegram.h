@@ -5,7 +5,7 @@
  * @date 24.11.2026
  * @authors Florian Wiesner
  * @details The telegram handed to receive callbacks registered with subscribe() and
- *          onTelegram(): who sent it, to which group address, what kind of telegram it is,
+ *          onAnyTelegram(): who sent it, to which group address, what kind of telegram it is,
  *          and its value. Arduino-free.
 */
 
@@ -68,7 +68,7 @@ class KnxTelegram {
 		//---- Value ----
 		/**
 		 * @brief The value, already decoded with the datapoint type you subscribed with.
-		 *        In an onTelegram() callback there is no datapoint type, so use decode() there.
+		 *        In an onAnyTelegram() callback there is no datapoint type, so use decode() there.
 		 * @return The value; check isValid() if you are not sure one was decoded.
 		*/
 		KnxValue value(void) const { return decodedValue; }

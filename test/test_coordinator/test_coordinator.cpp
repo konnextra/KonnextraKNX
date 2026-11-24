@@ -264,7 +264,7 @@ void test_control_pdu_reaches_handler(void) {
 	TEST_ASSERT_EQUAL_INT((int)KnxTpci::Connect, (int)handler.lastTpci);
 }
 
-//==== Stateless receive: onTelegram / subscribe ====
+//==== Stateless receive: onAnyTelegram / subscribe ====
 
 static const PhysicalAddress OTHER = { 1, 1, 1 };
 static const int CMD_WRITE    = -1;
@@ -318,7 +318,7 @@ class SeqReceiver : public IKnxReceiver {
 void test_on_telegram_sees_foreign_ga(void) {
 	resetRecorder();
 	MockDriver mock; KnxCoordinator knx(&mock, SELF);
-	knx.onTelegram(hookA);
+	knx.onAnyTelegram(hookA);
 	queueGroup(mock, GroupAddress{ 0, 7, 7 }, Dpt1(true));
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(1, hookCalls);
@@ -328,7 +328,7 @@ void test_on_telegram_sees_foreign_ga(void) {
 void test_on_telegram_sees_read(void) {
 	resetRecorder();
 	MockDriver mock; KnxCoordinator knx(&mock, SELF);
-	knx.onTelegram(hookA);
+	knx.onAnyTelegram(hookA);
 	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true), CMD_READ);
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(1, hookCalls);
@@ -339,7 +339,7 @@ void test_on_telegram_sees_read(void) {
 void test_on_telegram_context(void) {
 	MockDriver mock; KnxCoordinator knx(&mock, SELF);
 	int counter = 0;
-	knx.onTelegram(hookCtx, &counter);
+	knx.onAnyTelegram(hookCtx, &counter);
 	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(1, counter);
@@ -348,14 +348,14 @@ void test_on_telegram_context(void) {
 void test_on_telegram_replace_and_remove(void) {
 	resetRecorder();
 	MockDriver mock; KnxCoordinator knx(&mock, SELF);
-	knx.onTelegram(hookA);
-	knx.onTelegram(hookB);
+	knx.onAnyTelegram(hookA);
+	knx.onAnyTelegram(hookB);
 	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(0, hookCalls);
 	TEST_ASSERT_EQUAL_INT(1, hookCallsB);
 
-	knx.onTelegram(nullptr);
+	knx.onAnyTelegram(nullptr);
 	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(1, hookCallsB);
@@ -367,7 +367,7 @@ void test_on_telegram_and_registry_both_fire(void) {
 	uint16_t ga = packGroupAddress(GroupAddress{ 0, 3, 0 });
 	TestReceiver rx(ga);
 	knx.registerReceiver(&rx);
-	knx.onTelegram(hookA);
+	knx.onAnyTelegram(hookA);
 	queueGroup(mock, GroupAddress{ 0, 3, 0 }, Dpt1(true));
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(1, hookCalls);
@@ -535,7 +535,7 @@ void test_hook_subscribe_object_order(void) {
 	SeqReceiver rx(ga);
 	knx.registerReceiver(&rx);
 	knx.subscribe(ga, KnxDpt::DPT1, subA);
-	knx.onTelegram(hookA);
+	knx.onAnyTelegram(hookA);
 	queueGroup(mock, GA_A, Dpt1(true));
 	knx.loop();
 	TEST_ASSERT_EQUAL_INT(1, hookSeq);

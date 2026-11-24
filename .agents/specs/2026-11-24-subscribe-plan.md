@@ -1,8 +1,8 @@
-# Stateless receive (`subscribe` + `onTelegram`) Implementation Plan
+# Stateless receive (`subscribe` + `onAnyTelegram`) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let a sketch receive group telegrams without a `KnxObject`: `knx.subscribe(ga, dpt, cb)` for sketches, `knx.onTelegram(cb)` for integration layers (Tasmota).
+**Goal:** Let a sketch receive group telegrams without a `KnxObject`: `knx.subscribe(ga, dpt, cb)` for sketches, `knx.onAnyTelegram(cb)` for integration layers (Tasmota).
 
 **Architecture:** A new read-only event type `KnxTelegram` wraps the internal `ParsedTelegram`. `KnxCoordinator::dispatch()` gains a single catch-all hook (B) and a fixed subscription table (A), run before the existing receiver registry. Everything stays Arduino-free except the `String` overloads.
 
@@ -24,9 +24,9 @@
 ## Review Focus
 
 1. **Callback unsubscribes itself (or another entry on the same GA) during dispatch** → the remaining entries for that telegram still fire, no skipped or double call. Test in Task 3.
-2. **Read request on a subscribed GA** → subscribe callback does *not* fire; `onTelegram` does, with `isRead()` true and `decode()` invalid. Tests in Tasks 2 and 3.
+2. **Read request on a subscribed GA** → subscribe callback does *not* fire; `onAnyTelegram` does, with `isRead()` true and `decode()` invalid. Tests in Tasks 2 and 3.
 3. **Telegram whose payload does not fit the subscribed DPT** (e.g. 2-byte DPT9 arriving on a DPT1 subscription) → callback skipped, other matching entries and the registry still served. Test in Task 3.
-4. **`subscribe`/`onTelegram` with `nullptr` callback** → `subscribe` returns `false` and stores nothing; `onTelegram(nullptr)` removes the hook (must compile without ambiguity). Tests in Tasks 2 and 3.
+4. **`subscribe`/`onAnyTelegram` with `nullptr` callback** → `subscribe` returns `false` and stores nothing; `onAnyTelegram(nullptr)` removes the hook (must compile without ambiguity). Tests in Tasks 2 and 3.
 5. **`KnxTelegram` used after the callback returns** → not testable; the `@brief` of `KnxTelegram` must say it is only valid inside the callback and to copy `value()` out.
 
 ---
@@ -68,7 +68,7 @@ Tests:
 - [ ] **Step 4:** `~/.platformio/penv/bin/pio test -e native` → all suites PASS (incl. unchanged `test_object`).
 - [ ] **Step 5:** Commit `Add KnxTelegram event type`.
 
-### Task 2: `onTelegram` catch-all hook
+### Task 2: `onAnyTelegram` catch-all hook
 
 **Files:**
 - Modify: `src/KnxCoordinator.h`, `src/KnxCoordinator.cpp` (`dispatch()`)
@@ -77,20 +77,20 @@ Tests:
 **Interfaces:**
 - Consumes: `KnxTelegram`, both callback typedefs (Task 1).
 - Produces:
-  - `void onTelegram(KnxTelegramCallback callback)` — `nullptr` removes the hook
-  - `void onTelegram(KnxTelegramContextCallback callback, void* context)` — no default for `context`, so `onTelegram(nullptr)` resolves to the first overload
+  - `void onAnyTelegram(KnxTelegramCallback callback)` — `nullptr` removes the hook
+  - `void onAnyTelegram(KnxTelegramContextCallback callback, void* context)` — no default for `context`, so `onAnyTelegram(nullptr)` resolves to the first overload
   - private members: one callback slot that remembers which shape it holds + `void* p_telegramContext`
 
 - [ ] **Step 1: Write failing tests** (MockDriver as in the file; helper from Task 1 copied in)
   - `test_on_telegram_sees_foreign_ga`: hook set, no receivers; Write to 0/7/7 → hook called once, `t.groupAddress()` matches.
   - `test_on_telegram_sees_read`: Read on 0/3/0 → hook called, `t.isRead()`, `!t.decode(DPT1).isValid()`.
   - `test_on_telegram_context`: context overload with `&counter` → callback increments `*(int*)ctx`; counter == 1.
-  - `test_on_telegram_replace_and_remove`: set A, set B → only B fires; `onTelegram(nullptr)` → nothing fires.
+  - `test_on_telegram_replace_and_remove`: set A, set B → only B fires; `onAnyTelegram(nullptr)` → nothing fires.
   - `test_on_telegram_and_registry_both_fire`: hook + `TestReceiver` on same GA → both counts 1.
 - [ ] **Step 2:** `pio test -e native -f test_coordinator` → FAIL.
 - [ ] **Step 3:** Implement; in `dispatch()` call the hook first (after the existing `hasApci` guard), then the registry. Construct `KnxTelegram tg(telegram)` once per dispatch.
 - [ ] **Step 4:** `pio test -e native` → PASS.
-- [ ] **Step 5:** Commit `Add onTelegram hook`.
+- [ ] **Step 5:** Commit `Add onAnyTelegram hook`.
 
 ### Task 3: `subscribe` / `unsubscribe` table
 
@@ -140,7 +140,7 @@ Tests:
 
 - [ ] **Step 1:** Add the overloads. Update the `send(String…)` `@brief` ("This only sends; to receive, use a device object") to point to `subscribe()`.
 - [ ] **Step 2:** Write `examples/Subscribe/Subscribe.ino` in the style of `StatelessSend.ino` (header comment, 4-space indent, named free functions prototyped above `setup()`, no `Serial.printf`): `subscribe("0/3/0", KnxDpt::DPT1, onLightStatus)` printing on/off, and `subscribe("0/4/2", KnxDpt::DPT9, onTemperature)` printing the float with `Serial.print`.
-- [ ] **Step 3:** `keywords.txt`: `KnxTelegram` KEYWORD1; `subscribe`, `unsubscribe`, `onTelegram` KEYWORD2 (tab-separated, match the file). `Changes.md`: one user-facing line for `subscribe`/`unsubscribe`/`setSubscriptionSlotLimit` (KEYWORD2 too), one for `onTelegram`/`KnxTelegram`, under the existing 0.2.0 section format.
+- [ ] **Step 3:** `keywords.txt`: `KnxTelegram` KEYWORD1; `subscribe`, `unsubscribe`, `onAnyTelegram` KEYWORD2 (tab-separated, match the file). `Changes.md`: one user-facing line for `subscribe`/`unsubscribe`/`setSubscriptionSlotLimit` (KEYWORD2 too), one for `onAnyTelegram`/`KnxTelegram`, under the existing 0.2.0 section format.
 - [ ] **Step 4: Verify**
   - `~/.platformio/penv/bin/pio test -e native` → all PASS
   - `PLATFORMIO_SRC_DIR=examples/Subscribe ~/.platformio/penv/bin/pio run -e seeed_xiao_esp32c6` and the Mega env from `platformio.ini` → SUCCESS

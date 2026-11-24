@@ -2,7 +2,7 @@
  * @name test_telegram.cpp
  * @date 24.11.2026
  * @authors Florian Wiesner
- * @details Host unit tests for KnxTelegram (the event handed to subscribe/onTelegram callbacks)
+ * @details Host unit tests for KnxTelegram (the event handed to subscribe/onAnyTelegram callbacks)
  *          and KnxCodec::decodeTelegram (the shared inline-6 vs. payload decode).
  *          Run with: pio test -e native
 */

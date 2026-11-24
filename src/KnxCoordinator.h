@@ -27,7 +27,7 @@
 #include "KnxDebug.h"        // library-wide verbose logging switch
 #include "KnxValue.h"
 #include "KnxFrame.h"        // framing (pulls in KnxCodec)
-#include "KnxTelegram.h"     // event type + callback typedefs for subscribe/onTelegram
+#include "KnxTelegram.h"     // event type + callback typedefs for subscribe/onAnyTelegram
 
 // Subscription slots allocated on the first subscribe() unless setSubscriptionSlotLimit() says
 // otherwise. One slot is 12 bytes on 32-bit boards (64 = 768 B) and 8 bytes on AVR.
@@ -51,7 +51,7 @@ class KnxCoordinator {
 			KnxTelegramCallback        plain;
 			KnxTelegramContextCallback withContext;
 		};
-		TelegramHandler telegramHook = { nullptr };   // onTelegram() slot
+		TelegramHandler telegramHook = { nullptr };   // onAnyTelegram() slot
 		bool  _hookHasContext = false;
 		void* p_hookContext   = nullptr;
 
@@ -200,19 +200,19 @@ class KnxCoordinator {
 		 * @param callback Called with each telegram; decode its value with KnxTelegram::decode().
 		 *                 Pass nullptr to remove it.
 		*/
-		void onTelegram(KnxTelegramCallback callback) {
+		void onAnyTelegram(KnxTelegramCallback callback) {
 			telegramHook.plain = callback;
 			_hookHasContext = false;
 			p_hookContext = nullptr;
 		}
 
 		/**
-		 * @brief Like onTelegram(callback), but also hands your own pointer back to the callback,
+		 * @brief Like onAnyTelegram(callback), but also hands your own pointer back to the callback,
 		 *        for code that needs to know which of its objects a telegram belongs to.
 		 * @param callback Called with each telegram and the context pointer.
 		 * @param context  Any pointer of yours; passed through unchanged.
 		*/
-		void onTelegram(KnxTelegramContextCallback callback, void* context) {
+		void onAnyTelegram(KnxTelegramContextCallback callback, void* context) {
 			telegramHook.withContext = callback;
 			_hookHasContext = (callback != nullptr);
 			p_hookContext = context;
