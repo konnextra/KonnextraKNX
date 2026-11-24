@@ -28,14 +28,14 @@ sind auf Hardware bestätigt, auch gegen xknx (57/57) — siehe
    kurz trennen → erwartet `save pin low` + `[power]`, `chip in reset`, danach `re-running
    bring-up`; Licht schaltet weiter. Dasselbe ohne Pins: kommt `unexpected Reset.ind`?
 
-**Neue Testplatine (23.11., noch nicht fertig gelötet):** Protoboard im Schalterrahmen mit BCU
+**Neue Testplatine (24.11. fertig gelötet, noch nicht in Betrieb genommen):** Protoboard im Schalterrahmen mit BCU
 light (links), XIAO ESP32-C6, 2 grüne LEDs (Status der zwei Testkoffer-Lampen) und 2 Mikrotastern.
 Mit Florian festgelegte Belegung — Sketch und Test 3 darauf aufbauen:
 
 | Pin | GPIO | Funktion |
 |---|---|---|
-| D0 | 0 | RESETB (BCU RS) → `KNX_RESET_PIN` |
-| D1 | 1 | SAVEB (BCU SV) → `KNX_SAVE_PIN` |
+| D0 | 0 | SAVEB (BCU SV) → `KNX_SAVE_PIN` |
+| D1 | 1 | RESETB (BCU RS) → `KNX_RESET_PIN` |
 | D2 | 2 | LED 1 (Lampe 1), 220 Ω gegen GND (47 Ω falls InGaN-Grün ~3 V) |
 | D3 | 21 | Taster 1 gegen GND, `INPUT_PULLUP` |
 | D4 / D5 | 22 / 23 | I2C SDA / SCL — **frei halten** |
@@ -44,7 +44,11 @@ Mit Florian festgelegte Belegung — Sketch und Test 3 darauf aufbauen:
 | D9 | 20 | LED 2 (Lampe 2), 220 Ω gegen GND |
 | D10 | 18 | frei (Reserve) |
 
-Erst Status fragen: fertig gelötet? LEDs tatsächlich mit welchem Widerstand bestückt?
+RESET/SAVE gegenüber dem 23.11. getauscht (Florian, 24.11.). Versorgung vom Bus geplant: BCU-Pin 1
+(5 V) → XIAO 5V/VBUS; bei Test 3 muss der XIAO an USB hängen, sonst geht er mit aus.
+Sketch: `extras/bench/TestBoard/TestBoard.ino` (baut auf dem C6, **noch nicht hochgeladen/getestet**).
+Status-GA 0/3/0 stammt aus der Diplomarbeit (`0738a5f`); in den Mitschnitten vom 22.11. kam dort
+nichts. Offen: kommt der Status? Links/rechts richtig? LED-Widerstände?
 
 **Werkzeuge (alles fertig):** XIAO-Log
 `cd ~/Coding/Softwarestack_STKNX/extras/bench && ~/.platformio/penv/bin/pio device monitor -p /dev/cu.usbmodem101 -b 115200 -f time -f log2file`;
