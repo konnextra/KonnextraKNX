@@ -1,6 +1,6 @@
 # STATUS
 
-Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **23.11.2026**.
+Lebender Stand. Am Ende jeder Session aktualisieren. Letzte Aktualisierung: **24.11.2026**.
 
 ## First in the next session
 
@@ -77,6 +77,14 @@ Details: [`context/test-setup.md`](context/test-setup.md).
   - `Changes.md`: Breaking-Eintrag (Standard-Chip geändert) → Release wird **0.2.0**.
 
 ### Offen
+- **Zustandsloses Empfangen (`subscribe`/`onTelegram`, 24.11.) — Code fertig, auf
+  `feature/ncn5130`, nicht gepusht.** Spec `specs/2026-11-23-subscribe-design.md`, Plan
+  `specs/2026-11-24-subscribe-plan.md`, decisions/0004. Offen dazu: Abschnitt „Subscribe“ im
+  Examples-Guide der Website (en + de); Hardwaretest (Taster 1.1.1 → 0/1/1 abonnieren);
+  Forum-Antwort an LostWolf nach dem Release.
+- **Log-Stufen `Off/Basic/Deep` + `setDebugOutputPort(Print*)`** — Spec
+  `specs/2026-11-24-log-levels-design.md`, nächster Schritt nach subscribe: Plan schreiben,
+  vorher heutige Log-Aufrufe gegen einen echten Bench-Log durchgehen.
 - Hardwaretests (siehe oben). Danach Zeitlimits in `KnxTransceiverProtocol` /
   `KnxBringUp` anhand echter Messungen bestätigen oder anpassen.
 - Testwerkzeuge `extras/bench/` (BenchPair-Sketch, BusMonitor-Sketch, `knx_listen.py`,
@@ -104,7 +112,21 @@ Florian möchte die Website-Session und diese Library-Session später bündeln, 
 Gesamtkontext gearbeitet wird. Jetzt nicht umsetzen; nur im Hinterkopf behalten, wenn Doku
 für beide Repos anfällt.
 
-## Handoff der letzten Session (21./22.11.2026)
+## Handoff der Session 23./24.11.2026
+
+- **Erledigt:** subscribe-Feature nach Plan umgesetzt (Commits `1841937`..`006c853`):
+  `KnxTelegram` (neu, `src/KnxTelegram.h`), `KnxCodec::decodeTelegram`, `onTelegram`,
+  `subscribe`/`unsubscribe`/`setSubscriptionSlotLimit` (einmal `calloc`, Ausnahme laut 0004),
+  String-Überladungen, `examples/Subscribe`, README, keywords, Changes.md, Doxyfile. 111
+  Host-Tests grün; Subscribe baut auf C6, Mega, R4; BenchTest baut; Doxygen 0 Warnungen.
+- **Entschieden:** decisions/0004 (zustandsloses Empfangen, malloc-Ausnahme); Log-Stufen-Design;
+  Busmonitor geparkt (siehe „Idee, noch nicht dran“).
+- **Nicht getan:** Push, Website, Hardwaretest, Log-Stufen.
+- **Dateien:** `src/KnxTelegram.h`, `src/KnxCodec.{h,cpp}`, `src/KnxObject.h`,
+  `src/KnxCoordinator.{h,cpp}`, `test/test_telegram/`, `test/test_coordinator/`,
+  `examples/Subscribe/`, `README.md`, `keywords.txt`, `Changes.md`, `Doxyfile`, `.agents/*`.
+
+## Handoff der Session davor (21./22.11.2026)
 
 - **22.11. 23:20:** Empfang und Senden gegen xknx abgeglichen, 57/57, kein Verlust unter Last.
   `extras/bench/compare_logs.py` neu.
