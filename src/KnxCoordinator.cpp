@@ -122,6 +122,8 @@ void KnxCoordinator::dispatch(const ParsedTelegram& telegram) {
 
 bool KnxCoordinator::setSubscriptionSlotLimit(uint16_t total) {
 	if (p_subscriptions != nullptr) return false;   // table already reserved
+	// On AVR size_t is 16-bit: a huge total would wrap the calloc size to a tiny block.
+	if ((size_t)total > ((size_t)-1) / sizeof(Subscription)) return false;
 	subscriptionLimit = total;
 	return true;
 }
@@ -204,6 +206,11 @@ void KnxCoordinator::dispatchIndividual(const ParsedTelegram& telegram) {
 //---- Receiving ----
 
 bool KnxCoordinator::loop(void) {
+	// A callback that calls loop() again would overwrite rxFrame while the telegram it was
+	// handed still points into it; the nested call is a no-op instead.
+	if (_inLoop) return false;
+	_inLoop = true;
+
 	bool processed = false;
 	uint8_t len = 0;
 
@@ -225,5 +232,6 @@ bool KnxCoordinator::loop(void) {
 		}
 		processed = true;
 	}
+	_inLoop = false;
 	return processed;
 }

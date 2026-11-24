@@ -68,6 +68,7 @@ class KnxCoordinator {
 
 		Subscription* p_subscriptions = nullptr;   // allocated once, on the first subscribe()
 		uint16_t subscriptionLimit = KNX_DEFAULT_SUBSCRIPTION_SLOTS;
+		bool _inLoop = false;   // guards loop() against being called from a callback
 
 		//---- Methods ----
 		// Walks the receiver registry and delivers a parsed telegram to every match.
@@ -186,7 +187,8 @@ class KnxCoordinator {
 		 *        Call it in setup() before the first subscribe(): the slots are reserved once, at
 		 *        the first subscribe(), and cannot be resized afterwards.
 		 * @param total Number of subscription slots.
-		 * @return true if the limit was set; false if subscribe() has already been called.
+		 * @return true if the limit was set; false if subscribe() has already been called or
+		 *         the board cannot address that much memory.
 		*/
 		bool setSubscriptionSlotLimit(uint16_t total);
 
@@ -242,7 +244,8 @@ class KnxCoordinator {
 		/**
 		 * @brief Services the bus: call this on every iteration of loop(). It receives waiting
 		 *        telegrams and fires the callbacks of the objects they are addressed to. It never
-		 *        blocks, so do not replace it with delay()-based timing.
+		 *        blocks, so do not replace it with delay()-based timing. Calling it from inside a
+		 *        receive callback does nothing.
 		 * @return true if at least one telegram was handled this call.
 		*/
 		bool loop(void);

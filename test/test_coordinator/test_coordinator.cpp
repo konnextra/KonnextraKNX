@@ -543,6 +543,29 @@ void test_hook_subscribe_object_order(void) {
 	TEST_ASSERT_EQUAL_INT(3, rx.seq);
 }
 
+static bool  nestedLoopResult = true;
+static float secondSubValue = 0.0f;
+static int   gaBCalls = 0;
+static void subCallsLoop(const KnxTelegram&) { nestedLoopResult = p_knxUnderTest->loop(); }
+static void subRecordFloat(const KnxTelegram& t) { secondSubValue = t.value().asFloat(); }
+static void subCountB(const KnxTelegram&) { gaBCalls++; }
+
+// A callback that calls loop() must not overwrite the telegram still being dispatched.
+void test_loop_reentry_from_callback_ignored(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	p_knxUnderTest = &knx; nestedLoopResult = true; secondSubValue = 0.0f; gaBCalls = 0;
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT9, subCallsLoop);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT9, subRecordFloat);
+	knx.subscribe(packGroupAddress(GA_B), KnxDpt::DPT9, subCountB);
+	queueGroup(mock, GA_A, Dpt9(21.5f));
+	queueGroup(mock, GA_B, Dpt9(-5.0f));
+	knx.loop();
+	TEST_ASSERT_FALSE(nestedLoopResult);                       // nested call did nothing
+	TEST_ASSERT_FLOAT_WITHIN(0.01f, 21.5f, secondSubValue);    // still GA_A's value
+	TEST_ASSERT_EQUAL_INT(1, gaBCalls);                        // GA_B drained once, by the outer loop
+	p_knxUnderTest = nullptr;
+}
+
 int main(int, char**) {
 	UNITY_BEGIN();
 	RUN_TEST(test_send_con_true);
@@ -576,5 +599,6 @@ int main(int, char**) {
 	RUN_TEST(test_subscribe_decode_mismatch_skipped);
 	RUN_TEST(test_subscribe_context);
 	RUN_TEST(test_hook_subscribe_object_order);
+	RUN_TEST(test_loop_reentry_from_callback_ignored);
 	return UNITY_END();
 }
