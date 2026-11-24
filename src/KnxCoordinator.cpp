@@ -12,15 +12,7 @@
 //---- Sending ----
 
 bool KnxCoordinator::send(uint16_t groupAddress, const KnxValue& value) {
-	if (KnxDebug::isDeep()) {
-		GroupAddress ga = unpackGroupAddress(groupAddress);
-		char text[40];
-		KnxFormat::value(value, text, sizeof(text));
-		KnxDebug::section("TX %u.%u.%u -> %u/%u/%u  Write  (%s)",
-			(unsigned)physicalAddress.area, (unsigned)physicalAddress.line,
-			(unsigned)physicalAddress.device, (unsigned)ga.main, (unsigned)ga.middle,
-			(unsigned)ga.sub, text);
-	}
+	if (KnxDebug::isDeep()) logTransmitStart(groupAddress, value);
 
 	uint8_t frame[KnxFrame::MAX_FRAME];
 	uint8_t len = KnxFrame::build(physicalAddress, groupAddress, value, frame, sizeof(frame));
@@ -57,16 +49,32 @@ bool KnxCoordinator::sendControl(PhysicalAddress target, KnxTpci tpci, uint8_t s
 
 bool KnxCoordinator::transmit(const uint8_t* frame, uint8_t len, const KnxValue* value) {
 	bool confirmed = p_driver->sendTelegram(frame, len);
-	if (!KnxDebug::isEnabled()) return confirmed;
+	if (KnxDebug::isEnabled()) logTransmitted(frame, len, value, confirmed);
+	return confirmed;
+}
 
-	// Deep already opened the block before building; close it with the verdict.
+// Formatting lives in its own non-inlined functions so their buffers only take stack while
+// logging — send() is often called from inside a receive callback.
+KNX_NOINLINE void KnxCoordinator::logTransmitStart(uint16_t groupAddress, const KnxValue& value) {
+	GroupAddress ga = unpackGroupAddress(groupAddress);
+	char text[40];
+	KnxFormat::value(value, text, sizeof(text));
+	KnxDebug::section("TX %u.%u.%u -> %u/%u/%u  Write  (%s)",
+		(unsigned)physicalAddress.area, (unsigned)physicalAddress.line,
+		(unsigned)physicalAddress.device, (unsigned)ga.main, (unsigned)ga.middle,
+		(unsigned)ga.sub, text);
+}
+
+KNX_NOINLINE void KnxCoordinator::logTransmitted(const uint8_t* frame, uint8_t len,
+                                                 const KnxValue* value, bool confirmed) {
 	if (KnxDebug::isDeep()) {
 		if (confirmed) KnxDebug::log("result: confirmed by the bus");
 		else           KnxDebug::problem("not confirmed by the bus");
-		return confirmed;
+		// Sent from a receive callback: the rest of the received telegram's block follows.
+		if (_inLoop) KnxDebug::section("RX continued");
+		return;
 	}
 
-	// Basic: one line, written after the verdict is known.
 	char line[64];
 	line[0] = '\0';
 	ParsedTelegram sent;
@@ -80,7 +88,6 @@ bool KnxCoordinator::transmit(const uint8_t* frame, uint8_t len, const KnxValue*
 	else {
 		KnxDebug::problem("TX  %s  not confirmed by the bus", line);
 	}
-	return confirmed;
 }
 
 //---- Receiver registry (intrusive singly-linked list) ----
@@ -200,11 +207,7 @@ uint16_t KnxCoordinator::dispatchSubscriptions(const ParsedTelegram& telegram, u
 			continue;
 		}
 
-		if (KnxDebug::isDeep()) {
-			char text[40];
-			KnxFormat::value(value, text, sizeof(text));
-			KnxDebug::log("subscription -> %s", text);
-		}
+		if (KnxDebug::isDeep()) logSubscriptionHit(value);
 		KnxTelegram event(telegram, value);
 		if (slot.flags & SLOT_HAS_CONTEXT) slot.handler.withContext(event, slot.context);
 		else                               slot.handler.plain(event);
@@ -248,7 +251,7 @@ uint16_t KnxCoordinator::countListeners(const ParsedTelegram& telegram, KnxDpt& 
 	return count;
 }
 
-void KnxCoordinator::logReceived(const ParsedTelegram& telegram, uint8_t len) {
+KNX_NOINLINE void KnxCoordinator::logReceived(const ParsedTelegram& telegram, uint8_t len) {
 	char line[64];
 	KnxFormat::telegram(telegram, line, sizeof(line));
 
@@ -287,6 +290,12 @@ void KnxCoordinator::logReceived(const ParsedTelegram& telegram, uint8_t len) {
 	KnxDebug::log("%s", detail);
 	KnxFormat::frameRouting(rxFrame, len, detail, sizeof(detail));
 	KnxDebug::log("%s", detail);
+}
+
+KNX_NOINLINE void KnxCoordinator::logSubscriptionHit(const KnxValue& value) {
+	char text[40];
+	KnxFormat::value(value, text, sizeof(text));
+	KnxDebug::log("subscription -> %s", text);
 }
 
 //---- Receiving ----

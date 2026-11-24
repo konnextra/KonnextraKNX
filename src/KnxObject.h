@@ -86,6 +86,11 @@ class KnxObject : public IKnxReceiver {
 			if (!decoded.isValid()) {
 				// The object matched the GA but could not decode it — usually the object's DPT
 				// disagrees with what the actuator actually publishes on that address.
+				// A read request carries no value, so failing to decode it is no problem.
+				if (telegram.type == GroupValueType::Read) {
+					KnxDebug::log("object (DPT %u) -> read request, nothing to decode", (unsigned)objectDpt);
+					return;
+				}
 				GroupAddress g = unpackGroupAddress(statusGa);
 				KnxDebug::problem("object on %u/%u/%u: value does not decode as DPT %u",
 					(unsigned)g.main, (unsigned)g.middle, (unsigned)g.sub, (unsigned)objectDpt);

@@ -46,6 +46,7 @@ void Writer::putHex2(uint8_t byte) {
 void Writer::putFloat(float number) {
 	if (number != number) { put("nan"); return; }
 	if (number < 0) { put('-'); number = -number; }
+	if (number > 3.4e38f) { put("inf"); return; }   // above FLT_MAX: only infinity
 	if (number >= 4.0e9f) {
 		// Too large for the 32-bit integer part: scientific notation, two decimals.
 		int16_t exponent = 0;

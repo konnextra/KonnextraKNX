@@ -49,6 +49,7 @@ void test_value_floats(void) {
 	TEST_ASSERT_EQUAL_STRING("DPT9: 0.00", fmtValue(Dpt9(0.0f)));
 	TEST_ASSERT_EQUAL_STRING("DPT9: 1.00", fmtValue(Dpt9(0.999f)));   // rounds up into the integer
 	TEST_ASSERT_EQUAL_STRING("DPT14: 1.23e12", fmtValue(Dpt14(1.23e12f)));
+	TEST_ASSERT_EQUAL_STRING("DPT14: -inf", fmtValue(Dpt14(-1.0f / 0.0f)));
 }
 
 void test_value_structured(void) {

@@ -34,6 +34,13 @@
 // otherwise. One slot is 12 bytes on 32-bit boards (64 = 768 B) and 8 bytes on AVR.
 #define KNX_DEFAULT_SUBSCRIPTION_SLOTS 64
 
+// Keeps log-formatting buffers out of the caller's stack frame (GCC and Clang).
+#if defined(__GNUC__)
+	#define KNX_NOINLINE __attribute__((noinline))
+#else
+	#define KNX_NOINLINE
+#endif
+
 class KnxCoordinator {
 	private:
 		//---- Config ----
@@ -85,6 +92,15 @@ class KnxCoordinator {
 
 		// Sends a built frame and logs the verdict (Basic line or Deep block close).
 		bool transmit(const uint8_t* frame, uint8_t len, const KnxValue* value);
+
+		// Opens the Deep TX block for a group send, before the frame is built.
+		void logTransmitStart(uint16_t groupAddress, const KnxValue& value);
+
+		// Basic TX line, or the verdict closing the Deep TX block.
+		void logTransmitted(const uint8_t* frame, uint8_t len, const KnxValue* value, bool confirmed);
+
+		// Deep detail for a subscription that received a value.
+		void logSubscriptionHit(const KnxValue& value);
 
 		// Writes the Basic line or opens the Deep block for a received telegram, before dispatch.
 		void logReceived(const ParsedTelegram& telegram, uint8_t len);

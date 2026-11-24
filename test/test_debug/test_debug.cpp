@@ -75,6 +75,15 @@ void test_legacy_switch(void) {
 	TEST_ASSERT_FALSE(KnxDebug::isEnabled());
 }
 
+void test_hint_survives_long_line(void) {
+	KnxDebug::setLevel(KnxLog::Basic);
+	KnxDebug::problem("%s", "TX  15.15.255 -> 31/7/255  Write     12 34 56 78  (DPT14: 1234567.00)  not confirmed by the bus");
+	const char* hint = "  (more: setDebugMode(KnxLog::Deep))";
+	size_t n = strlen(lines[0]), h = strlen(hint);
+	TEST_ASSERT_TRUE(n > h);
+	TEST_ASSERT_EQUAL_STRING(hint, lines[0] + n - h);
+}
+
 int main(int argc, char** argv) {
 	(void)argc; (void)argv;
 	UNITY_BEGIN();
@@ -83,5 +92,6 @@ int main(int argc, char** argv) {
 	RUN_TEST(test_deep_kinds);
 	RUN_TEST(test_bytes_deep_only);
 	RUN_TEST(test_legacy_switch);
+	RUN_TEST(test_hint_survives_long_line);
 	return UNITY_END();
 }

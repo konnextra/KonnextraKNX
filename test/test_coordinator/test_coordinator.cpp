@@ -14,6 +14,7 @@
 #include "KnxFrame.h"
 #include "KnxCodec.h"
 #include "KnxTelegram.h"
+#include "KnxObject.h"
 
 //---- Test doubles ----
 
@@ -660,6 +661,40 @@ void test_log_off_is_silent(void) {
 	TEST_ASSERT_EQUAL_INT(0, logCount);
 }
 
+void test_log_basic_read_on_object_is_not_a_problem(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	KnxObject brightness(knx, packGroupAddress(GA_A), KnxDpt::DPT5);
+	queueGroup(mock, GA_A, Dpt1(false), CMD_READ);   // a real read: no data octet
+	startCapture(KnxLog::Basic);
+	knx.loop();
+	TEST_ASSERT_EQUAL_INT(1, logCount);
+	TEST_ASSERT_EQUAL_STRING("[knx] RX  1.1.1 -> 0/3/0  Read  1 listener", logLines[0]);
+}
+
+static void subSendsFromCallback(const KnxTelegram&) {
+	p_knxUnderTest->send(packGroupAddress(GroupAddress{ 0, 1, 1 }), Dpt1(true));
+}
+
+void test_log_deep_rx_continues_after_callback_send(void) {
+	MockDriver mock; KnxCoordinator knx(&mock, SELF);
+	p_knxUnderTest = &knx;
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subSendsFromCallback);
+	knx.subscribe(packGroupAddress(GA_A), KnxDpt::DPT1, subMarksCallback);
+	queueGroup(mock, GA_A, Dpt1(true));
+	startCapture(KnxLog::Deep);
+	knx.loop();
+	int txResult = -1, continued = -1, callback = -1;
+	for (int i = 0; i < logCount && i < 16; i++) {
+		if (strcmp(logLines[i], "[knx]   result: confirmed by the bus") == 0) txResult = i;
+		if (startsWith(logLines[i], "[knx] ----- RX continued")) continued = i;
+		if (strcmp(logLines[i], "CALLBACK") == 0) callback = i;
+	}
+	TEST_ASSERT_TRUE(txResult >= 0);
+	TEST_ASSERT_EQUAL_INT(txResult + 1, continued);
+	TEST_ASSERT_TRUE(callback > continued);
+	p_knxUnderTest = nullptr;
+}
+
 int main(int, char**) {
 	UNITY_BEGIN();
 	RUN_TEST(test_send_con_true);
@@ -701,5 +736,7 @@ int main(int, char**) {
 	RUN_TEST(test_log_deep_tx_block);
 	RUN_TEST(test_log_dropped_frame);
 	RUN_TEST(test_log_off_is_silent);
+	RUN_TEST(test_log_basic_read_on_object_is_not_a_problem);
+	RUN_TEST(test_log_deep_rx_continues_after_callback_send);
 	return UNITY_END();
 }

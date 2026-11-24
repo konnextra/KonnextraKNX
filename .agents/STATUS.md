@@ -84,9 +84,16 @@ Details: [`context/test-setup.md`](context/test-setup.md).
   Forum-Antwort an LostWolf nach dem Release. Zurückgestellte Kleinigkeiten aus dem Review:
   Null-Check liest inaktives Union-Member; `subscribe()` im Callback sieht das laufende Telegramm
   je nach Slot; Debug-Zähler kann über 255 laufen; `KnxTelegram::payload()` liefert bei Read 1 Byte.
-- **Log-Stufen `Off/Basic/Deep` + `setDebugOutputPort(Print*)`** — Spec
-  `specs/2026-11-24-log-levels-design.md`, nächster Schritt nach subscribe: Plan schreiben,
-  vorher heutige Log-Aufrufe gegen einen echten Bench-Log durchgehen.
+- **Log-Stufen `Off/Basic/Deep` + `setDebugOutputPort(Print*)` (24.11.) — Code fertig, nicht
+  gepusht.** Spec/Plan `specs/2026-11-24-log-levels-*.md`; Format in CLAUDE.md „Debug mode“.
+  `onTelegram` heißt jetzt `onAnyTelegram`. Offen: auf Hardware ansehen (Basic + Deep, BenchTest
+  steht auf `KnxLog::Deep`); Website-Text zum Debug-Modus (en + de) anpassen; `compare_logs.py`
+  liest jetzt auch Basic (gegen alten Mitschnitt 57/57, Basic-Pfad nur synthetisch geprüft).
+  Zurückgestellt aus dem Review: lange Payloads (>~14 Byte) werden in der Telegrammzeile
+  abgeschnitten; Listener-Zahl zählt `onAnyTelegram` nicht und kann bei Decode-Fehlern von der
+  Zustellung abweichen; „chip in reset“ ergibt zwei `!`-Zeilen; Encode-Fehler nennt keine GA;
+  Format-Strings liegen auf AVR im RAM (kein PROGMEM); `compare_logs` Basic ignoriert Reads.
+  Bekannter Altfehler bleibt: `KnxObject` dekodiert eine DPT1-Leseanfrage als „aus“ (PLAN.md).
 - Hardwaretests (siehe oben). Danach Zeitlimits in `KnxTransceiverProtocol` /
   `KnxBringUp` anhand echter Messungen bestätigen oder anpassen.
 - Testwerkzeuge `extras/bench/` (BenchPair-Sketch, BusMonitor-Sketch, `knx_listen.py`,
@@ -115,6 +122,11 @@ Gesamtkontext gearbeitet wird. Jetzt nicht umsetzen; nur im Hinterkopf behalten,
 für beide Repos anfällt.
 
 ## Handoff der Session 23./24.11.2026
+
+- **Nachtrag 24.11.:** Log-Stufen gebaut (Commits `a86edc5`..HEAD), `onAnyTelegram`-Umbenennung,
+  Review-Fixes (Read auf Objekt ohne `!`, „RX continued“ nach Senden aus Callback, Hinweis nie
+  abgeschnitten, `inf`, Log-Puffer in noinline-Helfern). 137 Host-Tests, Builds C6/Mega/R4/F401/
+  Pico, Doxygen 0. Kosten BenchTest: C6 Flash +4,9 KB; Mega Flash +7,0 KB, RAM +412 B.
 
 - **Erledigt:** subscribe-Feature nach Plan umgesetzt (Commits `1841937`..`006c853`):
   `KnxTelegram` (neu, `src/KnxTelegram.h`), `KnxCodec::decodeTelegram`, `onAnyTelegram`,

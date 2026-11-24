@@ -94,21 +94,24 @@ namespace KnxDebug {
 	// Formats "[knx] " + lead + fmt into one buffer; fill > 0 pads with that char to
 	// SECTION_WIDTH; withHint appends the "switch to Deep" hint.
 	inline void vline(const char* lead, const char* fmt, va_list args, char fill, bool withHint) {
+		static const char HINT[] = "  (more: setDebugMode(KnxLog::Deep))";
 		char buffer[LOG_BUFFER];
-		int n = snprintf(buffer, sizeof(buffer), "[knx] %s", lead);
+		// The hint must survive a long line, so the text is cut short to leave room for it.
+		const int limit = withHint ? (int)sizeof(buffer) - (int)sizeof(HINT) + 1 : (int)sizeof(buffer);
+		int n = snprintf(buffer, (size_t)limit, "[knx] %s", lead);
 		if (n < 0) return;
-		if (n < (int)sizeof(buffer)) {
-			int m = vsnprintf(buffer + n, sizeof(buffer) - (size_t)n, fmt, args);
+		if (n < limit) {
+			int m = vsnprintf(buffer + n, (size_t)(limit - n), fmt, args);
 			if (m > 0) n += m;
 		}
-		if (n >= (int)sizeof(buffer)) n = (int)sizeof(buffer) - 1;
+		if (n >= limit) n = limit - 1;
 		if (fill && n < (int)sizeof(buffer) - 2) {
 			buffer[n++] = ' ';
 			while (n < 6 + SECTION_WIDTH && n < (int)sizeof(buffer) - 1) buffer[n++] = fill;
 			buffer[n] = '\0';
 		}
 		if (withHint) {
-			snprintf(buffer + n, sizeof(buffer) - (size_t)n, "  (more: setDebugMode(KnxLog::Deep))");
+			snprintf(buffer + n, sizeof(buffer) - (size_t)n, "%s", HINT);
 		}
 		emit(buffer);
 	}
